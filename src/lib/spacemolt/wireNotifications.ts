@@ -4,8 +4,8 @@
  * composite unsubscribe. Formatting is intentionally terse here; panels that
  * need richer presentation read the typed payloads themselves.
  */
-import type { Account, LoggedInPayload } from '@spacemolt/lib'
-import type { UiStore } from './uiStore'
+import type { Account, GetTradesResponse, LoggedInPayload } from '@spacemolt/lib'
+import type { TradeOffer, UiStore } from './uiStore'
 
 const str = (value: unknown): string => (typeof value === 'string' ? value : '')
 
@@ -22,6 +22,20 @@ export function seedFromLogin(store: UiStore, login: LoggedInPayload | null): vo
   }
 }
 
+/**
+ * Replace pending incoming trades with a get_trades snapshot. Trades we already hold keep their
+ * richer push/login payload (station-sale fields); trades the server no longer lists drop out.
+ */
+export function mergeTradeSnapshot(current: TradeOffer[], incoming: GetTradesResponse['incoming']): TradeOffer[] {
+  return incoming.map((entry) => current.find((t) => t.trade_id === entry.trade_id) ?? { offerer_id: '', ...entry })
+}
+
+/** Resync pending trades after a reconnect (pushes sent while offline are lost). */
+export async function resyncTrades(account: Account, store: UiStore): Promise<void> {
+  const snapshot = (await account.commands.spacemolt_transfer.get_trades()).structuredContent
+  if (snapshot) store.dispatch({ type: 'seed_trades', trades: mergeTradeSnapshot(store.getState().pendingTrades, snapshot.incoming) })
+}
+
 export function wireNotifications(account: Account, store: UiStore): () => void {
   const log = (kind: 'info' | 'success' | 'warning' | 'danger' | 'chat' | 'combat', text: string) =>
     store.dispatch({ type: 'event', kind, text })
@@ -33,7 +47,7 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
 
     account.on('trade_offer_received', (trade) => {
       store.dispatch({ type: 'trade_received', trade })
-      log('info', `Trade offer received from ${str(trade.offerer_name) || 'another player'}`)
+      store.dispatch({ type: 'toast', kind: 'chat', text: `Trade offer received from ${str(trade.offerer_name) || 'another player'}` })
     }),
     account.on('trade_complete', (trade) => {
       store.dispatch({ type: 'trade_closed', tradeId: str(trade.trade_id) })
@@ -115,7 +129,17 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
     account.on('station_repaired', () => log('info', 'Station repaired')),
     account.on('pirate_radio', (radio) => log('chat', `Pirate radio: ${str(radio.message)}`)),
     account.on('pirate_destroyed', () => log('combat', 'Pirate destroyed')),
-    account.on('reconnected', () => log('info', 'Reconnected to the server')),
+    account.on('reconnected', () => {
+      log('info', 'Reconnected to the server')
+      resyncTrades(account, store).catch(() => {})
+    }),
+    account.on('exchange_fill', (fill) => {
+      const verb = fill.type === 'buy_filled' ? 'Bought' : 'Sold'
+      store.dispatch({
+        type: 'toast', kind: 'chat',
+        text: `Order filled: ${verb} ${fill.quantity.toLocaleString()} ${fill.item_name} for ${fill.total.toLocaleString()} cr`,
+      })
+    }),
 
     // Untyped pushes (no published schema yet — see spacemolt-lib docs/gameserver-todo.md).
     account.on('server_restart_warning', (payload: Record<string, unknown>) =>

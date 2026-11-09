@@ -26,6 +26,7 @@ import {
   useCommandMutation,
   useCommandQuery,
   useLocationState,
+  useMarket,
   usePlayer,
   type RunMutation,
 } from '@/lib/spacemolt'
@@ -33,9 +34,10 @@ import type { AnalyzeMarketResponse, Commands, EstimatePurchaseResponse, Mutatio
 import { usePlay } from '../../PlayProvider'
 import { getCatalogItem } from '../../../ItemDetail'
 import { ItemName } from '../../ItemTooltip'
-import { Credits, Loading, Modal, QtyButtons, shared } from '../../shared'
+import { ConfirmAction, Credits, Loading, Modal, QtyButtons, errorMessage, shared } from '../../shared'
 import { useHoverTooltip } from '../../hooks/useHoverTooltip'
 import { titleCase } from '@/lib/format'
+import { mergeLiveBook } from './tradingLogic'
 import styles from './MarketView.module.css'
 
 type MarketInsight = AnalyzeMarketResponse['insights'][number]
@@ -60,8 +62,6 @@ function normalizeCargo(raw: ReturnType<typeof useCargo>): CargoRow[] {
     return [{ item_id: c.item_id, name: c.item_name ?? c.item_id, quantity: c.quantity, size: c.size }]
   })
 }
-
-const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
 type SortField = 'name' | 'have' | 'buyQty' | 'buyPrice' | 'sellQty' | 'sellPrice' | 'spread'
 type SortDir = 'asc' | 'desc'
@@ -112,6 +112,9 @@ export function MarketView() {
   const isDocked = Boolean(dockedAt)
   const player = usePlayer()
   const credits = player?.credits ?? 0
+  const hasFaction = Boolean(player?.faction_id)
+  const [companyStore, setCompanyStore] = useState(false)
+  const liveBook = useMarket()
   const rawCargo = useCargo()
   const cargo = useMemo(() => normalizeCargo(rawCargo), [rawCargo])
   const mutate = useCommandMutation()
@@ -121,10 +124,15 @@ export function MarketView() {
     uiStore.dispatch({ type: 'toast', kind: 'danger', text })
   }, [uiStore])
 
-  const { data: marketData, error: marketError, refetch: refetchMarket } = useCommandQuery(
-    async (account) => (await account.commands.spacemolt_market.view_market()).structuredContent,
-    [dockedAt],
+  const { data: marketSnapshot, error: marketError, refetch: refetchMarket } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_market.view_market(companyStore ? { company_store: true } : {})).structuredContent,
+    [dockedAt, companyStore],
     { enabled: isDocked },
+  )
+  // The live feed omits Company Store orders, so only the public market gets live updates.
+  const marketData = useMemo(
+    () => marketSnapshot && !companyStore ? { ...marketSnapshot, items: mergeLiveBook(marketSnapshot.items, liveBook) } : marketSnapshot,
+    [marketSnapshot, companyStore, liveBook],
   )
 
   const { data: storageData } = useCommandQuery(
@@ -149,6 +157,8 @@ export function MarketView() {
   const [buyEstimate, setBuyEstimate] = useState<{ itemId: string; itemName: string; data: EstimatePurchaseResponse } | null>(null)
   const [estimating, setEstimating] = useState(false)
   const [buying, setBuying] = useState(false)
+  const [deliverToStorage, setDeliverToStorage] = useState(false)
+  const [autoList, setAutoList] = useState(false)
 
   // Filters
   const [selectedCategory, setSelectedCategory] = useState<string>('')
@@ -228,15 +238,19 @@ export function MarketView() {
     if (!buyEstimate) return
     setBuying(true)
     try {
-      await mutate((c) => c.spacemolt.buy({ id: buyEstimate.itemId, quantity: buyEstimate.data.quantity_requested }), { label: 'buy' })
+      await mutate((c) => c.spacemolt.buy({
+        id: buyEstimate.itemId, quantity: buyEstimate.data.quantity_requested,
+        deliver_to: deliverToStorage ? 'storage' : 'cargo', auto_list: autoList,
+      }), { label: 'buy' })
       setBuyEstimate(null)
       refetchMarket()
+      refetchOrders()
     } catch (err) {
       reportError(err)
     } finally {
       setBuying(false)
     }
-  }, [mutate, buyEstimate, refetchMarket, reportError])
+  }, [mutate, buyEstimate, deliverToStorage, autoList, refetchMarket, refetchOrders, reportError])
 
   const handleAnalyzeMarket = useCallback(async () => {
     setAnalysisLoading(true)
@@ -262,15 +276,16 @@ export function MarketView() {
     if (!sellConfirm) return
     setSelling(true)
     try {
-      await mutate((c) => c.spacemolt.sell({ id: sellConfirm.itemId, quantity: sellConfirm.quantity }), { label: 'sell' })
+      await mutate((c) => c.spacemolt.sell({ id: sellConfirm.itemId, quantity: sellConfirm.quantity, auto_list: autoList }), { label: 'sell' })
       setSellConfirm(null)
       refetchMarket()
+      refetchOrders()
     } catch (err) {
       reportError(err)
     } finally {
       setSelling(false)
     }
-  }, [mutate, sellConfirm, refetchMarket, reportError])
+  }, [mutate, sellConfirm, autoList, refetchMarket, refetchOrders, reportError])
 
   const haveMap = useMemo(() => {
     const map = new Map<string, number>()
@@ -479,6 +494,14 @@ export function MarketView() {
             onClick={() => setShowFilter('mine')}
             type="button"
           >Mine</button>
+          {hasFaction && (
+            <button
+              className={`${styles.showToggle} ${companyStore ? styles.showToggleActive : ''}`}
+              onClick={() => setCompanyStore((v) => !v)}
+              title="Show only your faction's private Company Store orders"
+              type="button"
+            >Company Store</button>
+          )}
         </div>
       </div>
 
@@ -545,7 +568,9 @@ export function MarketView() {
               ? 'No items in cargo or storage at this base.'
               : searchQuery || selectedCategory || showFilter !== 'all'
                 ? 'No items match your filters.'
-                : (marketData.message || 'No items listed on this market.')}
+                : companyStore
+                  ? 'Your faction has no Company Store orders here.'
+                  : (marketData.message || 'No items listed on this market.')}
         </div>
       ) : (
         <>
@@ -687,6 +712,12 @@ export function MarketView() {
               </div>
             )}
           </div>
+          <div className={styles.tradeOptions}>
+            <label><input type="checkbox" checked={deliverToStorage} onChange={(e) => setDeliverToStorage(e.target.checked)} /> Deliver to storage</label>
+            <label title="Place a buy order for any unfilled quantity at the average fill price">
+              <input type="checkbox" checked={autoList} onChange={(e) => setAutoList(e.target.checked)} /> Order the unfilled rest
+            </label>
+          </div>
           <div className={styles.modalBuyActions}>
             <button
               className={shared.actionBtn}
@@ -718,6 +749,11 @@ export function MarketView() {
               </div>
             )}
           </div>
+          <div className={styles.tradeOptions}>
+            <label title="List any unsold quantity as a sell order">
+              <input type="checkbox" checked={autoList} onChange={(e) => setAutoList(e.target.checked)} /> List the unsold rest
+            </label>
+          </div>
           <div className={styles.modalBuyActions}>
             <button
               className={sellConfirm.baseValue > 0 && sellConfirm.priceEach < sellConfirm.baseValue * 0.5 ? shared.dangerBtn : shared.warningBtn}
@@ -738,7 +774,6 @@ export function MarketView() {
   )
 }
 
-/** Quick-fill qty buttons */
 /** Expanded panel for a single market item — order book + actions */
 function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, onBuyEstimate, estimating, onQuickSell, onRefreshMarket, onRefreshOrders, onError }: {
   item: MarketItem
@@ -772,6 +807,10 @@ function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, on
   const [listing, setListing] = useState(false)
   const [orderQtys, setOrderQtys] = useState<Record<string, string>>({})
   const setOrderQty = (key: string, val: string) => setOrderQtys(prev => ({ ...prev, [key]: val }))
+  const [confirm, setConfirm] = useState<{ message: string; run: () => void } | null>(null)
+  const ask = (message: string, run: () => void) => setConfirm({ message, run })
+  const othersSellQty = item.sell_orders.reduce((sum, o) => sum + o.quantity - (o.my_quantity ?? 0), 0)
+  const maxBuyQty = item.best_sell > 0 ? Math.min(othersSellQty, Math.floor(credits / item.best_sell)) : othersSellQty
 
   const submitOrder = useCallback((run: (c: Commands) => Promise<MutationResult>, onSuccess?: () => void) => {
     setListing(true)
@@ -779,6 +818,7 @@ function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, on
       () => {
         setListing(false)
         onRefreshMarket()
+        onRefreshOrders()
         onSuccess?.()
       },
       (err) => {
@@ -786,20 +826,7 @@ function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, on
         onError(err)
       },
     )
-  }, [mutate, onRefreshMarket, onError])
-
-  const handleTradeOrder = useCallback(
-    (cmd: 'buy' | 'sell', qty: number) => {
-      const promise = cmd === 'buy'
-        ? mutate((c) => c.spacemolt.buy({ id: item.item_id, quantity: qty }), { label: 'buy' })
-        : mutate((c) => c.spacemolt.sell({ id: item.item_id, quantity: qty }), { label: 'sell' })
-      promise.then(
-        () => onRefreshMarket(),
-        (err) => onError(err),
-      )
-    },
-    [mutate, item.item_id, onRefreshMarket, onError]
-  )
+  }, [mutate, onRefreshMarket, onRefreshOrders, onError])
 
   const handleCancelOrder = useCallback(
     (orderId: string) => {
@@ -841,7 +868,7 @@ function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, on
         <span className={styles.yourTag}>YOURS</span>
         {orderId && (
           <div className={styles.orderAction}>
-            <button className={shared.dangerBtn} onClick={(e) => { e.stopPropagation(); handleCancelOrder(orderId) }} type="button">
+            <button className={shared.dangerBtn} onClick={(e) => { e.stopPropagation(); ask(`Cancel your ${side} order at ${priceEach.toLocaleString()} cr?`, () => handleCancelOrder(orderId)) }} type="button">
               <X size={10} /> Cancel
             </button>
           </div>
@@ -884,7 +911,7 @@ function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, on
                             <input className={styles.orderQtyInput} type="number" min={1} max={othersQty} value={qty}
                               onChange={(e) => setOrderQty(key, e.target.value)} onClick={(e) => e.stopPropagation()} />
                             <button className={shared.actionBtn}
-                              onClick={(e) => { e.stopPropagation(); handleTradeOrder('buy', parseInt(qty, 10) || 0) }}
+                              onClick={(e) => { e.stopPropagation(); onBuyEstimate(item.item_id, item.item_name, parseInt(qty, 10) || 0) }}
                               disabled={!qty || parseInt(qty, 10) < 1} type="button">Buy</button>
                           </div>
                         </div>
@@ -930,7 +957,7 @@ function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, on
                             <input className={styles.orderQtyInput} type="number" min={1} max={othersQty} value={qty}
                               onChange={(e) => setOrderQty(key, e.target.value)} onClick={(e) => e.stopPropagation()} />
                             <button className={shared.warningBtn}
-                              onClick={(e) => { e.stopPropagation(); handleTradeOrder('sell', parseInt(qty, 10) || 0) }}
+                              onClick={(e) => { e.stopPropagation(); onQuickSell(item.item_id, item.item_name, parseInt(qty, 10) || 0, order.price_each, baseValue) }}
                               disabled={!qty || parseInt(qty, 10) < 1 || available === 0} type="button">Sell</button>
                           </div>
                         </div>
@@ -982,6 +1009,7 @@ function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, on
               value={buyQty}
               onChange={(e) => setBuyQty(e.target.value)}
             />
+            <QtyButtons max={maxBuyQty} current={buyQty} onChange={setBuyQty} />
             <button
               className={shared.actionBtn}
               onClick={() => onBuyEstimate(item.item_id, item.item_name, parseInt(buyQty, 10))}
@@ -993,7 +1021,11 @@ function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, on
             </button>
             <button
               className={shared.actionBtn}
-              onClick={() => submitOrder((c) => c.spacemolt_market.create_buy_order({ item_id: item.item_id, quantity: parseInt(buyQty, 10) || 0, price_each: baseValue }))}
+              onClick={() => {
+                const quantity = parseInt(buyQty, 10) || 0
+                ask(`Place a buy order for ${quantity} at ${baseValue.toLocaleString()} cr each (${(quantity * baseValue).toLocaleString()} cr escrowed)?`,
+                  () => submitOrder((c) => c.spacemolt_market.create_buy_order({ item_id: item.item_id, quantity, price_each: baseValue })))
+              }}
               disabled={!buyQty || parseInt(buyQty, 10) < 1 || baseValue < 1}
               title={baseValue > 0 ? `Place buy order at ${baseValue.toLocaleString()} cr each` : 'Base price unavailable'}
               type="button"
@@ -1016,6 +1048,7 @@ function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, on
             <div className={styles.quickRow}>
               <input className={shared.textInput} type="number" min={1} max={available} placeholder="Qty"
                 value={listingQty} onChange={(e) => setListingQty(e.target.value)} />
+              <QtyButtons max={available} current={listingQty} onChange={setListingQty} />
               <input className={shared.textInput} type="number" min={1} placeholder="Price"
                 value={listingPrice} onChange={(e) => setListingPrice(e.target.value)} />
               <button className={shared.warningBtn} onClick={handleSubmitListing}
@@ -1035,7 +1068,8 @@ function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, on
               </button>
               <button
                 className={shared.warningBtn}
-                onClick={() => submitOrder((c) => c.spacemolt_market.create_sell_order({ item_id: item.item_id, quantity: available, price_each: baseValue }))}
+                onClick={() => ask(`List all ${available} at ${baseValue.toLocaleString()} cr each?`,
+                  () => submitOrder((c) => c.spacemolt_market.create_sell_order({ item_id: item.item_id, quantity: available, price_each: baseValue })))}
                 disabled={listing || available === 0 || baseValue < 1}
                 title={baseValue > 0 ? `List all ${available} at ${baseValue.toLocaleString()} cr each` : 'Base price unavailable'}
                 type="button"
@@ -1047,6 +1081,15 @@ function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, on
           )}
         </div>
       </div>
+
+      {confirm && (
+        <ConfirmAction
+          message={confirm.message}
+          variant="confirm"
+          onConfirm={() => { confirm.run(); setConfirm(null) }}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
     </div>
   )
 }

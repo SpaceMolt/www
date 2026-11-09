@@ -744,3 +744,19 @@
   .categoryToggle { font-size: 0.65rem; padding: 0.25rem 0.5rem; }
   .showToggle { font-size: 0.65rem; padding: 0.3rem 0.5rem; }
 }
+
+.tradeOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+}
+
+.tradeOptions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}

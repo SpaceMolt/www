@@ -1,10 +1,11 @@
 'use client'
 
-import { useCallback, useState } from 'react'
-import { Check, X } from 'lucide-react'
-import { useAccountStore, useCommandMutation, type TradeOffer } from '@/lib/spacemolt'
+import { useCallback, useEffect, useState } from 'react'
+import { Check, Plus, RefreshCw, X } from 'lucide-react'
+import { resyncTrades, useAccountStore, useCommandMutation, useCommandQuery, type TradeOffer } from '@/lib/spacemolt'
 import { usePlay, usePlayUi } from '../../PlayProvider'
-import { Credits, shared } from '../../shared'
+import { ConfirmAction, Credits, errorMessage, shared } from '../../shared'
+import { TradeOfferForm } from './TradeOfferForm'
 import styles from '../TradingPanel.module.css'
 
 interface TradeItemStack {
@@ -20,7 +21,10 @@ function tradeItems(items: TradeOffer['offer_items']): TradeItemStack[] {
   }))
 }
 
-const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err))
+const describeItems = (items: TradeItemStack[], credits = 0) =>
+  [...items.map((item) => `${item.item_id} x${item.quantity}`), credits > 0 ? `${credits.toLocaleString()} cr` : '']
+    .filter(Boolean)
+    .join(', ')
 
 export function TradesList() {
   const store = useAccountStore()
@@ -28,6 +32,19 @@ export function TradesList() {
   const pendingTrades = usePlayUi((s) => s.pendingTrades)
   const mutate = useCommandMutation()
   const [busyTradeId, setBusyTradeId] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [cancelId, setCancelId] = useState<string | null>(null)
+
+  const { data: trades, refetch: refetchTrades } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_transfer.get_trades()).structuredContent,
+    [pendingTrades.length],
+  )
+  const outgoing = trades?.outgoing ?? []
+
+  // Pushes sent while this tab was closed or offline never arrive; resync once on open.
+  useEffect(() => {
+    resyncTrades(store.account, uiStore).catch(() => {})
+  }, [store, uiStore])
 
   const reportError = useCallback((err: unknown) => {
     const text = errorMessage(err)
@@ -64,8 +81,34 @@ export function TradesList() {
     [store, uiStore, reportError]
   )
 
+  const handleCancelTrade = useCallback(
+    async (tradeId: string) => {
+      setCancelId(null)
+      setBusyTradeId(tradeId)
+      try {
+        await store.account.commands.spacemolt_transfer.trade_cancel({ trade_id: tradeId })
+        refetchTrades()
+      } catch (err) {
+        reportError(err)
+      } finally {
+        setBusyTradeId(null)
+      }
+    },
+    [store, refetchTrades, reportError]
+  )
+
   return (
     <div>
+      <div className={styles.tradesToolbar}>
+        <button className={shared.actionBtn} onClick={() => setShowForm(!showForm)} type="button">
+          <Plus size={12} /> New Trade
+        </button>
+        <button className={shared.refreshBtn} onClick={refetchTrades} title="Refresh trades" type="button">
+          <RefreshCw size={13} />
+        </button>
+      </div>
+      {showForm && <TradeOfferForm onSent={refetchTrades} onClose={() => setShowForm(false)} />}
+
       <div className={shared.sectionTitle}>
         Pending Trades ({pendingTrades.length})
       </div>
@@ -107,28 +150,11 @@ export function TradesList() {
                 )}
 
                 {offerItems.length > 0 && (
-                  <div className={styles.tradeItems}>
-                    Offering:{' '}
-                    {offerItems
-                      .map((item) => `${item.item_id} x${item.quantity}`)
-                      .join(', ')}
-                  </div>
+                  <div className={styles.tradeItems}>Offering: {describeItems(offerItems)}</div>
                 )}
 
                 {!stationSale && (requestItems.length > 0 || requestCredits > 0) && (
-                  <div className={styles.tradeItems}>
-                    Requesting:{' '}
-                    {[
-                      ...requestItems.map(
-                        (item) => `${item.item_id} x${item.quantity}`
-                      ),
-                      requestCredits > 0
-                        ? `${requestCredits.toLocaleString()} cr`
-                        : '',
-                    ]
-                      .filter(Boolean)
-                      .join(', ')}
-                  </div>
+                  <div className={styles.tradeItems}>Requesting: {describeItems(requestItems, requestCredits)}</div>
                 )}
 
                 <div className={styles.tradeActions}>
@@ -157,6 +183,34 @@ export function TradesList() {
         </div>
       ) : (
         <div className={shared.emptyState}>No pending trade offers</div>
+      )}
+
+      {outgoing.length > 0 && (
+        <>
+          <div className={shared.sectionTitle}>Your Offers ({outgoing.length})</div>
+          <div className={styles.tradesList}>
+            {outgoing.map((trade) => (
+              <div key={trade.trade_id} className={styles.tradeCard}>
+                <div className={styles.tradeHeader}>
+                  <span className={styles.tradeFrom}>To: {trade.target_name || 'another player'}</span>
+                </div>
+                <div className={styles.tradeItems}>Offering: {describeItems(tradeItems(trade.offer_items), trade.offer_credits) || 'nothing'}</div>
+                {(trade.request_items.length > 0 || (trade.request_credits ?? 0) > 0) && (
+                  <div className={styles.tradeItems}>Requesting: {describeItems(tradeItems(trade.request_items), trade.request_credits)}</div>
+                )}
+                {cancelId === trade.trade_id ? (
+                  <ConfirmAction message="Withdraw this offer?" onConfirm={() => handleCancelTrade(trade.trade_id)} onCancel={() => setCancelId(null)} />
+                ) : (
+                  <div className={styles.tradeActions}>
+                    <button className={shared.dangerBtn} onClick={() => setCancelId(trade.trade_id)} disabled={busyTradeId === trade.trade_id} type="button">
+                      <X size={12} /> Cancel Offer
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

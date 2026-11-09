@@ -97,22 +97,6 @@
   color: var(--plasma-cyan);
 }
 
-.formFieldStack {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  flex: 1;
-}
-
-.formLabel {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: var(--hull-grey);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .formHint {
   font-weight: 400;
   text-transform: none;
@@ -153,91 +137,6 @@
   justify-content: flex-end;
 }
 
-/* ── Sell Dropdown ────────────────────────────────────────────────── */
-
-.dropdown {
-  position: relative;
-}
-
-.dropdownTrigger {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
-  color: var(--star-white);
-  background: rgba(10, 14, 20, 0.6);
-  border: 1px solid var(--dim-grey);
-  border-radius: 3px;
-  padding: 0.4rem 0.5rem;
-  cursor: pointer;
-  transition: border-color 0.15s ease;
-}
-
-.dropdownTrigger:hover, .dropdownTrigger:focus {
-  border-color: var(--plasma-cyan);
-}
-
-.dropdownValue {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.dropdownPanel {
-  position: absolute;
-  z-index: 100;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 2px;
-  background: rgba(10, 15, 28, 0.97);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-  border-radius: 4px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-  max-height: 240px;
-  display: flex;
-  flex-direction: column;
-}
-
-.dropdownSearch {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.35rem 0.5rem;
-  border-bottom: 1px solid rgba(0, 212, 255, 0.15);
-  color: var(--hull-grey);
-}
-
-.dropdownSearchInput {
-  flex: 1;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--star-white);
-  background: transparent;
-  border: none;
-  outline: none;
-}
-
-.dropdownSearchInput::placeholder {
-  color: var(--hull-grey);
-  opacity: 0.6;
-}
-
-.dropdownList {
-  overflow-y: auto;
-  max-height: 200px;
-}
-
-.dropdownEmpty {
-  padding: 0.5rem;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
-  color: var(--hull-grey);
-  text-align: center;
-}
-
 .dropdownItem {
   display: flex;
   align-items: center;
@@ -259,22 +158,11 @@
   color: var(--star-white);
 }
 
-.dropdownItemActive {
-  background: rgba(0, 212, 255, 0.12);
-  color: var(--plasma-cyan);
-}
-
 .dropdownItemName {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.dropdownItemQty {
-  flex-shrink: 0;
-  font-size: 0.6rem;
-  color: var(--hull-grey);
 }
 
 .dropdownItemCategory {
@@ -327,21 +215,6 @@
 .autocompleteInput::placeholder {
   color: var(--hull-grey);
   opacity: 0.6;
-}
-
-.autocompleteClear {
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  color: var(--hull-grey);
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-}
-
-.autocompleteClear:hover {
-  color: var(--claw-red);
 }
 
 .autocompletePanel {
@@ -482,29 +355,6 @@
   box-shadow: 0 0 6px rgba(0, 212, 255, 0.12);
 }
 
-
-.modifyResult {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.2rem 0.3rem;
-  background: rgba(10, 14, 23, 0.3);
-  border-radius: 3px;
-}
-
-.modifyMessage {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.62rem;
-  color: var(--chrome-silver);
-}
-
-.modifyFeeWarning {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
-  font-weight: 600;
-  color: var(--warning-yellow);
-}
-
 .modifyFeeNote {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.6rem;
@@ -526,5 +376,45 @@
   .orderTypeBadge { font-size: 0.68rem; }
   .orderMeta { font-size: 0.68rem; }
   .createdBy { font-size: 0.68rem; }
-  .modifyFeeWarning { font-size: 0.68rem; }
+}
+
+.optionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--chrome-silver);
+}
+
+.optionRow label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+
+.bulkList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 18rem;
+  overflow-y: auto;
+}
+
+.bulkRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+}
+
+.bulkName {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 1 1 10rem;
+  min-width: 0;
+  cursor: pointer;
 }
