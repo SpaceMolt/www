@@ -22,8 +22,8 @@ const CHANNEL_CONFIG: Record<Channel, { icon: typeof Hash; label: string }> = {
 const HISTORY_PAGE = 50
 const CONTACT_LIMIT = 30
 
-export interface Partner { name: string; id: string }
-export interface Conversation extends Partner { last: ChatMessage }
+interface Partner { name: string; id: string }
+interface Conversation extends Partner { last: ChatMessage }
 
 function formatTimestamp(ts?: string | null): string {
   if (!ts) return ''
@@ -35,7 +35,7 @@ function formatTimestamp(ts?: string | null): string {
   }
 }
 
-export const fromHistory = ({ timestamp_utc, ...rest }: ChatHistoryMessage): ChatMessage => ({ ...rest, timestamp: timestamp_utc })
+const fromHistory = ({ timestamp_utc, ...rest }: ChatHistoryMessage): ChatMessage => ({ ...rest, timestamp: timestamp_utc })
 
 const timeOf = (m: ChatMessage) => Date.parse(m.timestamp ?? '') || 0
 
@@ -47,7 +47,7 @@ export function mergeChat(...lists: ChatMessage[][]): ChatMessage[] {
 }
 
 /** The other side of a private message. Incoming messages carry the partner's id; outgoing carry a username. */
-export function partnerOf(m: ChatMessage, myId?: string): Partner {
+function partnerOf(m: ChatMessage, myId?: string): Partner {
   if (m.sender_id === myId) {
     const name = m.target_name ?? m.target_id ?? ''
     return { name, id: name }

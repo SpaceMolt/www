@@ -29,6 +29,14 @@ export function jumpEstimateMs(shipSpeed: number): number {
   return Math.max(10, 70 - 10 * shipSpeed) * 1000
 }
 
+type Position = { x?: number; y?: number } | undefined
+
+/** In-system travel: one 10 s tick per distance/speed unit, at least one tick. */
+export function travelEstimateMs(from: Position, to: Position, shipSpeed: number): number {
+  const distance = Math.hypot((to?.x ?? 0) - (from?.x ?? 0), (to?.y ?? 0) - (from?.y ?? 0))
+  return Math.max(1, Math.ceil(distance / Math.max(0.1, shipSpeed))) * 10_000
+}
+
 /** Refuel at this system's station, travelling there first. Returns the station name, or null when there is none. */
 async function refuelAtStation(account: Account, run: RunMutation): Promise<string | null> {
   const data = (await account.commands.spacemolt.get_system()).structuredContent
@@ -41,7 +49,7 @@ async function refuelAtStation(account: Account, run: RunMutation): Promise<stri
   return station.base_name || station.name
 }
 
-export interface WalkOptions {
+interface WalkOptions {
   fuelPerJump: number
   shipSpeed: number
   /** Returns a reason to stop (abort request, combat), or null to keep going. */

@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { SpacemoltError } from '@spacemolt/lib'
 import { useAccountStore, useCommandMutation, type AccountStore, type RunMutation } from '@/lib/spacemolt'
 import { errorMessage } from '../shared'
+import { chunk } from '../shared/itemSelection'
 import { findRoute, walkRoute } from '../routeWalk'
 import { ABORT_CODES, advance, errorOutcome, stepLabel, type LoopPlan, type LoopPosition, type LoopStep } from './loopPlan'
 
@@ -29,7 +30,6 @@ export interface LoopRunner {
 }
 
 const LOG_LIMIT = 6
-const BAY_CHUNK = 100 // storage deposit takes at most 100 entries per call
 
 /** Pushes that end a loop: the ship's situation changed under it. */
 const HALT_PUSHES: Record<string, string> = {
@@ -99,9 +99,8 @@ async function sellCargo({ account, run, haltReason, log }: StepContext, itemIds
 
 async function depositCargo({ account, run }: StepContext, target: 'storage' | 'faction') {
   const items = (account.cargo ?? []).map(({ item_id, quantity }) => ({ item_id, quantity }))
-  for (let i = 0; i < items.length; i += BAY_CHUNK) {
-    const chunk = items.slice(i, i + BAY_CHUNK)
-    await run((c) => c.spacemolt_storage.deposit({ items: chunk, ...(target === 'faction' && { target: 'faction' }) }), { label: 'deposit' })
+  for (const batch of chunk(items)) {
+    await run((c) => c.spacemolt_storage.deposit({ items: batch, ...(target === 'faction' && { target: 'faction' }) }), { label: 'deposit' })
   }
 }
 

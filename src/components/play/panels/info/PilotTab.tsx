@@ -8,10 +8,10 @@ import { ActionButton } from '../../ActionButton'
 import { Loading, shared } from '../../shared'
 import styles from '../InfoPanel.module.css'
 
-/** Public profile lookup by username (get_player_profile). */
 /** Bookkeeping stats the server tracks for taxes; not a lifetime stat to a player. */
 const INTERNAL_STAT = /taxable|_snapshot$/
 
+/** Public profile lookup by username (get_player_profile). */
 export function PilotTab() {
   const [input, setInput] = useState('')
   const [username, setUsername] = useState('')

@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, useState, type ReactNode } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight, MapPin, PackageCheck, RotateCcw, Send, Truck, Undo2, X } from 'lucide-react'
 import type {
   ShippingActiveContract,
@@ -10,8 +10,7 @@ import type {
   ShippingTrackResponse,
   ViewStorageResponse,
 } from '@spacemolt/lib'
-import { fetchStations } from '@spacemolt/lib'
-import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useLocationState, usePendingAction, usePlayer } from '@/lib/spacemolt'
+import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useLocationState, usePendingAction, usePlayer, useStations } from '@/lib/spacemolt'
 import { ConfirmAction, Credits, shared, useAction } from '../../shared'
 import { packageOptions, settleBlock, shipFormError, type ShipForm } from './logic'
 import css from './missions.module.css'
@@ -76,13 +75,7 @@ export function ShippingTab() {
 
 /** Public station directory (base id, name, system), loaded once per mount. */
 function useStationDirectory() {
-  const [directory, setDirectory] = useState<{ base_id: string; base_name: string; system_name: string }[]>([])
-  useEffect(() => {
-    fetchStations(process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com')
-      .then(({ stations }) => setDirectory(stations.filter((s) => !s.wrecked).map((s) => ({ base_id: s.base_id, base_name: s.name, system_name: s.system_name }))))
-      .catch(() => {})
-  }, [])
-  return directory
+  return (useStations().data ?? []).filter((s) => !s.wrecked).map((s) => ({ base_id: s.base_id, base_name: s.name, system_name: s.system_name }))
 }
 
 function Board({ actor, dockedAt }: { actor: Actor; dockedAt: string | null }) {

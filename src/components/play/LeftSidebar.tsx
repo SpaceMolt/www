@@ -39,7 +39,7 @@ import { usePlay } from './PlayProvider'
 import { ProgressBar } from './ProgressBar'
 import { transitDestination } from './TravelProgress'
 import type { GalaxyPanelHandle, MapSystemData, PlannedRoute } from './panels/GalaxyPanel'
-import { findRoute } from './routeWalk'
+import { findRoute, jumpEstimateMs, travelEstimateMs } from './routeWalk'
 import { useLoop } from './loop/useLoopRunner'
 import { rememberPois } from './loop/loopPlan'
 import { shortcutKey } from './shortcuts'
@@ -338,12 +338,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
       const targetPoi = system?.pois.find((p) => p.id === poiId)
       let estimatedMs: number | undefined
       if (poi?.position?.x !== undefined && poi.position.y !== undefined && targetPoi?.position) {
-        const dx = targetPoi.position.x - poi.position.x
-        const dy = targetPoi.position.y - poi.position.y
-        const distance = Math.sqrt(dx * dx + dy * dy)
-        const speed = Math.max(0.1, ship?.speed ?? 1)
-        const travelTicks = Math.max(1, Math.ceil(distance / speed))
-        estimatedMs = travelTicks * 10000
+        estimatedMs = travelEstimateMs(poi.position, targetPoi.position, ship?.speed ?? 1)
       }
       const name = targetPoi?.base_name || targetPoi?.name || 'destination'
       logEvent(`Traveling to ${name}...`)
@@ -360,8 +355,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
 
   const handleJump = useCallback(
     async (systemId: string, systemName: string) => {
-      const speed = ship?.speed ?? 1
-      const estimatedMs = Math.max(10, 70 - 10 * speed) * 1000
+      const estimatedMs = jumpEstimateMs(ship?.speed ?? 1)
       logEvent(`Jumping to ${systemName}...`)
       onMobileClose?.()
       try {
@@ -382,7 +376,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     } catch (err) {
       reportError(err)
     }
-  }, [mutate, logEvent, reportError, uiStore])
+  }, [mutate, logEvent, reportError])
 
   const handleUndock = useCallback(async () => {
     try {

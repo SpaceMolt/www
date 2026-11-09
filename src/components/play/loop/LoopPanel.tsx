@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowDown, ArrowUp, Play, Plus, Repeat, Save, Square, Trash2, X } from 'lucide-react'
-import { fetchStations } from '@spacemolt/lib'
-import { useAccountStore, useCargo, useLocationState, usePendingAction, usePlayer, useSystem } from '@/lib/spacemolt'
+import { useAccountStore, useCargo, useLocationState, usePendingAction, usePlayer, useStations, useSystem } from '@/lib/spacemolt'
 import { Credits, Panel, shared } from '../shared'
 import { hasMineableResources } from '../LeftSidebar'
 import { loadKnownPois, loadPlans, mergePois, mineSellPreset, savePlans, stepLabel, type KnownPoi, type LoopPlan, type LoopStep } from './loopPlan'
@@ -26,7 +25,6 @@ const KIND_LABELS: Record<StepKind, string> = {
 
 const EMPTY_PLAN: LoopPlan = { name: 'My loop', steps: [], repeat: 0 }
 
-const GAMESERVER_URL = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
 /**
  * Goto destinations: POIs remembered from visited systems plus the public
@@ -37,14 +35,10 @@ function useDestinations(systemId: string, here: KnownPoi[]): { pois: KnownPoi[]
   const store = useAccountStore()
   const playerId = usePlayer()?.id
   const known = useMemo(() => loadKnownPois(playerId), [playerId])
-  const [stations, setStations] = useState<KnownPoi[]>([])
+  const directory = useStations().data
   const [intel, setIntel] = useState<KnownPoi[]>([])
 
-  useEffect(() => {
-    fetchStations(GAMESERVER_URL)
-      .then(({ stations }) => setStations(stations.map((s) => ({ id: s.poi_id, name: s.name, systemId: s.system_id, systemName: s.system_name }))))
-      .catch(() => {})
-  }, [])
+  const stations = (directory ?? []).map((s) => ({ id: s.poi_id, name: s.name, systemId: s.system_id, systemName: s.system_name }))
   const base = mergePois(stations, known) // remembered names win over directory names
 
   useEffect(() => {
@@ -207,7 +201,8 @@ export function LoopPanel() {
   const [draft, setDraft] = useState<LoopPlan>(EMPTY_PLAN)
 
   const pois = systemData && 'system' in systemData ? systemData.system.pois : []
-  const station = pois.find((p) => p.has_base)
+  const base = pois.find((p) => p.has_base)
+  const station = base && { id: base.id, name: base.base_name || base.name }
   const minePoi = hasMineableResources(location) && location ? { id: location.poi_id, name: location.poi_name } : null
   const canRun = !isActive && pending === null // HUD also blocks start() during auto-travel
 
@@ -225,11 +220,11 @@ export function LoopPanel() {
         <>
           <div className={shared.sectionTitle}>Presets</div>
           <div className={styles.row}>
-            <button className={shared.subtleBtn} onClick={() => setDraft(mineSellPreset({ minePoi, station: { id: station.id, name: station.base_name || station.name } }))} type="button">
-              Mine here, sell at {station.base_name || station.name}
+            <button className={shared.subtleBtn} onClick={() => setDraft(mineSellPreset({ minePoi, station }))} type="button">
+              Mine here, sell at {station.name}
             </button>
-            <button className={shared.subtleBtn} onClick={() => setDraft(mineSellPreset({ minePoi, station: { id: station.id, name: station.base_name || station.name }, deposit: true }))} type="button">
-              Mine here, store at {station.base_name || station.name}
+            <button className={shared.subtleBtn} onClick={() => setDraft(mineSellPreset({ minePoi, station, deposit: true }))} type="button">
+              Mine here, store at {station.name}
             </button>
           </div>
         </>

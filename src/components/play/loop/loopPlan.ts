@@ -92,24 +92,34 @@ export function mineSellPreset(
 
 // Per player: characters sharing a browser keep their own plans and maps.
 const STORAGE_KEY = 'spacemolt.play.loopPlans'
+const POIS_KEY = 'spacemolt.play.knownPois'
 
-export function loadPlans(playerId: string | undefined, storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): LoopPlan[] {
+/** The JSON array stored under `key.playerId`; empty without a player or on unreadable storage. */
+function readList(key: string, playerId: string | undefined, storage: Pick<Storage, 'getItem'> | undefined): unknown[] {
   if (!playerId) return []
   try {
-    const parsed: unknown = JSON.parse(storage?.getItem(`${STORAGE_KEY}.${playerId}`) ?? '[]')
-    return Array.isArray(parsed) ? parsed.filter(isPlan) : []
+    const parsed: unknown = JSON.parse(storage?.getItem(`${key}.${playerId}`) ?? '[]')
+    return Array.isArray(parsed) ? parsed : []
   } catch {
     return []
   }
 }
 
-export function savePlans(playerId: string | undefined, plans: LoopPlan[], storage: Pick<Storage, 'setItem'> | undefined = globalThis.localStorage): void {
+function writeList(key: string, playerId: string | undefined, value: unknown[], storage: Pick<Storage, 'setItem'> | undefined): void {
   if (!playerId) return
   try {
-    storage?.setItem(`${STORAGE_KEY}.${playerId}`, JSON.stringify(plans))
+    storage?.setItem(`${key}.${playerId}`, JSON.stringify(value))
   } catch {
-    // Private mode or full storage: plans live for this tab only.
+    // Private mode or full storage: the value lives for this tab only.
   }
+}
+
+export function loadPlans(playerId: string | undefined, storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): LoopPlan[] {
+  return readList(STORAGE_KEY, playerId, storage).filter(isPlan)
+}
+
+export function savePlans(playerId: string | undefined, plans: LoopPlan[], storage: Pick<Storage, 'setItem'> | undefined = globalThis.localStorage): void {
+  writeList(STORAGE_KEY, playerId, plans, storage)
 }
 
 /** A POI the player can pick for a goto step: seen in a visited system, a public station, or faction intel. */
@@ -120,16 +130,8 @@ export interface KnownPoi {
   systemName: string
 }
 
-const POIS_KEY = 'spacemolt.play.knownPois'
-
 export function loadKnownPois(playerId: string | undefined, storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): KnownPoi[] {
-  if (!playerId) return []
-  try {
-    const parsed: unknown = JSON.parse(storage?.getItem(`${POIS_KEY}.${playerId}`) ?? '[]')
-    return Array.isArray(parsed) ? parsed.filter((p) => typeof p?.id === 'string' && typeof p?.systemId === 'string') : []
-  } catch {
-    return []
-  }
+  return readList(POIS_KEY, playerId, storage).filter((p): p is KnownPoi => typeof (p as KnownPoi)?.id === 'string' && typeof (p as KnownPoi)?.systemId === 'string')
 }
 
 /** Merge newly seen POIs into the remembered list (newer entries replace older ones with the same id). */
@@ -139,12 +141,7 @@ export function mergePois(known: KnownPoi[], seen: KnownPoi[]): KnownPoi[] {
 }
 
 export function rememberPois(playerId: string | undefined, seen: KnownPoi[], storage: Pick<Storage, 'getItem' | 'setItem'> | undefined = globalThis.localStorage): void {
-  if (!playerId) return
-  try {
-    storage?.setItem(`${POIS_KEY}.${playerId}`, JSON.stringify(mergePois(loadKnownPois(playerId, storage), seen)))
-  } catch {
-    // Storage unavailable: the picker falls back to stations and intel.
-  }
+  writeList(POIS_KEY, playerId, mergePois(loadKnownPois(playerId, storage), seen), storage)
 }
 
 const STEP_KINDS = new Set<string>(['mine', 'goto', 'sell_all', 'sell', 'deposit', 'refuel', 'repair', 'craft', 'wait'])

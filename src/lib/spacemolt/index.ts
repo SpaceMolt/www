@@ -36,4 +36,4 @@ export { mergeTradeSnapshot, seedFromLogin, wireNotifications } from './wireNoti
 export { useMarket } from './useMarket'
 export { useObservation } from './useObservation'
 export { usePoi, useSystem } from './useSystemPoi'
-export { loadCatalog, loadMap, useCatalog, useMap } from './worldData'
+export { loadCatalog, loadMap, loadStations, useCatalog, useMap, useStations } from './worldData'

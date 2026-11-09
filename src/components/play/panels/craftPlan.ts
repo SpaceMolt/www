@@ -1,17 +1,13 @@
+import { availableQuantity, type ItemQty } from '@/lib/crafting'
 import type { Recipe } from '../types'
-
-type ItemQty = { item_id: string; quantity: number }
-
-const availableQuantity = (itemId: string, items: ItemQty[]) => items.find((i) => i.item_id === itemId)?.quantity ?? 0
 
 // The server converts an output quantity to whole runs with the first output's yield.
 const perRun = (recipe: Recipe) => Math.max(1, recipe.outputs?.[0]?.quantity ?? 1)
 
 export const runsFor = (recipe: Recipe, quantity: number) => Math.max(1, Math.ceil(quantity / perRun(recipe)))
 
-/** Most output items `items` can pay for, in whole runs. Recycle counts the feedstock (first output) held. */
-export function maxCraftable(recipe: Recipe, items: ItemQty[], mode: 'craft' | 'recycle' = 'craft'): number {
-  if (mode === 'recycle') return availableQuantity(recipe.outputs?.[0]?.item_id ?? '', items)
+/** Most output items `items` can pay for, in whole runs. */
+export function maxCraftable(recipe: Recipe, items: ItemQty[]): number {
   const inputs = recipe.inputs ?? []
   if (inputs.length === 0) return 0
   const runs = Math.min(...inputs.map((i) => Math.floor(availableQuantity(i.item_id, items) / i.quantity)))

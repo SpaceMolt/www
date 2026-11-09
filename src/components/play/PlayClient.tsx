@@ -82,17 +82,7 @@ function PlayClientInner() {
 
   // Initial connect/auth — nothing to show behind the loader yet
   if (!wasReady.current) {
-    return (
-      <div className={styles.loadingScreen}>
-        <div className={styles.loadingContent}>
-          <Loader2 size={32} className={styles.spinner} />
-          <div className={styles.loadingTitle}>SpaceMolt</div>
-          <div className={styles.loadingText}>
-            {phase === 'authenticating' ? 'Authenticating...' : 'Connecting to game server...'}
-          </div>
-        </div>
-      </div>
-    )
+    return <LoadingScreen text={phase === 'authenticating' ? 'Authenticating...' : 'Connecting to game server...'} />
   }
 
   // Ready before (HUD has state to show); overlay while the lib reconnects
@@ -161,6 +151,18 @@ function TabGate({ playerId, onSwitchPlayer, children }: { playerId: string; onS
 
 const LAST_PLAYER_KEY = 'spacemolt.play.lastPlayer'
 
+function LoadingScreen({ text }: { text: string }) {
+  return (
+    <div className={styles.loadingScreen}>
+      <div className={styles.loadingContent}>
+        <Loader2 size={32} className={styles.spinner} />
+        <div className={styles.loadingTitle}>SpaceMolt</div>
+        <div className={styles.loadingText}>{text}</div>
+      </div>
+    </div>
+  )
+}
+
 /** System accounts like `[Pirate Fleet]` are bracketed; they are not playable characters. */
 function playable(players: LinkedPlayer[] | undefined): LinkedPlayer[] {
   return (players ?? []).filter(p => !/^\[.*\]$/.test(p.username))
@@ -183,9 +185,7 @@ export function PlayClient() {
     setSelectedPlayerId(playerId)
   }, [])
 
-  const handleSwitchPlayer = useCallback(() => {
-    selectPlayer(null)
-  }, [selectPlayer])
+  const handleSwitchPlayer = useCallback(() => selectPlayer(null), [selectPlayer])
 
   const handlePlayerCreated = useCallback(async (playerId: string) => {
     // Re-fetch player list then auto-select the new player
@@ -256,15 +256,7 @@ export function PlayClient() {
 
   // Not loaded yet
   if (!isLoaded) {
-    return (
-      <div className={styles.loadingScreen}>
-        <div className={styles.loadingContent}>
-          <Loader2 size={32} className={styles.spinner} />
-          <div className={styles.loadingTitle}>SpaceMolt</div>
-          <div className={styles.loadingText}>Loading...</div>
-        </div>
-      </div>
-    )
+    return <LoadingScreen text="Loading..." />
   }
 
   // Not signed in — prompt Clerk sign-in
@@ -306,15 +298,7 @@ export function PlayClient() {
         playerId={selectedPlayerId}
         mintToken={mintToken}
         gameserverUrl={GAME_SERVER}
-        fallback={
-          <div className={styles.loadingScreen}>
-            <div className={styles.loadingContent}>
-              <Loader2 size={32} className={styles.spinner} />
-              <div className={styles.loadingTitle}>SpaceMolt</div>
-              <div className={styles.loadingText}>Connecting to game server...</div>
-            </div>
-          </div>
-        }
+        fallback={<LoadingScreen text="Connecting to game server..." />}
       >
         <PlayProvider onSwitchPlayer={handleSwitchPlayer}>
           <PlayClientInner />

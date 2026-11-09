@@ -5,7 +5,7 @@
  * need richer presentation read the typed payloads themselves.
  */
 import type { Account, GetTradesResponse, LoggedInPayload } from '@spacemolt/lib'
-import type { TradeOffer, UiStore } from './uiStore'
+import type { EventKind, TradeOffer, UiStore } from './uiStore'
 
 const str = (value: unknown): string => (typeof value === 'string' ? value : '')
 
@@ -31,16 +31,15 @@ export function mergeTradeSnapshot(current: TradeOffer[], incoming: GetTradesRes
 }
 
 /** Resync pending trades after a reconnect (pushes sent while offline are lost). */
-export async function resyncTrades(account: Account, store: UiStore): Promise<void> {
+async function resyncTrades(account: Account, store: UiStore): Promise<void> {
   const snapshot = (await account.commands.spacemolt_transfer.get_trades()).structuredContent
   if (snapshot) store.dispatch({ type: 'seed_trades', trades: mergeTradeSnapshot(store.getState().pendingTrades, snapshot.incoming) })
 }
 
 export function wireNotifications(account: Account, store: UiStore): () => void {
-  const log = (kind: 'info' | 'success' | 'warning' | 'danger' | 'chat' | 'combat', text: string) =>
-    store.dispatch({ type: 'event', kind, text })
+  const log = (kind: EventKind, text: string) => store.dispatch({ type: 'event', kind, text })
 
-  const toast = (kind: 'info' | 'success' | 'warning', text: string) => store.dispatch({ type: 'toast', kind, text })
+  const toast = (kind: EventKind, text: string) => store.dispatch({ type: 'toast', kind, text })
 
   const unsubscribers = [
     account.on('chat_message', (msg) => {
@@ -49,7 +48,7 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
 
     account.on('trade_offer_received', (trade) => {
       store.dispatch({ type: 'trade_received', trade })
-      store.dispatch({ type: 'toast', kind: 'chat', text: `Trade offer received from ${str(trade.offerer_name) || 'another player'}` })
+      toast('chat', `Trade offer received from ${str(trade.offerer_name) || 'another player'}`)
     }),
     account.on('trade_complete', (trade) => {
       store.dispatch({ type: 'trade_closed', tradeId: str(trade.trade_id) })

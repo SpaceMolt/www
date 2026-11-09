@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { useAccountStore, useCommandMutation } from '@/lib/spacemolt'
 import type { PlannedRoute } from './panels/GalaxyPanel'
-import { jumpEstimateMs, walkRoute } from './routeWalk'
+import { jumpEstimateMs, travelEstimateMs, walkRoute } from './routeWalk'
 
 export interface AutoTravelProgress {
   currentJumpIndex: number    // 0-based, which jump we're on (-1 = not started)
@@ -119,9 +119,7 @@ export function useAutoTravel(): UseAutoTravelReturn {
         const currentPoi = pois.find((p) => p.id === currentPoiId)
 
         if (target && target.id !== currentPoiId) {
-          const dx = (target.position?.x ?? 0) - (currentPoi?.position?.x ?? 0)
-          const dy = (target.position?.y ?? 0) - (currentPoi?.position?.y ?? 0)
-          const travelSecs = Math.max(1, Math.ceil(Math.hypot(dx, dy) / Math.max(0.1, shipSpeed))) * 10
+          const travelSecs = travelEstimateMs(currentPoi?.position, target.position, shipSpeed) / 1000
           update({
             phase: 'traveling_to_station',
             completedJumps: route.totalJumps,

@@ -21,7 +21,6 @@ describe('craftPlan', () => {
   test('maxCraftable is limited by the scarcest input', () => {
     expect(maxCraftable(recipe, [{ item_id: 'iron_ore', quantity: 10 }, { item_id: 'carbon', quantity: 2 }])).toBe(4)
     expect(maxCraftable(recipe, [{ item_id: 'iron_ore', quantity: 10 }])).toBe(0)
-    expect(maxCraftable(recipe, [{ item_id: 'steel_plate', quantity: 7 }], 'recycle')).toBe(7)
   })
 
   test('missingFromCargo deposits only the shortfall cargo can cover', () => {

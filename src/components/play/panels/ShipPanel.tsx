@@ -77,17 +77,11 @@ export function ShipPanel() {
   const [cargoSel, setCargoSel] = useState<Selection>({})
   const [confirmJettison, setConfirmJettison] = useState(false)
   const move = useStorageMove()
+  const deposit = async (items: Parameters<typeof move>[1]) =>
+    setCargoSel(await move('Deposited', items, (c, picked) => c.spacemolt_storage.deposit({ items: picked }), 'from cargo to storage'))
 
   const classDetail: ShipClassDetail | null =
     ship?.class_id && catalog ? ((catalog.ship(ship.class_id) as unknown as ShipClassDetail) ?? null) : null
-
-  const reportError = useCallback(
-    (err: unknown) => {
-      const text = errorMessage(err)
-      uiStore.dispatch({ type: 'toast', kind: 'danger', text })
-    },
-    [uiStore]
-  )
 
   const handleUninstallModule = useCallback(
     async (moduleId: string) => {
@@ -416,7 +410,7 @@ export function ShipPanel() {
             <>
               <button
                 className={shared.confirmBtn}
-                onClick={async () => setCargoSel(await move('Deposited', cargoPicked, (c, items) => c.spacemolt_storage.deposit({ items }), 'from cargo to storage'))}
+                onClick={() => deposit(cargoPicked)}
                 disabled={actionPending || cargoPicked.length === 0}
                 title={actionPending ? 'Another action is pending' : 'Move the selected items to station storage'}
                 type="button"
@@ -425,7 +419,7 @@ export function ShipPanel() {
               </button>
               <button
                 className={shared.subtleBtn}
-                onClick={async () => setCargoSel(await move('Deposited', selectedItems(cargoRows, selectAll(cargoRows)), (c, items) => c.spacemolt_storage.deposit({ items }), 'from cargo to storage'))}
+                onClick={() => deposit(selectedItems(cargoRows, selectAll(cargoRows)))}
                 disabled={actionPending}
                 type="button"
               >

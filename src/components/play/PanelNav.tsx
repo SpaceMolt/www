@@ -41,7 +41,7 @@ interface PanelDef {
   right?: boolean
 }
 
-export const ALL_PANELS: PanelDef[] = [
+const ALL_PANELS: PanelDef[] = [
   { id: 'galaxy', icon: Map, label: 'Galaxy', visibility: 'always' },
   { id: 'ship', icon: Rocket, label: 'Ship', visibility: 'always' },
   { id: 'faction', icon: Users, label: 'Faction', visibility: 'always' },
@@ -68,7 +68,7 @@ export const ALL_PANELS: PanelDef[] = [
   { id: 'settings', icon: Settings, label: 'Settings', visibility: 'always', right: true },
 ]
 
-export function visiblePanelsFor(isDocked: boolean | undefined): PanelDef[] {
+function visiblePanelsFor(isDocked: boolean | undefined): PanelDef[] {
   return ALL_PANELS.filter((p) => p.visibility === 'always' || isDocked)
 }
 

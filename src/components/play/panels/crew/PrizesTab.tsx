@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { Anchor, Flag, Fuel, Navigation, Pause, Play, Wrench } from 'lucide-react'
-import { fetchStations, type StationSummary } from '@spacemolt/lib'
-import { useAccountStore, useCommandMutation, useLocationState, usePlayer, useSection } from '@/lib/spacemolt'
+import { useAccountStore, useCommandMutation, useLocationState, usePlayer, useSection, useStations } from '@/lib/spacemolt'
 import { shared, useAction } from '../../shared'
 import styles from '../CrewPanel.module.css'
 import { parseCount } from './crewLogic'
-
-const GAMESERVER_URL = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
 const WAIT_REASONS: Record<string, string> = {
   no_route: 'no route to destination',
@@ -28,22 +25,11 @@ export function PrizesTab() {
   const recoveries = useSection('prize_recoveries') ?? []
   const { busy: running, run } = useAction()
   const busy = running !== null
-  const [stations, setStations] = useState<StationSummary[]>([])
+  const stations = (useStations().data ?? []).filter((s) => !s.wrecked).sort((a, b) => a.name.localeCompare(b.name))
   const [destination, setDestination] = useState('')
   const [disposition, setDisposition] = useState<'aboard' | 'faction_reserve'>('aboard')
   const [redirect, setRedirect] = useState<Record<string, string>>({})
   const [qty, setQty] = useState<Record<string, string>>({})
-
-  useEffect(() => {
-    let live = true
-    fetchStations(GAMESERVER_URL).then(
-      (list) => live && setStations(list.stations.filter((s) => !s.wrecked).sort((a, b) => a.name.localeCompare(b.name))),
-      () => live && setStations([]),
-    )
-    return () => {
-      live = false
-    }
-  }, [])
 
   // Prize pushes carry no state delta; re-read the status blob so prize_recoveries updates.
   useEffect(() => {
