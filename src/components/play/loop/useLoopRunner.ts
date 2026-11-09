@@ -167,7 +167,6 @@ export function useLoopRunner(): LoopRunner {
     const event = (text: string) => uiStore.dispatch({ type: 'event', kind: 'info', text })
     const loggedRun: RunMutation = async (call, options) => {
       const result = await run(call, options)
-      if (result.autoUndocked) event('Undocked from station')
       if (options?.label === 'travel') event(`Arrived at ${account.location?.poi_name ?? 'destination'}`)
       if (options?.label === 'jump') event(`Jumped to ${account.location?.system_name ?? options.target ?? 'next system'}`)
       return result

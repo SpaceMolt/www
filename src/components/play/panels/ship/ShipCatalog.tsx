@@ -396,6 +396,7 @@ export function ShipCatalog() {
                     className={styles.shipCardTop}
                     onClick={() => toggleExpand(catShip.id)}
                     role="button"
+                    aria-expanded={isExpanded}
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.target !== e.currentTarget) return

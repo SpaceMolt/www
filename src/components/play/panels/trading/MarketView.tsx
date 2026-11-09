@@ -184,16 +184,10 @@ export function MarketView() {
     setExpandedItem(null)
   }, [])
 
-  const handleSort = useCallback((field: SortField) => {
-    setSortField(prev => {
-      if (prev === field) {
-        setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-        return field
-      }
-      setSortDir(field === 'name' ? 'asc' : 'desc')
-      return field
-    })
-  }, [])
+  const handleSort = (field: SortField) => {
+    setSortDir(field === sortField ? (sortDir === 'asc' ? 'desc' : 'asc') : field === 'name' ? 'asc' : 'desc')
+    setSortField(field)
+  }
 
   const handleToggleItem = useCallback(
     (itemId: string) => setExpandedItem(prev => prev === itemId ? null : itemId),

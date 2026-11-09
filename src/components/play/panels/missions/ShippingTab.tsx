@@ -11,6 +11,7 @@ import type {
   ViewStorageResponse,
 } from '@spacemolt/lib'
 import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useLocationState, usePendingAction, usePlayer, useStations } from '@/lib/spacemolt'
+import { titleCase } from '@/lib/format'
 import { ConfirmAction, Credits, shared, useAction } from '../../shared'
 import { packageOptions, settleBlock, shipFormError, type ShipForm } from './logic'
 import css from './missions.module.css'
@@ -294,7 +295,6 @@ function HaulCard({ entry: s, dockedAt, onSettled }: { entry: ShippingActiveCont
         <span className={shared.badge}>{s.role.replace('_', ' ')} / {c.status.replace('_', ' ')}</span>
       </div>
       <div className={css.row}>
-        <span className={css.meta}>pkg {c.package_id}</span>
         {s.destination_system && <span className={css.meta}>[{s.destination_system}]</span>}
         {c.status === 'in_transit' && (
           <span className={css.meta}>
@@ -304,9 +304,8 @@ function HaulCard({ entry: s, dockedAt, onSettled }: { entry: ShippingActiveCont
         {c.status === 'in_transit' && !s.late && (
           <span className={`${css.value} ${css.good}`}>pays <Credits amount={s.payout_if_delivered_now} /> now</span>
         )}
-        {s.last_known_location && <span className={css.meta}>last seen {s.last_known_location}</span>}
+        {s.last_known_location && <span className={css.meta}>last seen {titleCase(s.last_known_location)}</span>}
       </div>
-      <div className={css.hint}>{s.next_step}</div>
 
       {confirmKind ? (
         <ConfirmAction

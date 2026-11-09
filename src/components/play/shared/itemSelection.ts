@@ -95,7 +95,7 @@ export function summarize(verb: string, results: ItemResult[], where = ''): { ok
   const failed = results.filter((r) => !r.success)
   const noun = `${results.length === 1 ? 'item' : 'items'}${where ? ` ${where}` : ''}`
   if (failed.length === 0) return { ok: true, text: `${verb} ${results.length} ${noun}` }
-  const reasons = failed.slice(0, 3).map((r) => `${formatItemId(r.item_id)}: ${stripErrorCode(r.message ?? r.error ?? 'failed')}`).join('; ')
+  const reasons = failed.slice(0, 3).map((r) => `${formatItemId(r.item_id)}: ${stripErrorCode(r.message ?? r.error ?? 'failed').replace(/package:[0-9a-f]+/g, 'sealed package')}`).join('; ')
   const more = failed.length > 3 ? ` (+${failed.length - 3} more)` : ''
   return { ok: false, text: `${verb} ${results.length - failed.length} of ${results.length} ${noun}. ${reasons}${more}` }
 }

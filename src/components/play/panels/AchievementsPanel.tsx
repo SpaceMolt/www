@@ -122,7 +122,7 @@ export function AchievementsPanel() {
             {(['all', 'earned', 'locked'] as FilterMode[]).map((mode) => (
               <button
                 key={mode}
-                className={filter === mode ? shared.tabActive : shared.tab}
+                className={filter === mode ? `${shared.tab} ${shared.tabActive}` : shared.tab}
                 aria-pressed={filter === mode}
                 onClick={() => setFilter(mode)}
                 type="button"

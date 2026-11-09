@@ -42,6 +42,12 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
   const toast = (kind: EventKind, text: string) => store.dispatch({ type: 'toast', kind, text })
 
   const unsubscribers = [
+    // Errors the server pushes outside any request (e.g. battle range or fuel).
+    account.on('error', (err) => toast('danger', err.message)),
+    // Docking the engine did on its own before a command (e.g. undock for a jump).
+    account.on('ok', (ok) => {
+      if ('type' in ok && (ok.type === 'auto_dock' || ok.type === 'auto_undock') && ok.message) log('info', ok.message)
+    }),
     account.on('chat_message', (msg) => {
       store.dispatch({ type: 'chat', message: msg })
     }),
