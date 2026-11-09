@@ -123,6 +123,15 @@
   min-width: 0;
 }
 
+.openElsewhere {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--plasma-cyan);
+}
+
 .playerMeta {
   display: flex;
   align-items: center;

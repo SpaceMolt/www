@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Loader2, RefreshCw, WifiOff, LogIn, MonitorSmartphone } from 'lucide-react'
+import { Loader2, RefreshCw, WifiOff, LogIn, MonitorSmartphone, Users } from 'lucide-react'
 import { SignInButton } from '@clerk/nextjs'
 import { mintWsToken } from '@spacemolt/lib'
 import { AccountProvider, useAccountStore, useConnectionPhase } from '@/lib/spacemolt'
@@ -10,6 +10,7 @@ import { PlayProvider } from './PlayProvider'
 import { PlayerSelector } from './PlayerSelector'
 import { HUD } from './HUD'
 import { useGameAuth } from '@/lib/useGameAuth'
+import { useTabClaim } from '@/lib/spacemolt/tabClaim'
 import styles from './PlayClient.module.css'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -52,7 +53,9 @@ function PlayClientInner() {
         <div className={styles.loadingContent}>
           <MonitorSmartphone size={32} />
           <div className={styles.loadingTitle}>Session Replaced</div>
-          <div className={styles.loadingText}>Another session connected as this player.</div>
+          <div className={styles.loadingText}>
+            Another browser, device, or agent connected as this player.
+          </div>
           <button className={styles.signInBtn} onClick={reconnectHere}>
             Reconnect Here
           </button>
@@ -117,6 +120,42 @@ function PlayClientInner() {
         </div>
       )}
     </>
+  )
+}
+
+/**
+ * Connects only while this tab holds the character's tab lock. If another tab
+ * of this browser plays the character, ask before taking over instead of
+ * kicking it to a "Session Replaced" screen.
+ */
+function TabGate({ playerId, onSwitchPlayer, children }: { playerId: string; onSwitchPlayer: () => void; children: ReactNode }) {
+  const { claim, takeOver } = useTabClaim(playerId)
+  if (claim === 'held') return <>{children}</>
+  if (claim === 'pending') {
+    return (
+      <div className={styles.loadingScreen}>
+        <div className={styles.loadingContent}>
+          <Loader2 size={32} className={styles.spinner} />
+          <div className={styles.loadingTitle}>SpaceMolt</div>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div className={styles.loadingScreen}>
+      <div className={styles.loadingContent}>
+        <MonitorSmartphone size={32} />
+        <div className={styles.loadingTitle}>Open in Another Tab</div>
+        <div className={styles.loadingText}>This player is connected in another tab of this browser.</div>
+        <button className={styles.signInBtn} onClick={takeOver}>
+          Play Here
+        </button>
+        <button className={styles.signInBtn} onClick={onSwitchPlayer}>
+          <Users size={16} />
+          Switch Player
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -242,23 +281,25 @@ export function PlayClient() {
 
   // Player selected — launch game
   return (
-    <AccountProvider
-      playerId={selectedPlayerId}
-      mintToken={mintToken}
-      gameserverUrl={GAME_SERVER}
-      fallback={
-        <div className={styles.loadingScreen}>
-          <div className={styles.loadingContent}>
-            <Loader2 size={32} className={styles.spinner} />
-            <div className={styles.loadingTitle}>SpaceMolt</div>
-            <div className={styles.loadingText}>Connecting to game server...</div>
+    <TabGate playerId={selectedPlayerId} onSwitchPlayer={handleSwitchPlayer}>
+      <AccountProvider
+        playerId={selectedPlayerId}
+        mintToken={mintToken}
+        gameserverUrl={GAME_SERVER}
+        fallback={
+          <div className={styles.loadingScreen}>
+            <div className={styles.loadingContent}>
+              <Loader2 size={32} className={styles.spinner} />
+              <div className={styles.loadingTitle}>SpaceMolt</div>
+              <div className={styles.loadingText}>Connecting to game server...</div>
+            </div>
           </div>
-        </div>
-      }
-    >
-      <PlayProvider onSwitchPlayer={handleSwitchPlayer}>
-        <PlayClientInner />
-      </PlayProvider>
-    </AccountProvider>
+        }
+      >
+          <PlayProvider onSwitchPlayer={handleSwitchPlayer}>
+          <PlayClientInner />
+        </PlayProvider>
+      </AccountProvider>
+    </TabGate>
   )
 }
