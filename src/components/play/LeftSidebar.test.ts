@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'bun:test'
-import { EMPIRE_NAMES, hasMineableResources } from './LeftSidebar'
+import { canSurvey, EMPIRE_NAMES, extractionKinds, hasMineableResources, mineWarning } from './LeftSidebar'
+import { getItem } from '@/data/catalog'
 import { CANONICAL_EMPIRE_FULL_NAMES, expectExactEmpireKeys } from '@/test/canonicalEmpires'
 import { transitDestination } from './TravelProgress'
 
@@ -62,5 +63,27 @@ describe('transitDestination', () => {
 
   it('a jump prefers the system name', () => {
     expect(transitDestination({ transit_type: 'jump', transit_dest_system_name: 'Sol', transit_dest_poi_name: 'Gate' })).toBe('Sol')
+  })
+})
+
+describe('mine and survey gates mirror the server loadout checks', () => {
+  const fit = (...ids: string[]) => ids.map((id) => getItem(id)!)
+
+  it('warns with the missing extractor only when nothing fitted can work a deposit here', () => {
+    expect(mineWarning(['hydrogen_gas'], extractionKinds(fit('mining_laser_i'), undefined)))
+      .toBe('Nothing fitted can extract gas here: fit a Gas Harvester')
+    expect(mineWarning(['hydrogen_gas', 'iron_ore'], extractionKinds(fit('mining_laser_i'), undefined))).toBeNull()
+    expect(mineWarning(['helium_ice'], extractionKinds(fit('ice_harvester_i'), undefined))).toBeNull()
+  })
+
+  it('counts a hull with inherent rad harvesting', () => {
+    expect(extractionKinds([], 'warhead')).toEqual(['rad'])
+  })
+
+  it('needs survey power or an anomaly detector', () => {
+    expect(canSurvey(fit('mining_laser_i'), undefined)).toBe(false)
+    expect(canSurvey(fit('survey_scanner_i'), undefined)).toBe(true)
+    expect(canSurvey(fit('anomaly_detector'), undefined)).toBe(true)
+    expect(canSurvey([], 'datum')).toBe(true)
   })
 })

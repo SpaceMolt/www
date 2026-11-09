@@ -16,7 +16,8 @@ import {
 } from 'lucide-react'
 import type { CompleteMissionResponse, DistressSignalResponse, CompletedMissionsResponse, GameState, GetMissionsResponse, ViewCompletedMissionResponse } from '@spacemolt/lib'
 import { timeAgoOrDate, titleCase } from '@/lib/format'
-import { useAccountStore, useCommandMutation, useCommandQuery, useLocationState, useMissions, usePendingAction } from '@/lib/spacemolt'
+import { useAccountStore, useCommandMutation, useCommandQuery, useLocationState, useMissions, usePendingAction, useShip } from '@/lib/spacemolt'
+import { useStationServices } from '../hooks/useGates'
 import { usePlay } from '../PlayProvider'
 import { ConfirmAction, Credits, PanelWithTabs, shared, errorMessage } from '../shared'
 import { BugReportButton } from '../BugReportButton'
@@ -158,8 +159,12 @@ export function MissionsPanel() {
   const store = useAccountStore()
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
-  const [activeTab, setActiveTab] = useState<TabId>('available')
+  const [pickedTab, setActiveTab] = useState<TabId>('available')
   const isDocked = Boolean(useLocationState()?.docked_at)
+  // The mission board needs a station with a mission service; elsewhere open on Active.
+  const hasMissions = useStationServices().includes('missions')
+  const activeTab = pickedTab === 'available' && !hasMissions ? 'active' : pickedTab
+  const ship = useShip()
   const actionPending = usePendingAction() !== null
 
   // Decline replies keyed by mission_id; abandon confirm target; distress call.
@@ -168,6 +173,13 @@ export function MissionsPanel() {
   const [distressType, setDistressType] = useState<DistressType>('fuel')
   const [confirmDistress, setConfirmDistress] = useState(false)
   const [distressResult, setDistressResult] = useState<DistressSignalResponse | null>(null)
+  // The server rejects a fuel call on a full tank and a repair call on a full hull (handlers/distress.go).
+  const distressOptions = ([
+    ['fuel', 'Out of fuel', Boolean(ship && ship.fuel < ship.max_fuel)],
+    ['repair', 'Hull critical', Boolean(ship && ship.hull < ship.max_hull)],
+    ['combat', 'Under attack', true],
+  ] as const).filter(([, , open]) => open)
+  const distress = distressOptions.some(([type]) => type === distressType) ? distressType : 'combat'
 
   const reportError = useCallback(
     (err: unknown) => {
@@ -284,7 +296,7 @@ export function MissionsPanel() {
   const handleDistress = useCallback(async () => {
     setConfirmDistress(false)
     try {
-      const result = await mutate((c) => c.spacemolt.distress_signal({ distress_type: distressType }), { label: 'distress_signal' })
+      const result = await mutate((c) => c.spacemolt.distress_signal({ distress_type: distress }), { label: 'distress_signal' })
       const details = result.delta.details
       if (details) setDistressResult(details)
       uiStore.dispatch({
@@ -295,7 +307,7 @@ export function MissionsPanel() {
     } catch (err) {
       reportError(err)
     }
-  }, [mutate, distressType, uiStore, reportError])
+  }, [mutate, distress, uiStore, reportError])
 
   const handleViewCompletedMission = useCallback(async (templateId: string) => {
     setLoadingMissionDetail(true)
@@ -365,7 +377,7 @@ export function MissionsPanel() {
   }
 
   const tabs = [
-    { id: 'available', label: 'Available', icon: <Target size={13} /> },
+    ...(hasMissions ? [{ id: 'available', label: 'Available', icon: <Target size={13} /> }] : []),
     { id: 'active', label: 'Active', icon: <AlertTriangle size={13} /> },
     { id: 'completed', label: 'Completed', icon: <Award size={13} /> },
     { id: 'shipping', label: 'Shipping', icon: <Truck size={13} /> },
@@ -488,52 +500,49 @@ export function MissionsPanel() {
         {/* Active Missions Tab */}
         {activeTab === 'active' && (
           <>
-            <div className={missionsCss.distress}>
-              <div className={missionsCss.row}>
-                <Radio size={12} />
-                <span className={missionsCss.label}>Distress signal</span>
-                <select
-                  className={shared.selectInput}
-                  value={distressType}
-                  onChange={(e) => setDistressType(e.target.value as DistressType)}
-                  aria-label="Distress signal"
-                  disabled={isDocked}
-                >
-                  <option value="fuel">Out of fuel</option>
-                  <option value="repair">Hull critical</option>
-                  <option value="combat">Under attack</option>
-                </select>
-                {!confirmDistress && (
-                  <button
-                    className={shared.dangerBtn}
-                    disabled={isDocked || actionPending}
-                    onClick={() => setConfirmDistress(true)}
-                    type="button"
+            {!isDocked && (
+              <div className={missionsCss.distress}>
+                <div className={missionsCss.row}>
+                  <Radio size={12} />
+                  <span className={missionsCss.label}>Distress signal</span>
+                  <select
+                    className={shared.selectInput}
+                    value={distress}
+                    onChange={(e) => setDistressType(e.target.value as DistressType)}
+                    aria-label="Distress signal"
                   >
-                    Broadcast
-                  </button>
+                    {distressOptions.map(([type, label]) => <option key={type} value={type}>{label}</option>)}
+                  </select>
+                  {!confirmDistress && (
+                    <button
+                      className={shared.dangerBtn}
+                      disabled={actionPending}
+                      onClick={() => setConfirmDistress(true)}
+                      type="button"
+                    >
+                      Broadcast
+                    </button>
+                  )}
+                </div>
+                <div className={missionsCss.hint}>
+                  Free. Pilots within 5 jumps can claim a rescue mission for 3 hours. One signal at a time, 1-hour cooldown.
+                </div>
+                {confirmDistress && (
+                  <ConfirmAction
+                    message="Broadcast a MAYDAY to nearby pilots? You cannot send another for 1 hour."
+                    confirmLabel="Broadcast"
+                    onConfirm={handleDistress}
+                    onCancel={() => setConfirmDistress(false)}
+                  />
+                )}
+                {distressResult && (
+                  <div className={missionsCss.npcLine}>
+                    {distressResult.message} ({distressResult.responders_reached} pilots reached
+                    {distressResult.mission_id ? ', rescue mission posted' : ', no rescue mission posted'})
+                  </div>
                 )}
               </div>
-              <div className={missionsCss.hint}>
-                {isDocked
-                  ? 'Undock to call for help.'
-                  : 'Free. Pilots within 5 jumps can claim a rescue mission for 3 hours. One signal at a time, 1-hour cooldown.'}
-              </div>
-              {confirmDistress && (
-                <ConfirmAction
-                  message="Broadcast a MAYDAY to nearby pilots? You cannot send another for 1 hour."
-                  confirmLabel="Broadcast"
-                  onConfirm={handleDistress}
-                  onCancel={() => setConfirmDistress(false)}
-                />
-              )}
-              {distressResult && (
-                <div className={missionsCss.npcLine}>
-                  {distressResult.message} ({distressResult.responders_reached} pilots reached
-                  {distressResult.mission_id ? ', rescue mission posted' : ', no rescue mission posted'})
-                </div>
-              )}
-            </div>
+            )}
             {!activeLoaded && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />

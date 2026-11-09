@@ -15,8 +15,13 @@ export function RightPane() {
   const [activeTab, setActiveTab] = useState<SubTab>('events')
   const [mobileExpanded, setMobileExpanded] = useState(false)
 
+  // Unread means a message arrived since the Chat tab was last open.
+  const lastChat = chatMessages[chatMessages.length - 1]
+  const [seenChat, setSeenChat] = useState(lastChat)
+  if (activeTab === 'chat' && seenChat !== lastChat) setSeenChat(lastChat)
+
   const eventCount = eventLog.length
-  const hasUnreadChat = chatMessages.length > 0
+  const hasUnreadChat = lastChat !== seenChat
 
   return (
     <div className={`${styles.container} ${mobileExpanded ? styles.containerExpanded : ''}`}>
@@ -37,7 +42,7 @@ export function RightPane() {
         >
           <MessageSquare size={12} />
           <span>Chat</span>
-          {hasUnreadChat && activeTab !== 'chat' && (
+          {hasUnreadChat && (
             <span className={styles.unreadDot} />
           )}
         </button>

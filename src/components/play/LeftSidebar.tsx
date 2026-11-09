@@ -21,6 +21,7 @@ import {
   Wind,
   SlidersHorizontal,
   X,
+  AlertTriangle,
 } from 'lucide-react'
 import type { FactionQueryIntelResponse, MapSystemInfo, ScanContact, ScanResponse } from '@spacemolt/lib'
 import {
@@ -48,8 +49,9 @@ import { shortcutKey } from './shortcuts'
 import { titleCase as formatLabel } from '@/lib/format'
 import styles from './LeftSidebar.module.css'
 import { depositTitle, rateRichness } from './richness'
-import { getItem } from '@/data/catalog'
+import { getItem, getShip, type RawCatalogItem } from '@/data/catalog'
 import { errorMessage, Modal, shared } from './shared'
+import { useFittedModules, useStationServices } from './hooks/useGates'
 
 // Intel query response entries — shaped by the faction intel query, not a
 // cached state section.
@@ -107,15 +109,47 @@ const TARGET_MODULE = { refuel: 'refueling_pump', repair: 'repair_arm' } as cons
 
 /** Icon and extractor for each kind of deposit, by the catalog's extracted_by. */
 const DEPOSIT_KIND = {
-  mining: { Icon: Pickaxe, label: 'Ore: mined with a mining laser', className: styles.kindOre },
-  ice: { Icon: Snowflake, label: 'Ice: needs an Ice Harvester', className: styles.kindIce },
-  gas: { Icon: Wind, label: 'Gas: needs a Gas Harvester', className: styles.kindGas },
-  rad: { Icon: Radiation, label: 'Radioactive: needs a Rad Harvester', className: styles.kindRad },
+  mining: { Icon: Pickaxe, label: 'Ore: mined with a mining laser', className: styles.kindOre, noun: 'ore', extractor: 'a Mining Laser' },
+  ice: { Icon: Snowflake, label: 'Ice: needs an Ice Harvester', className: styles.kindIce, noun: 'ice', extractor: 'an Ice Harvester' },
+  gas: { Icon: Wind, label: 'Gas: needs a Gas Harvester', className: styles.kindGas, noun: 'gas', extractor: 'a Gas Harvester' },
+  rad: { Icon: Radiation, label: 'Radioactive: needs a Rad Harvester', className: styles.kindRad, noun: 'radioactives', extractor: 'a Rad Harvester' },
 } as const
+type DepositKind = keyof typeof DEPOSIT_KIND
+
+function depositKind(itemId: string): DepositKind {
+  const by = getItem(itemId)?.extracted_by
+  return by && by in DEPOSIT_KIND ? by as DepositKind : 'mining'
+}
+
+/** Whether the hull carries an inherent special flag (gameserver ShipClass.HasInherentFlag). */
+function hullHasFlag(shipClassId: string | undefined, flag: string): boolean {
+  return Boolean(getShip(shipClassId ?? '')?.inherent_capabilities?.some((c) => c.type === 'special_flag' && 'flag' in c && c.flag === flag))
+}
+
+/** Deposit kinds the fitted modules and hull can extract (gameserver State.ExtractionCapabilities). */
+export function extractionKinds(fitted: RawCatalogItem[], shipClassId: string | undefined): DepositKind[] {
+  return (Object.keys(DEPOSIT_KIND) as DepositKind[]).filter((kind) => kind === 'mining'
+    ? fitted.some((m) => m.type === 'mining')
+    : fitted.some((m) => m.special?.includes(`${kind}_harvesting`)) || (kind === 'rad' && hullHasFlag(shipClassId, 'rad_harvesting')))
+}
+
+/** Why mining these deposits must fail with this loadout, or null when something fitted can extract one of them. */
+export function mineWarning(itemIds: string[], kinds: DepositKind[]): string | null {
+  const needed = [...new Set(itemIds.map(depositKind))]
+  if (needed.length === 0 || needed.some((k) => kinds.includes(k))) return null
+  const names = (key: 'noun' | 'extractor') => needed.map((k) => DEPOSIT_KIND[k][key]).join(' or ')
+  return `Nothing fitted can extract ${names('noun')} here: fit ${names('extractor')}`
+}
+
+/** Survey needs survey power or an anomaly detector, from a module or the hull (gameserver HandleSurveySystem; buffs ignored). */
+export function canSurvey(fitted: RawCatalogItem[], shipClassId: string | undefined): boolean {
+  return fitted.some((m) => (m.survey_power ?? 0) > 0 || m.special === 'anomaly_detection') ||
+    Boolean(getShip(shipClassId ?? '')?.inherent_capabilities?.some((c) => c.type === 'integrated_survey_scanner' && c.value > 0)) ||
+    hullHasFlag(shipClassId, 'anomaly_detection')
+}
 
 function DepositIcon({ itemId }: { itemId: string }) {
-  const by = getItem(itemId)?.extracted_by
-  const { Icon, label, className } = DEPOSIT_KIND[by as keyof typeof DEPOSIT_KIND] ?? DEPOSIT_KIND.mining
+  const { Icon, label, className } = DEPOSIT_KIND[depositKind(itemId)]
   return <Icon size={10} className={`${styles.depositIcon} ${className}`}><title>{label}</title></Icon>
 }
 
@@ -236,6 +270,8 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   const [scanTarget, setScanTarget] = useState('')
   const [scanResult, setScanResult] = useState<ScanResponse | null>(null)
   const cargo = useCargo() ?? []
+  const services = useStationServices()
+  const fitted = useFittedModules()
   const loop = useLoop()
   const { data: galaxyMap } = useMap()
 
@@ -342,6 +378,13 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   const isDocked = Boolean(location?.docked_at)
   const isTraveling = Boolean(location?.in_transit)
   const actionBusy = pendingAction !== null || autoTravelActive
+  const mineIssue = mineWarning((location?.resources ?? []).map((r) => r.item_id), extractionKinds(fitted, ship?.class_id))
+  const surveyable = canSurvey(fitted, ship?.class_id)
+  // Refuel/repair can act only at a station with the service, from cargo supplies,
+  // or on a nearby ship with the transfer module (gameserver HandleRefuel / HandleRepair).
+  const canTransfer = (kind: SupplyKind) => Boolean(location?.nearby_players?.length) && Boolean(modules?.some((m) => m.type_id === TARGET_MODULE[kind]))
+  const supplyKinds = (['refuel', 'repair'] as const).filter((kind) =>
+    services.includes(kind) || cargo.some((c) => SUPPLY_ITEM[kind].test(c.item_id)) || canTransfer(kind))
 
   const travelDestination = transitDestination(location, pendingAction?.target, system?.pois)
   const transitElapsed = location?.transit_ticks_elapsed ?? 0
@@ -474,8 +517,8 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   shortcutsRef.current = actionBusy ? {} : {
     d: () => { if (poi?.base_id) void (isDocked ? handleUndock() : handleDock()) },
     m: () => { if (!isDocked && hasMineableResources(location)) void handleMine() },
-    f: () => void handleRefuel(),
-    r: () => void handleRepair(),
+    f: () => { if (supplyKinds.includes('refuel')) void handleRefuel() },
+    r: () => { if (supplyKinds.includes('repair')) void handleRepair() },
   }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -657,19 +700,23 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                 className={styles.actionBtn}
                 onClick={handleMine}
                 disabled={actionBusy}
+                title={mineIssue ?? undefined}
                 type="button"
               >
                 <Pickaxe size={13} />
                 <span>Mine</span>
+                {mineIssue && <AlertTriangle size={12} className={styles.mineWarning} aria-label={mineIssue} />}
               </button>
               <button
                 className={styles.actionBtn}
                 onClick={handleMineUntilFull}
                 disabled={actionBusy}
+                title={mineIssue ?? undefined}
                 type="button"
               >
                 <Pickaxe size={13} />
                 <span>Mine Until Full</span>
+                {mineIssue && <AlertTriangle size={12} className={styles.mineWarning} aria-label={mineIssue} />}
               </button>
             </>
           )}
@@ -700,7 +747,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
           )}
 
           {/* Survey */}
-          {Boolean(modules?.length) && (
+          {surveyable && (
             <button
               className={styles.actionBtn}
               onClick={handleSurvey}
@@ -713,7 +760,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
           )}
 
           {/* Refuel / Repair — quick button plus options (item, quantity, target player or fleet) */}
-          {ship && (['refuel', 'repair'] as const).map((kind) => {
+          {ship && supplyKinds.map((kind) => {
             const [now, max] = kind === 'refuel' ? [ship.fuel, ship.max_fuel] : [ship.hull, ship.max_hull]
             const Icon = kind === 'refuel' ? Fuel : Wrench
             return (
@@ -741,7 +788,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                 {supplyOpen === kind && (
                   <SupplyOptions
                     kind={kind}
-                    nearby={modules?.some((m) => m.type_id === TARGET_MODULE[kind]) ? location?.nearby_players ?? [] : []}
+                    nearby={canTransfer(kind) ? location?.nearby_players ?? [] : []}
                     cargo={cargo}
                     busy={actionBusy}
                     onSubmit={(args) => void (kind === 'refuel' ? handleRefuel(args) : handleRepair(args))}

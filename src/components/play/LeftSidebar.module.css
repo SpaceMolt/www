@@ -250,6 +250,12 @@
   cursor: not-allowed;
 }
 
+.mineWarning {
+  margin-left: auto;
+  color: var(--warning-yellow);
+  flex-shrink: 0;
+}
+
 /* --- POI Section --- */
 .poiSection {
   padding: 0.5rem 0.75rem;

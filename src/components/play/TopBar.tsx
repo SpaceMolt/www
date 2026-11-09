@@ -214,7 +214,7 @@ export function TopBar({ onShowShortcuts }: { onShowShortcuts?: () => void }) {
       {ship && (
         <div className={styles.barsRow}>
           <StatusBar value={ship.hull ?? 0} max={maxHull} color={hullColor} label="Hull" />
-          <StatusBar value={ship.shield ?? 0} max={ship.max_shield ?? 0} color="blue" label="Shield" />
+          {Boolean(ship.max_shield) && <StatusBar value={ship.shield ?? 0} max={ship.max_shield} color="blue" label="Shield" />}
           <StatusBar value={ship.fuel ?? 0} max={ship.max_fuel ?? 0} color="yellow" label="Fuel" />
           <StatusBar value={ship.cargo_used ?? 0} max={ship.cargo_capacity ?? 0} color="cyan" label="Cargo" />
         </div>
