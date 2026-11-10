@@ -82,6 +82,10 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
     }),
     account.on('battle_alert', (battle) => {
       // Also sent to spectators: an alert does not establish participation.
+      // Skip other players' wildlife hunts; each hunt is its own battle and spams bystanders.
+      const playerId = account.state.player?.id ?? account.loginPayload?.player?.id
+      const participants = battle.participants ?? []
+      if (participants.some((p) => p.kind === 'creature') && !participants.some((p) => p.player_id === playerId)) return
       log('warning', battle.message)
     }),
     account.on('battle_left', (left) => {
