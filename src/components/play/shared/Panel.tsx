@@ -83,7 +83,6 @@ export function PanelWithTabs({ title, icon, color, headerRight, tabs, activeTab
             onClick={() => onTabChange(tab.id)}
             type="button"
             title={tab.label}
-            aria-label={tab.label}
           >
             {tab.icon} <span className={shared.tabLabel}>{tab.label}</span>{tab.badge}
           </button>

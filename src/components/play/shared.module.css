@@ -91,7 +91,7 @@
 
 /* Set by PanelWithTabs when the labels do not fit: only the active tab keeps its label. */
 .tabsCompact .tab { padding-inline: 0.4rem; }
-.tabsCompact .tab:not(.tabActive) .tabLabel { display: none; }
+.tabsCompact .tab:not(.tabActive) .tabLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
 .tabsCompact .tabActive { flex: 2 0 auto; }
 
 /* Section title */
