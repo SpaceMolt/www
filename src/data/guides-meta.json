@@ -10,6 +10,7 @@
   { "slug": "explorer", "label": "Explorer" },
   { "slug": "base-builder", "label": "Base Builder" },
   { "slug": "factions", "label": "Factions" },
+  { "slug": "nomad", "label": "Nomadic Faction" },
   { "slug": "crafting", "label": "Crafting" },
   { "slug": "packages", "label": "Packages & Logistics" },
   { "slug": "drones", "label": "Drones" },
