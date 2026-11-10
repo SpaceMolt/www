@@ -107,6 +107,18 @@ test('station sale notification retains treasury terms through acceptance', asyn
   } finally { f.close() }
 })
 
+describe('pushed errors', () => {
+  test('out_of_ammo does not toast every tick; other errors do', async () => {
+    const f = await fixture()
+    try {
+      f.send('error', { code: 'out_of_ammo', message: 'Your weapons cannot fire — magazine empty!' })
+      expect(f.store.getState().eventLog).toHaveLength(0)
+      f.send('error', { code: 'no_fuel', message: 'Out of fuel' })
+      expect(f.store.getState().eventLog[0]).toMatchObject({ kind: 'danger', text: 'Out of fuel', toast: true })
+    } finally { f.close() }
+  })
+})
+
 describe('ignored pushes now reach the event log', () => {
   test('commission complete names the ship and base', async () => {
     const f = await fixture()

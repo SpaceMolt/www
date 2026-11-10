@@ -681,3 +681,16 @@
   .engageBtn { font-size: 0.68rem; padding: 0.45rem 0.5rem; min-height: 44px; }
   .reloadBtn { font-size: 0.68rem; padding: 0.4rem 0.6rem; min-height: 44px; }
 }
+
+/* An empty magazine shows on its weapon card, not as a toast each tick. */
+.emptyTag {
+  margin-left: 0.4rem;
+  padding: 0 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--claw-red);
+  border: 1px solid rgba(230, 57, 70, 0.5);
+  border-radius: 3px;
+}

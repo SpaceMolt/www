@@ -17,9 +17,10 @@ test('enemiesOf drops your own side', () => {
 })
 
 test('compatibleAmmo matches ammo family and keeps unknown items', () => {
-  const catalog: Record<string, { ammo_type?: string }> = {
-    ac_round: { ammo_type: 'autocannon' },
-    missile: { ammo_type: 'missile' },
+  // Shaped like the catalog: ammo names its weapon family in effect.subtype.
+  const catalog: Record<string, { effect?: { type?: string; subtype?: string } }> = {
+    ac_round: { effect: { type: 'ammo', subtype: 'autocannon' } },
+    missile: { effect: { type: 'ammo', subtype: 'missile' } },
     iron_ore: {},
   }
   const cargo = [{ item_id: 'ac_round' }, { item_id: 'missile' }, { item_id: 'iron_ore' }, { item_id: 'new_ammo' }]

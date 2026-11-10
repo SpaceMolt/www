@@ -13,12 +13,12 @@ export const enemiesOf = (battle: BattleView) =>
 export function compatibleAmmo<C extends { item_id: string }>(
   weapon: { ammo_type?: string },
   cargo: C[],
-  itemOf: (id: string) => { ammo_type?: string } | undefined,
+  itemOf: (id: string) => { effect?: { subtype?: string } } | undefined,
 ): C[] {
   if (!weapon.ammo_type) return cargo
   return cargo.filter((c) => {
     const item = itemOf(c.item_id)
-    return !item || item.ammo_type === weapon.ammo_type
+    return !item || item.effect?.subtype === weapon.ammo_type
   })
 }
 
