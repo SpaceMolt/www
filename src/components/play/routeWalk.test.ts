@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import type { RouteStep } from '@spacemolt/lib'
 import type { AccountStore, RunMutation } from '@/lib/spacemolt'
-import { jumpTarget, walkRoute } from './routeWalk'
+import { jumpEstimateMs, jumpTarget, travelSpeed, walkRoute } from './routeWalk'
 
 const route: RouteStep[] = [
   { system_id: 'a', name: 'A', jumps: 0 },
@@ -75,5 +75,19 @@ describe('walkRoute', () => {
     const reason = await walkRoute(account, run, route, { ...opts, stopReason: () => (jumps > 0 ? 'Emergency abort' : null), onJumpDone: () => { jumps++ } })
     expect(reason).toBe('Emergency abort')
     expect(calls).toEqual(['jump:b'])
+  })
+})
+
+describe('travel estimates', () => {
+  it('times a jump as the server does: 7 − speed, cut to whole ticks, at least one', () => {
+    expect(jumpEstimateMs(1)).toBe(60_000)
+    expect(jumpEstimateMs(2.5)).toBe(40_000)
+    expect(jumpEstimateMs(9)).toBe(10_000)
+  })
+
+  it('uses the ship speed after crew efficiency', () => {
+    expect(travelSpeed({ speed: 4, operational_speed: 3 })).toBe(3)
+    expect(travelSpeed({ speed: 4 })).toBe(4)
+    expect(travelSpeed(null)).toBe(1)
   })
 })

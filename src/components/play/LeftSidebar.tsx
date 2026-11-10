@@ -41,7 +41,7 @@ import { usePlay } from './PlayProvider'
 import { ProgressBar } from './ProgressBar'
 import { transitDestination, useTransitClock } from './TravelProgress'
 import type { GalaxyPanelHandle, MapSystemData, PlannedRoute } from './panels/GalaxyPanel'
-import { findRoute, jumpEstimateMs, travelEstimateMs } from './routeWalk'
+import { findRoute, jumpEstimateMs, travelEstimateMs, travelSpeed } from './routeWalk'
 import { useLoop } from './loop/useLoopRunner'
 import { rememberPois } from './loop/loopPlan'
 import { shortcutKey } from './shortcuts'
@@ -437,7 +437,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
       const targetPoi = system?.pois.find((p) => p.id === poiId)
       let estimatedMs: number | undefined
       if (poi?.position?.x !== undefined && poi.position.y !== undefined && targetPoi?.position) {
-        estimatedMs = travelEstimateMs(poi.position, targetPoi.position, ship?.speed ?? 1)
+        estimatedMs = travelEstimateMs(poi.position, targetPoi.position, travelSpeed(ship))
       }
       const name = targetPoi?.base_name || targetPoi?.name || 'destination'
       logEvent(`Traveling to ${name}...`)
@@ -449,12 +449,12 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
         reportError(err)
       }
     },
-    [mutate, system, poi, ship?.speed, logEvent, reportError, onMobileClose],
+    [mutate, system, poi, ship, logEvent, reportError, onMobileClose],
   )
 
   const handleJump = useCallback(
     async (systemId: string, systemName: string) => {
-      const estimatedMs = jumpEstimateMs(ship?.speed ?? 1)
+      const estimatedMs = jumpEstimateMs(travelSpeed(ship))
       logEvent(`Jumping to ${systemName}...`)
       onMobileClose?.()
       try {
@@ -464,7 +464,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
         reportError(err)
       }
     },
-    [mutate, ship?.speed, logEvent, reportError, onMobileClose],
+    [mutate, ship, logEvent, reportError, onMobileClose],
   )
 
   const handleDock = useCallback(async () => {

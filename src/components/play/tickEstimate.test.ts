@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test'
-import { estimateTick, fractionalTick, MAX_ESTIMATED_TICKS, transitClock } from './tickEstimate'
+import { estimateTick, fractionalTick, MAX_ESTIMATED_TICKS, tickStartingNow, transitClock } from './tickEstimate'
 
 const RATE = 10_000
 
@@ -119,6 +119,11 @@ describe('transitClock', () => {
     expect(transitClock(106, nowTick, nowTick, 10)).toEqual({ etaSecs: 30, percent: 0 })
     const later = fractionalTick(staleAnchor, t0, t0 + 45_000, RATE)
     expect(transitClock(106, nowTick, later, 10)).toEqual({ etaSecs: 15, percent: 50 })
+  })
+
+  it('corrects an anchor that was seen late in its tick when a trip starts', () => {
+    expect(tickStartingNow(102.3)).toBe(103) // anchor seen 0.7 ticks into its tick
+    expect(tickStartingNow(103.1)).toBe(103) // anchor seen at a tick start, with a little drift
   })
 
   it('holds at arrival and has no ETA without an arrival tick', () => {

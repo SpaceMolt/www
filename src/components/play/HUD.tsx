@@ -7,7 +7,7 @@ import { useStationServices } from './hooks/useGates'
 import { usePlayUi } from './PlayProvider'
 import { TopBar } from './TopBar'
 import { ToastContainer } from './ToastContainer'
-import { TravelProgress } from './TravelProgress'
+import { TravelProgress, useTransitClock } from './TravelProgress'
 import { PanelNav, panelShortcuts } from './PanelNav'
 import { LeftSidebar, type SidebarTab } from './LeftSidebar'
 import { RightPane } from './RightPane'
@@ -30,7 +30,7 @@ import { StationPanel } from './panels/StationPanel'
 import { SalvagePanel } from './panels/SalvagePanel'
 import { CrewPanel } from './panels/CrewPanel'
 import { useAutoTravel, type AutoTravelProgress } from './useAutoTravel'
-import { findRoute, jumpEstimateMs } from './routeWalk'
+import { findRoute, jumpEstimateMs, travelSpeed } from './routeWalk'
 import { LoopRunnerContext, useLoopRunner } from './loop/useLoopRunner'
 import { LoopBanner, LoopPanel } from './loop/LoopPanel'
 import { ACTION_SHORTCUTS, COMBAT_SHORTCUTS, shortcutKey } from './shortcuts'
@@ -91,31 +91,18 @@ function ShortcutHelp({ onClose, hiddenPanels }: { onClose: () => void; hiddenPa
 }
 
 function AutoTravelBanner({ progress, onAbort }: { progress: AutoTravelProgress; onAbort: () => void }) {
-  const [now, setNow] = useState(Date.now())
   const liveFuel = useShip()?.fuel // progress.currentFuel only updates between jumps
+  // The leg in flight runs on the server's arrival tick. The estimates only cover legs that have not started.
+  const leg = useTransitClock()
 
-  // Tick every 100ms for smooth countdown
-  useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 100)
-    return () => clearInterval(interval)
-  }, [])
+  const { totalJumps, completedJumps, estimatedSecsPerJump, phase, currentFuel, route } = progress
+  const legProgress = leg.percent / 100
+  const jumpProgress = phase === 'jumping' ? legProgress : 0
+  const stationTravelProgress = phase === 'traveling_to_station' ? legProgress : 0
 
-  const { totalJumps, completedJumps, estimatedSecsPerJump, phase, jumpStartTime, currentFuel, route } = progress
-  const jumpElapsed = (now - jumpStartTime) / 1000
-  const jumpProgress = phase === 'jumping' ? Math.min(1, jumpElapsed / estimatedSecsPerJump) : 0
-
-  // Station travel progress
-  const stationTravelElapsed = progress.stationTravelStart ? (now - progress.stationTravelStart) / 1000 : 0
-  const stationTravelTotal = progress.stationTravelSecs ?? 1
-  const stationTravelProgress = phase === 'traveling_to_station' ? Math.min(1, stationTravelElapsed / stationTravelTotal) : 0
-
-  // ETA calculation — include station travel time if applicable
-  const remainingJumps = totalJumps - completedJumps - (phase === 'jumping' ? jumpProgress : 0)
-  const jumpEtaSecs = Math.max(0, Math.round(remainingJumps * estimatedSecsPerJump))
-  const stationEtaSecs = phase === 'traveling_to_station'
-    ? Math.max(0, Math.round(stationTravelTotal - stationTravelElapsed))
-    : 0
-  const etaSecs = jumpEtaSecs + stationEtaSecs
+  const jumpsNotStarted = Math.max(0, totalJumps - completedJumps - (phase === 'jumping' ? 1 : 0))
+  const legEtaSecs = leg.etaSecs ?? (phase === 'jumping' ? estimatedSecsPerJump : progress.stationTravelSecs ?? 0)
+  const etaSecs = Math.round(legEtaSecs + jumpsNotStarted * estimatedSecsPerJump)
   const etaMins = Math.floor(etaSecs / 60)
   const etaRemSecs = etaSecs % 60
 
@@ -204,7 +191,7 @@ export function HUD() {
   const handleBeginTravel = useCallback(() => {
     if (!plannedRoute || !ship) return
     if (loop.isActive) { setTravelGate('confirm'); return }
-    autoTravel.start(plannedRoute, { shipSpeed: ship.speed ?? 1 })
+    autoTravel.start(plannedRoute, { shipSpeed: travelSpeed(ship) })
     setPlannedRoute(null) // clear the planned route, auto-travel takes over
   }, [plannedRoute, ship, autoTravel, loop.isActive])
 
@@ -310,7 +297,7 @@ export function HUD() {
                     <span className={styles.routeBannerStats}>
                       {plannedRoute.totalJumps} jump{plannedRoute.totalJumps !== 1 ? 's' : ''} · {plannedRoute.estimatedFuel} fuel
                       {ship && (() => {
-                        const totalSecs = (jumpEstimateMs(ship.speed ?? 1) / 1000) * plannedRoute.totalJumps
+                        const totalSecs = (jumpEstimateMs(travelSpeed(ship)) / 1000) * plannedRoute.totalJumps
                         const mins = Math.floor(totalSecs / 60)
                         const secs = totalSecs % 60
                         return ` · ${mins > 0 ? `${mins}m ` : ''}${secs}s`

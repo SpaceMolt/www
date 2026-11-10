@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAccountStore, useCurrentTick, useLocationState, usePendingAction, useSystem } from '@/lib/spacemolt'
 import { Navigation, Zap } from 'lucide-react'
-import { fractionalTick, transitClock } from './tickEstimate'
+import { fractionalTick, tickStartingNow, transitClock } from './tickEstimate'
 import styles from './TravelProgress.module.css'
 
 type TransitLocation = Pick<NonNullable<ReturnType<typeof useLocationState>>,
@@ -32,6 +32,7 @@ export function transitDestination(
 export function useTransitClock() {
   const store = useAccountStore()
   const location = useLocationState()
+  const pending = usePendingAction()
   const anchorTick = useCurrentTick()
   const inTransit = !!location?.in_transit
   // Re-render each second during a trip; each render reads the clock.
@@ -45,10 +46,17 @@ export function useTransitClock() {
   const tickSecs = store.account.welcome?.tick_rate || 10
   const arrivalTick = location?.transit_arrival_tick
   // ponytail: the trip starts when this client first sees it, so a reload mid-trip restarts the bar. The ETA stays right.
-  const start = useRef({ key: '', tick: 0 })
+  const start = useRef({ key: '', tick: 0, anchorTick: 0, shift: 0 })
   const key = inTransit ? `${location?.transit_type}@${arrivalTick}` : ''
-  const nowTick = fractionalTick(anchorTick, store.getTickObservedAt(), Date.now(), tickSecs * 1000)
-  if (start.current.key !== key) start.current = { key, tick: nowTick - (location?.transit_ticks_elapsed ?? 0) }
+  const estimate = fractionalTick(anchorTick, store.getTickObservedAt(), Date.now(), tickSecs * 1000)
+  if (start.current.key !== key) {
+    // A trip this client began starts on a tick, which places the anchor inside its tick.
+    const began = pending?.command === 'travel' || pending?.command === 'jump'
+    const tick = began ? tickStartingNow(estimate) : estimate - (location?.transit_ticks_elapsed ?? 0)
+    start.current = { key, tick, anchorTick, shift: began ? tick - estimate : 0 }
+  }
+  // The shift holds until the server sends a newer anchor.
+  const nowTick = estimate + (start.current.anchorTick === anchorTick ? start.current.shift : 0)
   return transitClock(inTransit ? arrivalTick : undefined, start.current.tick, nowTick, tickSecs)
 }
 

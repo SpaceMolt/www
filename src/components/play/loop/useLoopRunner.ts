@@ -6,7 +6,7 @@ import { useAccountStore, useCommandMutation, type AccountStore, type RunMutatio
 import { errorMessage } from '../shared'
 import { usePlay } from '../PlayProvider'
 import { chunk } from '../shared/itemSelection'
-import { findRoute, walkRoute } from '../routeWalk'
+import { findRoute, travelSpeed, walkRoute } from '../routeWalk'
 import { ABORT_CODES, advance, errorOutcome, stepLabel, type LoopPlan, type LoopPosition, type LoopStep } from './loopPlan'
 
 type Account = AccountStore['account']
@@ -74,7 +74,7 @@ async function goTo({ account, run, haltReason, log }: StepContext, poiId: strin
   if (!route) throw new Error('No known route to that location')
   const stop = await walkRoute(account, run, route.route, {
     fuelPerJump: route.fuelPerJump,
-    shipSpeed: account.ship?.speed ?? 1,
+    shipSpeed: travelSpeed(account.ship),
     stopReason: haltReason,
     onRefuel: (where) => log(`Refueled at ${where}`),
   })

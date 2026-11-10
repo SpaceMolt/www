@@ -77,6 +77,12 @@ export function estimateTick(
 export const fractionalTick = (anchorTick: number, anchorTimeMs: number, nowMs: number, tickRateMs: number) =>
   anchorTick + Math.max(0, nowMs - anchorTimeMs) / tickRateMs
 
+/**
+ * The tick that is starting now, for a moment known to be a tick start (a trip this client began).
+ * The anchor's place inside its tick is unknown, so the estimate runs up to one tick behind and never far ahead.
+ */
+export const tickStartingNow = (estimatedTick: number) => Math.ceil(estimatedTick - 0.25)
+
 /** Time left and share done for a trip that was first seen at `startTick`. No arrival tick (pathfinder): no ETA. */
 export function transitClock(arrivalTick: number | undefined, startTick: number, nowTick: number, tickSecs: number) {
   if (!arrivalTick) return { etaSecs: null, percent: 0 }
