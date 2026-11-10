@@ -28,7 +28,6 @@ import {
   useAccountStore,
   useCargo,
   useCommandMutation,
-  useCurrentTick,
   useLocationState,
   useMap,
   useModules,
@@ -40,7 +39,7 @@ import {
 } from '@/lib/spacemolt'
 import { usePlay } from './PlayProvider'
 import { ProgressBar } from './ProgressBar'
-import { transitDestination } from './TravelProgress'
+import { transitDestination, useTransitClock } from './TravelProgress'
 import type { GalaxyPanelHandle, MapSystemData, PlannedRoute } from './panels/GalaxyPanel'
 import { findRoute, jumpEstimateMs, travelEstimateMs } from './routeWalk'
 import { useLoop } from './loop/useLoopRunner'
@@ -276,7 +275,6 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   const modules = useModules()
   const location = useLocationState()
   const pendingAction = usePendingAction()
-  const currentTick = useCurrentTick()
   const systemQuery = useSystem()
   const poiQuery = usePoi()
   const [expandedPoi, setExpandedPoi] = useState<string | null>(null)
@@ -423,12 +421,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   const supplyKinds = (['refuel', 'repair'] as const).filter((kind) => selfSupply(kind).length > 0 || canTransfer(kind))
 
   const travelDestination = transitDestination(location, pendingAction?.target, system?.pois)
-  const transitElapsed = location?.transit_ticks_elapsed ?? 0
-  const transitArrivalTick = location?.transit_arrival_tick
-  const transitEta = transitArrivalTick !== undefined ? Math.max(0, transitArrivalTick - currentTick) : null
-  const transitTotalTicks = transitEta !== null ? transitElapsed + transitEta : null
-  const travelProgress =
-    transitTotalTicks && transitTotalTicks > 0 ? Math.max(0, Math.min(100, (transitElapsed / transitTotalTicks) * 100)) : 0
+  const travelProgress = useTransitClock().percent
 
   const logEvent = useCallback((text?: string) => {
     if (text) uiStore.dispatch({ type: 'event', kind: 'info', text })

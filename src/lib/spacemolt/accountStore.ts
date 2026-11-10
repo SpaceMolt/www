@@ -44,6 +44,8 @@ export interface AccountStore {
   setPhase: (phase: ConnectionPhase, detail?: string) => void
   fail: (err: unknown) => void
   getCurrentTick: () => number
+  /** Local `Date.now()` when the current tick was first seen. */
+  getTickObservedAt: () => number
   getMarketVersion: () => number
   getObservationVersion: () => number
   getPendingAction: () => PendingAction | null
@@ -62,6 +64,7 @@ export function createAccountStore(account: Account): AccountStore {
   let marketVersion = 0
   let observationVersion = 0
   let lastTick = account.currentTick
+  let tickObservedAt = Date.now()
   let pendingAction: PendingAction | null = null
 
   const notify = (key: StoreKey) => {
@@ -83,6 +86,7 @@ export function createAccountStore(account: Account): AccountStore {
   const checkTick = () => {
     if (account.currentTick !== lastTick) {
       lastTick = account.currentTick
+      tickObservedAt = Date.now()
       notify('tick')
     }
   }
@@ -124,6 +128,7 @@ export function createAccountStore(account: Account): AccountStore {
     setPhase,
     fail: (err) => setPhase('error', message(err)),
     getCurrentTick: () => account.currentTick,
+    getTickObservedAt: () => tickObservedAt,
     getMarketVersion: () => marketVersion,
     getObservationVersion: () => observationVersion,
     getPendingAction: () => pendingAction,

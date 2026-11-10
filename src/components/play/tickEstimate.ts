@@ -69,3 +69,21 @@ export function estimateTick(
     stale: false,
   }
 }
+
+/**
+ * The current tick with its fraction, run forward from the last server anchor with no bound.
+ * A trip is short, and a frozen tick makes its countdown wrong, so the ~1% drift is the smaller error.
+ */
+export const fractionalTick = (anchorTick: number, anchorTimeMs: number, nowMs: number, tickRateMs: number) =>
+  anchorTick + Math.max(0, nowMs - anchorTimeMs) / tickRateMs
+
+/** Time left and share done for a trip that was first seen at `startTick`. No arrival tick (pathfinder): no ETA. */
+export function transitClock(arrivalTick: number | undefined, startTick: number, nowTick: number, tickSecs: number) {
+  if (!arrivalTick) return { etaSecs: null, percent: 0 }
+  const left = Math.max(0, arrivalTick - nowTick)
+  const total = arrivalTick - startTick
+  return {
+    etaSecs: Math.ceil(left * tickSecs),
+    percent: total > 0 ? Math.min(100, Math.max(0, (1 - left / total) * 100)) : 100,
+  }
+}
