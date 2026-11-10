@@ -5,7 +5,6 @@ import { Maximize, Radar } from 'lucide-react'
 import type { FactionQueryIntelResponse } from '@spacemolt/lib'
 import {
   useAccountStore,
-  useCurrentTick,
   useLocationState,
   useMap,
   usePendingAction,
@@ -17,7 +16,8 @@ import { getItem } from '@/data/catalog'
 import { titleCase as formatLabel } from '@/lib/format'
 import { depositKind, DepositIcon, DepositRating } from '../LeftSidebar'
 import { depositTitle } from '../richness'
-import { travelEstimateMs } from '../routeWalk'
+import { travelEstimateMs, travelSpeed } from '../routeWalk'
+import { useTransitClock } from '../TravelProgress'
 import sidebar from '../LeftSidebar.module.css'
 import shared from '../shared.module.css'
 import galaxy from './GalaxyPanel.module.css'
@@ -163,10 +163,9 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
   const store = useAccountStore()
   const factionId = usePlayer()?.faction_id
   const ship = useShip()
-  const speed = ship?.operational_speed || ship?.speed || 1 // crew efficiency included, as the server counts travel ticks
+  const speed = travelSpeed(ship)
   const location = useLocationState()
-  const pending = usePendingAction()
-  const currentTick = useCurrentTick()
+  const { etaSecs } = useTransitClock()
   const { data: galaxyMap } = useMap()
   const systemData = useSystem().data
   const system = systemData && 'system' in systemData ? systemData.system : undefined
@@ -218,11 +217,11 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
 
   const pois: Poi[] = system?.pois ?? []
   const inTransit = Boolean(location?.in_transit) && location?.transit_type !== 'jump'
-  const blocked = busy || pending !== null
+  const blocked = busy || usePendingAction() !== null
 
   // What the animation loop reads each frame. A ref, so the loop does not restart on every update.
-  const live = { pois, poiId: location?.poi_id, systemId, exits, deposits, speed, tickMs, currentTick, pending, hoverId, showRings, blocked, onTravel, onJump,
-    destId: inTransit ? location?.transit_dest_poi_id : undefined, transitElapsed: location?.transit_ticks_elapsed ?? 0, arrivalTick: location?.transit_arrival_tick,
+  const live = { pois, poiId: location?.poi_id, systemId, exits, deposits, speed, tickMs, etaSecs, hoverId, showRings, blocked, onTravel, onJump,
+    destId: inTransit ? location?.transit_dest_poi_id : undefined,
     transitAt: location?.transit_x !== undefined && location.transit_y !== undefined ? { x: location.transit_x, y: location.transit_y } : undefined }
   const liveRef = useRef(live)
   liveRef.current = live
@@ -238,7 +237,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
     const belts = new Map<string, Rock[]>()
     const nodes = new Map<string, Point>() // screen position of every click target
     const view = viewRef.current
-    let ship: { pos: Point | null; from: Point | null; key: string; arriveAt: number; systemId?: string } = { pos: null, from: null, key: '', arriveAt: 0 }
+    let ship: { pos: Point | null; from: Point | null; key: string; eta: number | null; arriveAt: number; systemId?: string } = { pos: null, from: null, key: '', eta: null, arriveAt: 0 }
     let last = performance.now()
     let raf = 0
 
@@ -262,27 +261,26 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
       if (!W || !H || d.pois.length === 0) return
 
       // --- ship position, in AU ---
-      if (ship.systemId !== d.systemId) { ship = { pos: null, from: null, key: '', arriveAt: 0, systemId: d.systemId }; view.fit = true; belts.clear() }
+      if (ship.systemId !== d.systemId) { ship = { pos: null, from: null, key: '', eta: null, arriveAt: 0, systemId: d.systemId }; view.fit = true; belts.clear() }
       const at = point(d.pois.find((p) => p.id === d.poiId))
       const dest = point(d.pois.find((p) => p.id === d.destId))
       if (dest) {
-        const key = `${d.destId}:${d.arrivalTick}`
-        if (ship.key !== key) {
-          // A new trip, or the server moved the arrival tick: retime, and keep the drawn position.
-          // The transit state arrives on the tick that starts the trip, so the client's own estimate runs from now.
-          // The arrival tick is the fallback: currentTick is the last tick a message carried, and it can be several ticks old.
-          const left = d.pending?.estimatedMs
-            ? Math.max(0, d.pending.estimatedMs - d.transitElapsed * d.tickMs)
-            : Math.max(0, (d.arrivalTick ?? d.currentTick + 1) - d.currentTick) * d.tickMs
-          ship.key = key
-          ship.arriveAt = now + left
-          ship.pos ??= d.transitAt ?? at ?? dest
+        ship.pos ??= d.transitAt ?? at ?? dest
+        if (ship.key !== d.destId) {
+          // A new trip: keep the drawn position.
+          ship.key = d.destId!
+          ship.eta = null
+          ship.arriveAt = 0
           ship.from ??= ship.pos
           view.target = Math.max(view.target, Math.hypot(dest.x - ship.pos.x, dest.y - ship.pos.y) * 1.12) // keep the destination in view
         }
-        ship.pos = stepToward(ship.pos!, dest, dt, ship.arriveAt - now)
+        // The shared transit clock counts in whole seconds; retime when it moves.
+        if (d.etaSecs !== null && ship.eta !== d.etaSecs) { ship.eta = d.etaSecs; ship.arriveAt = now + d.etaSecs * 1000 }
+        // No time yet: hold. A missing time must not read as "arrived".
+        if (ship.arriveAt) ship.pos = stepToward(ship.pos, dest, dt, ship.arriveAt - now)
       } else {
         ship.key = ''
+        ship.eta = null
         ship.from = null
         ship.pos = at && ship.pos ? stepToward(ship.pos, at, dt, 250) : at ?? ship.pos ?? { x: 0, y: 0 }
       }
