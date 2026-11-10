@@ -54,11 +54,12 @@ function drawGlow(ctx: Ctx, x: number, y: number, color: Rgb, radius: number, st
   ctx.fillStyle = glow; circle(ctx, x, y, radius); ctx.fill()
 }
 
-function drawBlackHole(ctx: Ctx, x: number, y: number, t: number) {
+function drawBlackHole(ctx: Ctx, x: number, y: number, t: number, tilted = true) {
   const hot: Rgb = [255, 170, 90]
   drawGlow(ctx, x, y, [255, 120, 60], 34, 0.35)
   // The disk is a tilted ellipse: the far half goes behind the hole, the near half in front.
   const half = (from: number, to: number) => {
+    if (!tilted) return
     ctx.save(); ctx.translate(x, y); ctx.rotate(-0.35); ctx.scale(1, 0.32)
     for (const [r, a] of [[19, 0.25], [15.5, 0.5], [12, 0.85]] as const) {
       ctx.strokeStyle = rgba(hot, a); ctx.lineWidth = 2.6
@@ -334,6 +335,8 @@ function drawBrackets(ctx: Ctx, x: number, y: number, color: string) {
 /** Draw a POI; returns its radius. `lit` is the unit vector away from the star, `t` the animation time in ms. */
 export function drawPoi(ctx: Ctx, p: Poi, x: number, y: number, lit: [number, number], t: number): number {
   let r: number
+  // Alzirr draws The Maw's disk from above, so the hole itself is bare.
+  if (p.id === 'the_maw') { drawBlackHole(ctx, x, y, t, false); return 9 }
   if (p.type === 'sun') return drawStar(ctx, p.class, x, y, t)
   if (p.id === 'blood_arena') return drawArena(ctx, x, y, t)
   if (p.stronghold) return drawStronghold(ctx, x, y, t)
@@ -381,40 +384,93 @@ export function classLabel(p: Poi): string | undefined {
 
 interface Scene { pois: Poi[]; project: (p: Point) => Point; scale: number; t: number }
 
-/** Alzirr: The Maw pulls a spiral of matter off its companion star. The Bleeding Ring POI is the disk itself. */
+/**
+ * Alzirr, seen from above: The Maw strips its companion star. Gas leaves the star's near side in a
+ * stream, swings round the hole, and hits the rim of the accretion disk at a hot spot. In the disk,
+ * matter orbits faster and burns hotter the closer it gets. The Bleeding Ring POI is the disk itself.
+ */
+const DISK_INNER = 0.16 // of the rim radius; inside this nothing orbits for long
 const alzirrDisk = (() => {
   const rand = seeded('the_bleeding_ring')
-  return Array.from({ length: 700 }, () => ({ turn: rand() * TAU * 2.2, arm: rand() < 0.5 ? 0 : Math.PI, drift: (rand() - 0.5) * (rand() < 0.75 ? 0.22 : 1.4), size: 0.6 + rand() * 1.2, alpha: 0.25 + rand() * 0.6 }))
+  // Dense near the hole, thin at the rim.
+  return Array.from({ length: 520 }, () => ({ k: DISK_INNER + (1 - DISK_INNER) * rand() ** 1.7, angle: rand() * TAU, alpha: 0.25 + rand() * 0.6 }))
 })()
+const alzirrStream = (() => {
+  const rand = seeded('alzirr_a')
+  return Array.from({ length: 260 }, () => ({ phase: rand(), side: (rand() + rand() - 1), alpha: 0.2 + rand() * 0.35 }))
+})()
+/** Disk colour by radius: white-hot at the inner edge, deep red at the rim. */
+const diskColor = (k: number, alpha: number) => {
+  const heat = 1 - (k - DISK_INNER) / (1 - DISK_INNER)
+  return `rgba(255,${Math.round(60 + 185 * heat ** 1.4)},${Math.round(30 + 200 * heat ** 2.6)},${alpha})`
+}
 
 function drawAlzirr(ctx: Ctx, { pois, project, scale, t }: Scene) {
   const ring = pois.find((p) => p.id === 'the_bleeding_ring')
   const companion = pois.find((p) => p.id === 'alzirr_a')
   const edge = Math.hypot(ring?.position?.x ?? 0.3, ring?.position?.y ?? -0.7) * 1.25 // AU; the POI sits inside the disk
   const maw = project({ x: 0, y: 0 })
-  drawGlow(ctx, maw.x, maw.y, [255, 90, 60], edge * scale * 1.15, 0.22)
-  // Two arms wind inward. Matter near the hole moves faster and burns hotter.
-  for (const dot of alzirrDisk) {
-    const k = dot.turn / (TAU * 2.2) // 0 at the hole, 1 at the rim
-    const r = edge * (0.08 + 0.92 * k)
-    const angle = dot.turn + dot.arm + dot.drift - t * 0.00022 / (0.25 + k)
-    const q = project({ x: Math.cos(angle) * r, y: Math.sin(angle) * r })
-    ctx.fillStyle = `rgba(255,${Math.round(235 - 150 * k)},${Math.round(200 - 170 * k)},${dot.alpha})`
-    ctx.fillRect(q.x, q.y, dot.size, dot.size)
+  const rim = edge * scale
+  const at = (r: number, angle: number) => project({ x: Math.cos(angle) * r, y: Math.sin(angle) * r })
+  ctx.save()
+  ctx.globalCompositeOperation = 'lighter'
+  ctx.lineCap = 'round'
+
+  // The body of the disk: a smooth glow, dark at the hole, brightest just outside it.
+  const body = ctx.createRadialGradient(maw.x, maw.y, 0, maw.x, maw.y, rim * 1.15)
+  body.addColorStop(0, 'rgba(0,0,0,0)')
+  body.addColorStop(DISK_INNER * 0.8, 'rgba(255,240,220,0)')
+  body.addColorStop(DISK_INNER, 'rgba(255,235,210,0.55)')
+  body.addColorStop(0.38, 'rgba(255,140,60,0.3)')
+  body.addColorStop(0.85, 'rgba(200,50,30,0.14)')
+  body.addColorStop(1, 'rgba(160,30,20,0)')
+  ctx.fillStyle = body; circle(ctx, maw.x, maw.y, rim * 1.15); ctx.fill()
+
+  // Orbiting gas as streaks along the orbit. Kepler: speed falls with radius, so the disk shears.
+  for (const gas of alzirrDisk) {
+    const spin = gas.k ** -1.5
+    const angle = gas.angle - t * 0.00009 * spin
+    const from = at(edge * gas.k, angle), to = at(edge * gas.k, angle - Math.min(0.5, 0.05 * spin))
+    ctx.strokeStyle = diskColor(gas.k, gas.alpha); ctx.lineWidth = 1.1
+    ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y); ctx.stroke()
   }
-  // The stream from the orange giant to the disk.
+
   if (companion?.position) {
-    const from = { x: companion.position.x ?? 0, y: companion.position.y ?? 0 }
-    const reach = Math.hypot(from.x, from.y)
-    ctx.fillStyle = 'rgba(255,170,110,0.7)'
-    for (let i = 0; i < 140; i++) {
-      const k = (i / 140 + t * 0.00004) % 1 // 0 at the star, 1 at the rim of the disk
-      const base = Math.atan2(from.y, from.x) - k * 1.5
-      const r = reach + (edge - reach) * k
-      const q = project({ x: Math.cos(base) * r, y: Math.sin(base) * r })
-      ctx.fillRect(q.x, q.y, 2 - k, 2 - k)
+    const star = { x: companion.position.x ?? 0, y: companion.position.y ?? 0 }
+    const reach = Math.hypot(star.x, star.y), bearing = Math.atan2(star.y, star.x)
+    const SWING = 2.1 // radians the stream turns before it meets the rim
+    // k runs 0 at the star to 1 at the rim. The path flattens onto the rim, so the gas arrives along the orbit.
+    const path = (k: number, side: number) => at(edge + (reach - edge) * (1 - k) ** 2 + side * edge * (0.045 + 0.2 * (1 - k) ** 1.5), bearing - SWING * k)
+
+    // The star bulges toward the hole where the gas leaves it.
+    const tip = path(0.2, 0), base = project(star)
+    const bulge = ctx.createLinearGradient(base.x, base.y, tip.x, tip.y)
+    bulge.addColorStop(0, 'rgba(255,190,120,0.55)'); bulge.addColorStop(1, 'rgba(255,150,80,0)')
+    ctx.strokeStyle = bulge; ctx.lineWidth = Math.max(6, edge * scale * 0.28)
+    ctx.beginPath(); ctx.moveTo(base.x, base.y); ctx.lineTo(tip.x, tip.y); ctx.stroke()
+
+    // The stream: wide and slow at the star, thin and fast at the rim.
+    for (const gas of alzirrStream) {
+      const k = ((gas.phase + t * 0.00005) % 1) ** 0.6
+      const head = path(k, gas.side), tail = path(Math.max(0, k - 0.02 - 0.05 * k), gas.side)
+      ctx.strokeStyle = `rgba(255,${Math.round(150 + 50 * k)},${Math.round(80 + 50 * k)},${gas.alpha})`; ctx.lineWidth = 1.3
+      ctx.beginPath(); ctx.moveTo(tail.x, tail.y); ctx.lineTo(head.x, head.y); ctx.stroke()
+    }
+
+    // The hot spot where the stream strikes the disk, and the bright arc it drags downstream.
+    const impact = bearing - SWING
+    const spot = at(edge, impact), flare = 0.8 + 0.2 * Math.sin(t * 0.006)
+    const glow = ctx.createRadialGradient(spot.x, spot.y, 0, spot.x, spot.y, rim * 0.3)
+    glow.addColorStop(0, `rgba(255,245,225,${0.9 * flare})`); glow.addColorStop(0.3, `rgba(255,170,90,${0.45 * flare})`); glow.addColorStop(1, 'rgba(255,90,40,0)')
+    ctx.fillStyle = glow; circle(ctx, spot.x, spot.y, rim * 0.3); ctx.fill()
+    for (let i = 0; i < 40; i++) {
+      const k = i / 40
+      const from = at(edge * (1 - 0.45 * k), impact - k * 2.6), to = at(edge * (1 - 0.45 * (k + 0.025)), impact - (k + 0.025) * 2.6)
+      ctx.strokeStyle = `rgba(255,180,120,${0.3 * (1 - k)})`; ctx.lineWidth = 3 * (1 - k) + 0.6
+      ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y); ctx.stroke()
     }
   }
+  ctx.restore()
 }
 
 const SPECIAL_SYSTEMS: Record<string, (ctx: Ctx, scene: Scene) => void> = { alzirr: drawAlzirr }
