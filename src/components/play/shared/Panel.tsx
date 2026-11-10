@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, type ReactNode } from 'react'
+import { useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
 import shared from '../shared.module.css'
 
 interface PanelProps {
@@ -32,12 +32,29 @@ export function Panel({ title, icon, color, headerRight, children }: PanelProps)
   )
 }
 
+/** Hide inactive tab labels while the full row is wider than the panel. */
+function useCompactTabs(labels: string) {
+  const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const fit = () => {
+      el.classList.remove(shared.tabsCompact)
+      el.classList.toggle(shared.tabsCompact, el.scrollWidth > el.clientWidth)
+    }
+    const observer = new ResizeObserver(fit)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [labels])
+  return ref
+}
+
 interface PanelWithTabsProps {
   title: string
   icon?: ReactNode
   color?: string
   headerRight?: ReactNode
-  tabs: Array<{ id: string; label: ReactNode; icon?: ReactNode; hidden?: boolean }>
+  tabs: Array<{ id: string; label: string; icon?: ReactNode; badge?: ReactNode; hidden?: boolean }>
   activeTab: string
   onTabChange: (id: string) => void
   children: ReactNode
@@ -46,6 +63,7 @@ interface PanelWithTabsProps {
 export function PanelWithTabs({ title, icon, color, headerRight, tabs, activeTab, onTabChange, children }: PanelWithTabsProps) {
   const { headerStyle, titleStyle } = usePanelStyles(color)
   const visibleTabs = tabs.filter(t => !t.hidden)
+  const tabsRef = useCompactTabs(visibleTabs.map(t => t.label).join())
 
   return (
     <div className={shared.panel}>
@@ -56,7 +74,7 @@ export function PanelWithTabs({ title, icon, color, headerRight, tabs, activeTab
         </div>
         {headerRight}
       </div>
-      <div className={shared.tabs}>
+      <div className={shared.tabs} ref={tabsRef}>
         {visibleTabs.map(tab => (
           <button
             key={tab.id}
@@ -64,8 +82,10 @@ export function PanelWithTabs({ title, icon, color, headerRight, tabs, activeTab
             style={activeTab === tab.id ? titleStyle : undefined}
             onClick={() => onTabChange(tab.id)}
             type="button"
+            title={tab.label}
+            aria-label={tab.label}
           >
-            {tab.icon} {tab.label}
+            {tab.icon} <span className={shared.tabLabel}>{tab.label}</span>{tab.badge}
           </button>
         ))}
       </div>

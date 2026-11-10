@@ -30,9 +30,8 @@ export function TradingPanel() {
     { id: 'orders', label: 'Orders', icon: <ClipboardList size={13} /> },
     {
       id: 'trades',
-      label: pendingTrades.length > 0
-        ? <>Trades <span className={styles.tabBadge}>{pendingTrades.length}</span></>
-        : 'Trades',
+      label: 'Trades',
+      badge: pendingTrades.length > 0 && <span className={styles.tabBadge}>{pendingTrades.length}</span>,
       icon: <ArrowLeftRight size={13} />,
     },
   ]

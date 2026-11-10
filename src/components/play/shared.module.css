@@ -55,6 +55,8 @@
   gap: 0;
   border-bottom: 1px solid var(--dim-grey);
   flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .tab {
@@ -74,6 +76,7 @@
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
+  white-space: nowrap;
   transition: all 0.2s ease;
 }
 
@@ -85,6 +88,11 @@
 .tabActive {
   border-bottom-color: var(--plasma-cyan);
 }
+
+/* Set by PanelWithTabs when the labels do not fit: only the active tab keeps its label. */
+.tabsCompact .tab { padding-inline: 0.4rem; }
+.tabsCompact .tab:not(.tabActive) .tabLabel { display: none; }
+.tabsCompact .tabActive { flex: 2 0 auto; }
 
 /* Section title */
 .sectionTitle {
