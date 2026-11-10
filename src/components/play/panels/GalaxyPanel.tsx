@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useState } from 'react'
 import { Home, Crosshair } from 'lucide-react'
 import { fetchStations, type MapSystem, type RouteStep } from '@spacemolt/lib'
-import { fixedStations } from '@/lib/stationPresentation'
+import { fixedStations, splitStationRegistry } from '@/lib/stationPresentation'
 import { useAccountStore, useCurrentTick, useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
 import { fractionalTick } from '../tickEstimate'
 import styles from './GalaxyPanel.module.css'
@@ -55,6 +55,8 @@ export interface MapSystemData {
   is_home?: boolean
   is_stronghold?: boolean
   has_station?: boolean
+  /** An outpost of the player's own faction. Other factions' outposts are members-only, so the map leaves them out. */
+  has_outpost?: boolean
   connections: string[]
 }
 
@@ -259,7 +261,9 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     dragPreviewRoute: null as PlannedRoute | null,
     lastDragSystemId: '',
   })
-  const stationSystemIdsRef = useRef<Set<string> | null>(null)
+  const stationsRef = useRef<Array<{ system_id: string; type?: string; faction_id?: string }> | null>(null)
+  const factionIdRef = useRef<string | undefined>(undefined)
+  factionIdRef.current = player?.faction_id
 
   const plannedRouteRef = useRef<PlannedRoute | null>(null)
   // Only sync from prop when NOT dragging (drag manages its own preview)
@@ -878,6 +882,15 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
             Math.PI * 2,
           )
           ctx.stroke()
+        } else if (system.has_outpost && !system.has_station) {
+          // Your faction's outpost: a dashed ring, so it does not read as a full station.
+          ctx.strokeStyle = color + 'aa'
+          ctx.lineWidth = 1.2 * nodeScale
+          ctx.setLineDash([3 * nodeScale, 3 * nodeScale])
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, nodeRadius * hoverScale + 3 * nodeScale, 0, Math.PI * 2)
+          ctx.stroke()
+          ctx.setLineDash([])
         } else if (system.has_station) {
           // Non-capital station: single ring indicator
           ctx.strokeStyle = color + 'aa'
@@ -927,7 +940,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         }
 
         // System name label — hide when tooltip is showing (system has extra info)
-        const hasExtraInfo = !!(system.empire || system.is_home || system.has_station || system.is_stronghold)
+        const hasExtraInfo = !!(system.empire || system.is_home || system.has_station || system.has_outpost || system.is_stronghold)
         const tooltipShowing = isHovered && hasExtraInfo
         if ((s.zoom > 0.15 || isHovered || isHighlighted) && !tooltipShowing) {
           ctx.font = isHovered
@@ -962,7 +975,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       if (!tooltip) return
 
       // Only show tooltip for systems with info beyond just the name
-      const hasExtraInfo = system && !!(system.empire || system.is_home || system.has_station || system.is_stronghold)
+      const hasExtraInfo = system && !!(system.empire || system.is_home || system.has_station || system.has_outpost || system.is_stronghold)
       if (!system || !hasExtraInfo) {
         tooltip.className = styles.tooltip
         return
@@ -991,6 +1004,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         const tags: string[] = []
         if (system.is_home) tags.push('Capital')
         if (system.has_station) tags.push('Station')
+        if (system.has_outpost) tags.push('Faction outpost')
         if (system.is_stronghold) tags.push('Pirate Stronghold')
         if (tags.length > 0) {
           tooltipTagsRef.current.textContent = tags.join(' \u00B7 ')
@@ -1143,13 +1157,19 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   // resolves, in whichever order they land.
   const applyStationFlags = useCallback(() => {
     const s = stateRef.current
-    const ids = stationSystemIdsRef.current
-    if (!s.mapData || !ids) return
+    const stations = stationsRef.current
+    if (!s.mapData || !stations) return
+    const { stations: full, outposts } = splitStationRegistry(stations)
+    const stationIds = new Set(full.map((st) => st.system_id))
+    const outpostIds = new Set(outposts.filter((st) => st.faction_id && st.faction_id === factionIdRef.current).map((st) => st.system_id))
     for (const system of s.mapData.systems) {
-      if (ids.has(system.id)) system.has_station = true
+      system.has_station = stationIds.has(system.id)
+      system.has_outpost = outpostIds.has(system.id)
     }
     render()
   }, [render])
+  // The player's faction decides which outposts show, and it can load after the stations.
+  useEffect(applyStationFlags, [player?.faction_id, applyStationFlags])
 
   // Galaxy topology from useMap() (module-level cache, survives player
   // switches). Adapts the loosely-typed MapSystem entries into MapSystemData
@@ -1262,9 +1282,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       try {
         const { stations } = await fetchStations(GAMESERVER_URL)
         // Mobile bases move, so they get no fixed station marker.
-        stationSystemIdsRef.current = new Set(
-          fixedStations(stations as Array<(typeof stations)[number] & { mobile?: boolean }>).map((st) => st.system_id),
-        )
+        stationsRef.current = fixedStations(stations as Array<(typeof stations)[number] & { mobile?: boolean; type?: string; faction_id?: string }>)
         applyStationFlags()
       } catch {
         // Stations data is optional -- map still works without it

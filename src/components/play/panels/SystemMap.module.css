@@ -116,3 +116,15 @@
   background: rgba(0, 212, 255, 0.15);
   color: var(--plasma-cyan);
 }
+
+/* A POI description, cut after five lines. */
+.tooltipDescription {
+  margin: 0.4rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--chrome-silver);
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
