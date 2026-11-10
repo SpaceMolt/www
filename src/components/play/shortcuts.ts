@@ -9,6 +9,21 @@ export const ACTION_SHORTCUTS = [
   { key: 'Esc', label: 'Close help or drawer' },
 ] as const
 
+/** Battle keys, live only while the Combat panel shows a battle you are in. They avoid the keys above. */
+export const COMBAT_SHORTCUTS = [
+  { key: 'z', action: 'fire', label: 'Battle: fire stance' },
+  { key: 'x', action: 'evade', label: 'Battle: evade stance' },
+  { key: 'c', action: 'brace', label: 'Battle: brace stance' },
+  { key: 'v', action: 'flee', label: 'Battle: flee stance' },
+  { key: 'w', action: 'advance', label: 'Battle: advance one zone' },
+  { key: 's', action: 'retreat', label: 'Battle: retreat one zone' },
+  { key: 't', action: 'target', label: 'Battle: next target' },
+  { key: 'l', action: 'reload', label: 'Battle: reload all weapons' },
+] as const
+
+export type CombatAction = (typeof COMBAT_SHORTCUTS)[number]['action']
+export const combatKey = (action: CombatAction) => COMBAT_SHORTCUTS.find((s) => s.action === action)?.key.toUpperCase()
+
 type KeyEventLike = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'target'> & { repeat?: boolean }
 
 /**

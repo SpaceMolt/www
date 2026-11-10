@@ -2,12 +2,15 @@
 
 import { useBattleData } from '@/lib/battle/useBattleData'
 import BattlePresentation from './BattlePresentation'
+import type { ReachRing } from '@/lib/battle/render'
 
 interface Props {
   battleId: string
   embedded?: boolean
   focusPlayerId?: string
   enabled?: boolean
+  reachRings?: ReachRing[]
+  onPickShip?: (id: string) => void
 }
 
 export default function BattleViewer(props: Props) {
@@ -15,7 +18,7 @@ export default function BattleViewer(props: Props) {
   return <BattleSession key={props.battleId} {...props} />
 }
 
-function BattleSession({ battleId, embedded, focusPlayerId, enabled = true }: Props) {
+function BattleSession({ battleId, enabled = true, ...rest }: Props) {
   const data = useBattleData(battleId, { enabled })
-  return <BattlePresentation battleId={battleId} data={data} embedded={embedded} focusPlayerId={focusPlayerId} enabled={enabled} />
+  return <BattlePresentation battleId={battleId} data={data} enabled={enabled} {...rest} />
 }

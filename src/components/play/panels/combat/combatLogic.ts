@@ -1,5 +1,6 @@
-import type { ArenaObjective, ArenaRules, BattleLogEntry, NotificationBattleDamage } from '@spacemolt/lib'
+import type { ArenaObjective, ArenaRules, BattleLogEntry } from '@spacemolt/lib'
 import type { BattleView } from '@/lib/spacemolt'
+import { zoneIndex } from '@/lib/battle/types'
 
 /** Everyone not on your side is a valid battle target. */
 export const enemiesOf = (battle: BattleView) =>
@@ -10,6 +11,49 @@ export const enemiesOf = (battle: BattleView) =>
  * Scrapgun firing junk) takes anything. Items missing from the static catalog
  * stay listed, so a catalog older than the server never hides real ammo.
  */
+/** The next enemy after the current target, wrapping; the first enemy when nothing is targeted. */
+export const nextEnemy = <P extends { player_id: string }>(enemies: P[], currentId?: string): P | undefined =>
+  enemies[(enemies.findIndex((e) => e.player_id === currentId) + 1) % enemies.length]
+
+/** gameserver models.ZoneDistance: 0 when both ships are engaged, 6 when both are at the outer zone. */
+export const zoneDistance = (a = '', b = '') => 6 - zoneIndex(a) - zoneIndex(b)
+
+/** The outermost zone (0 outer … 3 engaged) a weapon hits from your zone, or undefined if it hits nothing. */
+export function reachZone(yourZone: string, reach: number): number | undefined {
+  const zone = zoneDistance(yourZone) - reach
+  return zone > 3 ? undefined : Math.max(0, zone)
+}
+
+export type WeaponState = { kind: 'empty' } | { kind: 'idle' } | { kind: 'unknown' } | { kind: 'ready' } | { kind: 'far'; advances: number }
+
+/** What a weapon can do against the target this tick. An empty magazine wins over range; a reach missing from the catalog is unknown. */
+export function weaponState({ ammo = 0, magazine, reach, distance }: { ammo?: number; magazine?: number; reach?: number; distance?: number }): WeaponState {
+  if (magazine !== undefined && ammo === 0) return { kind: 'empty' }
+  if (distance === undefined) return { kind: 'idle' }
+  if (reach === undefined) return { kind: 'unknown' }
+  return distance <= reach ? { kind: 'ready' } : { kind: 'far', advances: distance - reach }
+}
+
+export type LogLine = { id: number; tick?: number; kind: 'out' | 'in' | 'miss' | 'other' | 'sys'; who: string; dmg?: number }
+export interface BattleLog { battleId?: string; lines: LogLine[]; dealt: number; taken: number }
+const LOG_LINES = 40
+
+/** The log for this battle; a log left over from another battle starts over. */
+export const logFor = (log: BattleLog, battleId?: string): BattleLog =>
+  log.battleId === battleId ? log : { battleId, lines: [], dealt: 0, taken: 0 }
+
+/** Add a line to this battle's log, newest first, and count its damage. */
+export function addLogLine(log: BattleLog, battleId: string | undefined, line: LogLine): BattleLog {
+  const { lines, dealt, taken } = logFor(log, battleId)
+  const dmg = line.dmg ?? 0
+  return {
+    battleId,
+    lines: [line, ...lines].slice(0, LOG_LINES),
+    dealt: dealt + (line.kind === 'out' ? dmg : 0),
+    taken: taken + (line.kind === 'in' ? dmg : 0),
+  }
+}
+
 export function compatibleAmmo<C extends { item_id: string }>(
   weapon: { ammo_type?: string },
   cargo: C[],
@@ -34,11 +78,6 @@ export const reloadPlan = (rows: ReloadRow[]) =>
   rows
     .filter((r) => r.ammoId && !(r.full && r.ammoId === r.loadedId))
     .map((r) => ({ weapon_instance_id: r.weaponId, ammo_item_id: r.ammoId as string }))
-
-export const formatDamage = (d: NotificationBattleDamage) =>
-  `T${d.tick} ${d.attacker_name || d.attacker_id} > ${d.target_name || d.target_id}: ${
-    d.hit_success ? `${d.total_damage} dmg (${d.shield_hit} shd / ${d.hull_hit} hull)` : 'miss'
-  }`
 
 /** Next page of a battle log starts one tick after the last tick shown. */
 export const nextTickStart = (entries: Pick<BattleLogEntry, 'tick'>[]) =>

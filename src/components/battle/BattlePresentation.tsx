@@ -17,6 +17,7 @@ import {
   renderFrame,
   sampleShips,
   shipRadius,
+  type ReachRing,
   type ViewState,
 } from '@/lib/battle/render'
 import { BATTLE_CATEGORY_META, SIDE_COLORS } from '@/lib/battle/types'
@@ -37,10 +38,14 @@ export interface BattlePresentationProps {
   embedded?: boolean
   focusPlayerId?: string
   enabled?: boolean
+  /** Play only: your weapons' reach, drawn on the field. */
+  reachRings?: ReachRing[]
+  /** Play only: called with the ship a click lands on, e.g. to target it. */
+  onPickShip?: (id: string) => void
 }
 
 /** Shared, read-only replay presentation. Authentication and combat commands stay in Play. */
-export default function BattlePresentation({ battleId, data, embedded = false, focusPlayerId, enabled = true }: BattlePresentationProps) {
+export default function BattlePresentation({ battleId, data, embedded = false, focusPlayerId, enabled = true, reachRings, onPickShip }: BattlePresentationProps) {
   const { t } = useTranslation()
   const { summary, entries, isLive, loading, error } = data
   const timeline = useMemo(() => buildTimeline(entries, summary), [entries, summary])
@@ -63,6 +68,10 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
   const selectedRef = useRef<string | null>(null)
   hoveredRef.current = hoveredId
   selectedRef.current = selectedId
+
+  // The draw loop reads the rings through a ref so a new array never restarts it.
+  const reachRingsRef = useRef(reachRings)
+  reachRingsRef.current = reachRings
 
   const viewRef = useRef<ViewState>({ zoom: 1, panX: 0, panY: 0 })
   const reducedMotionRef = useRef(false)
@@ -232,6 +241,7 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
           selectedId: selectedRef.current ?? focusPlayerId ?? null,
           view: viewRef.current,
           reducedMotion: reducedMotionRef.current,
+          reachRings: reachRingsRef.current,
         })
       }
     }
@@ -301,8 +311,9 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
       if (wasDrag) return
       const hit = hitTest(e.clientX, e.clientY)
       setSelectedId(prev => (hit === prev ? null : hit))
+      if (hit) onPickShip?.(hit)
     },
-    [hitTest],
+    [hitTest, onPickShip],
   )
 
   const onWheel = useCallback((e: React.WheelEvent) => {

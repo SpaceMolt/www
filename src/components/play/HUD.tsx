@@ -33,7 +33,7 @@ import { useAutoTravel, type AutoTravelProgress } from './useAutoTravel'
 import { findRoute, jumpEstimateMs } from './routeWalk'
 import { LoopRunnerContext, useLoopRunner } from './loop/useLoopRunner'
 import { LoopBanner, LoopPanel } from './loop/LoopPanel'
-import { ACTION_SHORTCUTS, shortcutKey } from './shortcuts'
+import { ACTION_SHORTCUTS, COMBAT_SHORTCUTS, shortcutKey } from './shortcuts'
 import { ConfirmAction, errorMessage, Modal } from './shared'
 import { usePlay } from './PlayProvider'
 import { FeatureHelp } from './FeatureHelp'
@@ -78,7 +78,7 @@ function ShortcutHelp({ onClose, hiddenPanels }: { onClose: () => void; hiddenPa
       </div>
       {tab === 'unlocks' ? <FeatureHelp /> : (
         <dl className={styles.helpList}>
-          {ACTION_SHORTCUTS.map(({ key, label }) => (
+          {[...ACTION_SHORTCUTS, ...COMBAT_SHORTCUTS].map(({ key, label }) => (
             <div key={key}><dt><kbd>{key}</kbd></dt><dd>{label}</dd></div>
           ))}
           {panelShortcuts(hiddenPanels).map(({ id, label }, i) => (

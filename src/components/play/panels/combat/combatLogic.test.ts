@@ -1,7 +1,7 @@
 import { test, expect } from 'bun:test'
-import type { BattleLogEntry, NotificationBattleDamage } from '@spacemolt/lib'
+import type { BattleLogEntry } from '@spacemolt/lib'
 import type { BattleView } from '@/lib/spacemolt'
-import { compatibleAmmo, describeTick, enemiesOf, formatDamage, nextTickStart, objectiveText, reloadPlan, rulesText } from './combatLogic'
+import { addLogLine, compatibleAmmo, describeTick, enemiesOf, logFor, nextEnemy, nextTickStart, objectiveText, reachZone, reloadPlan, rulesText, weaponState, zoneDistance } from './combatLogic'
 
 test('enemiesOf drops your own side', () => {
   const battle = {
@@ -41,12 +41,6 @@ test('reloadPlan skips unpicked weapons and full magazines with the same ammo', 
     { weapon_instance_id: 'w1', ammo_item_id: 'a' },
     { weapon_instance_id: 'w3', ammo_item_id: 'b' },
   ])
-})
-
-test('formatDamage shows hits and misses', () => {
-  const base = { tick: 7, attacker_id: 'a', attacker_name: 'Ana', target_id: 'b', target_name: 'Bo', total_damage: 30, shield_hit: 20, hull_hit: 10 }
-  expect(formatDamage({ ...base, hit_success: true } as NotificationBattleDamage)).toBe('T7 Ana > Bo: 30 dmg (20 shd / 10 hull)')
-  expect(formatDamage({ ...base, hit_success: false } as NotificationBattleDamage)).toBe('T7 Ana > Bo: miss')
 })
 
 test('nextTickStart continues after the last tick', () => {
@@ -91,4 +85,43 @@ test('rulesText lists only set rules', () => {
     'no cloak',
     'banned modules: a, b',
   ])
+})
+
+test('zoneDistance matches the gameserver: 0 when both engaged, 6 when both outer', () => {
+  expect(zoneDistance('engaged', 'engaged')).toBe(0)
+  expect(zoneDistance('outer', 'outer')).toBe(6)
+  expect(zoneDistance('mid', 'inner')).toBe(3)
+})
+
+test('reachZone is the outermost zone a weapon hits from your zone', () => {
+  expect(reachZone('outer', 6)).toBe(0)
+  expect(reachZone('outer', 3)).toBe(3)
+  expect(reachZone('mid', 3)).toBe(2)
+  expect(reachZone('outer', 2)).toBeUndefined()
+  expect(reachZone('engaged', 9)).toBe(0)
+})
+
+test('weaponState: empty before range, then ready or how far to advance', () => {
+  expect(weaponState({ ammo: 0, magazine: 8, reach: 6, distance: 2 })).toEqual({ kind: 'empty' })
+  expect(weaponState({ reach: 3 })).toEqual({ kind: 'idle' })
+  expect(weaponState({ reach: 3, distance: 3 })).toEqual({ kind: 'ready' })
+  expect(weaponState({ ammo: 5, magazine: 8, reach: 3, distance: 5 })).toEqual({ kind: 'far', advances: 2 })
+  expect(weaponState({ ammo: 5, magazine: 8, distance: 3 })).toEqual({ kind: 'unknown' })
+})
+
+test('nextEnemy cycles and starts at the first enemy', () => {
+  const enemies = [{ player_id: 'a' }, { player_id: 'b' }]
+  expect(nextEnemy(enemies, undefined)?.player_id).toBe('a')
+  expect(nextEnemy(enemies, 'a')?.player_id).toBe('b')
+  expect(nextEnemy(enemies, 'b')?.player_id).toBe('a')
+  expect(nextEnemy([], 'a')).toBeUndefined()
+})
+
+test('battle log: counts your damage, and starts over in a new battle', () => {
+  const hit = (id: number, kind: 'out' | 'in' | 'miss', dmg?: number) => ({ id, kind, who: 'a > b', dmg })
+  const a = [hit(1, 'out', 10), hit(2, 'in', 4), hit(3, 'miss')].reduce((log, line) => addLogLine(log, 'a', line), logFor({ lines: [], dealt: 0, taken: 0 }, 'a'))
+  expect(a).toMatchObject({ battleId: 'a', dealt: 10, taken: 4 })
+  expect(a.lines.map((l) => l.id)).toEqual([3, 2, 1])
+  expect(logFor(a, 'b')).toEqual({ battleId: 'b', lines: [], dealt: 0, taken: 0 })
+  expect(addLogLine(a, 'b', hit(4, 'out', 7))).toMatchObject({ battleId: 'b', dealt: 7, taken: 0, lines: [{ id: 4 }] })
 })

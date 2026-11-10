@@ -64,6 +64,15 @@ export interface RenderInput {
   selectedId: string | null
   view: ViewState
   reducedMotion: boolean
+  /** Play only: one dashed ring per weapon reach, around every zone that weapon can hit. */
+  reachRings?: ReachRing[]
+}
+
+/** zone is the outermost zone index (0 outer … 3 engaged) the weapon hits. */
+export interface ReachRing {
+  zone: number
+  color: string
+  label: string
 }
 
 interface Vec {
@@ -465,6 +474,7 @@ export function renderFrame(ctx: CanvasRenderingContext2D, input: RenderInput): 
   const ships = sampleShips(timeline, playhead, timeMs, reducedMotion)
 
   drawArena(ctx, tf, timeline, timeMs, width, height, reducedMotion)
+  drawReachRings(ctx, tf, input.reachRings ?? [])
   drawWrecks(ctx, tf, timeline, playhead, battleId, ships)
 
   // Target line for the selected ship.
@@ -572,6 +582,27 @@ function drawArena(
   ctx.moveTo(c.x, c.y - ch)
   ctx.lineTo(c.x, c.y + ch)
   ctx.stroke()
+}
+
+// Each ring sits halfway out to the next zone, so the ships on its own zone are inside it.
+function drawReachRings(ctx: CanvasRenderingContext2D, tf: ScreenTransform, rings: ReachRing[]): void {
+  const c = tf.toScreen({ x: 0, y: 0 })
+  ctx.save()
+  ctx.setLineDash([3, 5])
+  ctx.lineWidth = 1.5
+  ctx.font = '10px "JetBrains Mono", monospace'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'top'
+  rings.forEach(({ zone, color, label }, i) => {
+    const r = (zone === 0 ? RING_R[0] + 0.12 : (RING_R[zone] + RING_R[zone - 1]) / 2) * tf.scale + i * 3
+    ctx.strokeStyle = hexWithAlpha(color, 0.7)
+    ctx.beginPath()
+    ctx.arc(c.x, c.y, r, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.fillStyle = color
+    ctx.fillText(label, c.x, c.y + r + 3 + i * 12)
+  })
+  ctx.restore()
 }
 
 /**
