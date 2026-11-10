@@ -102,6 +102,7 @@ function AutoTravelBanner({ progress, onAbort }: { progress: AutoTravelProgress;
   const jumpProgress = phase === 'jumping' ? legProgress : 0
   const stationTravelProgress = phase === 'traveling_to_station' ? legProgress : 0
 
+  const charging = leg.etaSecs === null // the leg waits for the next tick
   const jumpsNotStarted = Math.max(0, totalJumps - completedJumps - (phase === 'jumping' ? 1 : 0))
   const legEtaSecs = leg.etaSecs ?? (phase === 'jumping' ? estimatedSecsPerJump : progress.stationTravelSecs ?? 0)
   const etaSecs = Math.round(legEtaSecs + jumpsNotStarted * estimatedSecsPerJump)
@@ -112,8 +113,8 @@ function AutoTravelBanner({ progress, onAbort }: { progress: AutoTravelProgress;
     <div className={styles.autoTravelBanner}>
       <div className={styles.atbTop}>
         <div className={styles.atbPhase}>
-          {phase === 'traveling_to_station' ? `TRAVELING TO ${progress.stationName?.toUpperCase() || 'STATION'}`
-            : `JUMPING ${completedJumps + 1} / ${totalJumps}`}
+          {phase === 'traveling_to_station' ? `${charging ? 'POWERING ENGINES FOR' : 'TRAVELING TO'} ${progress.stationName?.toUpperCase() || 'STATION'}`
+            : `${charging ? 'CHARGING JUMP DRIVE' : 'JUMPING'} ${completedJumps + 1} / ${totalJumps}`}
         </div>
         <div className={styles.atbCountdown}>
           {etaMins > 0 ? `${etaMins}m ` : ''}{etaRemSecs}s
@@ -129,10 +130,9 @@ function AutoTravelBanner({ progress, onAbort }: { progress: AutoTravelProgress;
       {phase === 'traveling_to_station' ? (
         <div className={styles.atbProgressBar}>
           <div className={styles.atbSegment}>
-            <div
-              className={styles.atbSegmentFill}
-              style={{ width: `${stationTravelProgress * 100}%` }}
-            />
+            {charging
+              ? <div className={`${styles.atbSegmentFill} ${styles.atbSegmentCharging}`} />
+              : <div className={styles.atbSegmentFill} style={{ width: `${stationTravelProgress * 100}%` }} />}
           </div>
         </div>
       ) : (
@@ -143,10 +143,9 @@ function AutoTravelBanner({ progress, onAbort }: { progress: AutoTravelProgress;
             else if (i === completedJumps && phase === 'jumping') fill = jumpProgress
             return (
               <div key={i} className={styles.atbSegment}>
-                <div
-                  className={`${styles.atbSegmentFill} ${fill >= 1 ? styles.atbSegmentComplete : ''}`}
-                  style={{ width: `${fill * 100}%` }}
-                />
+                {charging && i === completedJumps
+                  ? <div className={`${styles.atbSegmentFill} ${styles.atbSegmentCharging}`} />
+                  : <div className={`${styles.atbSegmentFill} ${fill >= 1 ? styles.atbSegmentComplete : ''}`} style={{ width: `${fill * 100}%` }} />}
               </div>
             )
           })}

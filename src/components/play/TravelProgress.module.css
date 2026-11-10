@@ -108,7 +108,7 @@
 .barFill {
   height: 100%;
   border-radius: 2px;
-  transition: width 0.5s ease;
+  transition: width 1s linear; /* the clock steps once a second */
   position: relative;
 }
 
