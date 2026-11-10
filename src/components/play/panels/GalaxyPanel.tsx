@@ -4,7 +4,8 @@ import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useSta
 import { Home, Crosshair } from 'lucide-react'
 import { fetchStations, type MapSystem, type RouteStep } from '@spacemolt/lib'
 import { fixedStations } from '@/lib/stationPresentation'
-import { useCurrentTick, useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
+import { useAccountStore, useCurrentTick, useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
+import { fractionalTick } from '../tickEstimate'
 import styles from './GalaxyPanel.module.css'
 
 const GAMESERVER_URL = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -287,6 +288,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   // re-sync and jitter the position. Off-network "pathfinder" jumps report no
   // destination, so no dot is shown for them.
   const currentTick = useCurrentTick()
+  const store = useAccountStore()
   const transitAnimRef = useRef<{
     fromId: string
     toId: string
@@ -302,7 +304,9 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   ) {
     const arrival = location.transit_arrival_tick
     const elapsed = location.transit_ticks_elapsed ?? 0
-    const remaining = arrival != null ? Math.max(0, arrival - currentTick) : 0
+    // currentTick is the last tick a server frame carried, so run it forward to now.
+    const nowTick = fractionalTick(currentTick, store.getTickObservedAt(), Date.now(), TRANSIT_TICK_DURATION_MS)
+    const remaining = arrival != null ? Math.max(0, arrival - nowTick) : 0
     const totalTicks = elapsed + remaining
     const key = `${location.system_id}->${location.transit_dest_system_id}@${arrival ?? 0}`
     if (totalTicks > 0 && transitAnimRef.current?.key !== key) {

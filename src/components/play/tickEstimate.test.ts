@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test'
-import { estimateTick, MAX_ESTIMATED_TICKS } from './tickEstimate'
+import { estimateTick, fractionalTick, MAX_ESTIMATED_TICKS, tickStartingNow, transitClock } from './tickEstimate'
 
 const RATE = 10_000
 
@@ -106,5 +106,28 @@ describe('estimateTick', () => {
     const estimate = estimateTick(88, 0, 999_999, 0)
     expect(estimate.tick).toBe(88)
     expect(Number.isFinite(estimate.progress)).toBe(true)
+  })
+})
+
+describe('transitClock', () => {
+  // Reported: a 3-tick trip showed "1m 0s" and an empty bar, because the last server tick was 3 ticks old.
+  it('counts from the estimated tick, not the last tick a server frame carried', () => {
+    const t0 = 1_700_000_000_000
+    const staleAnchor = 100 // observed 30 s before the trip starts
+    const nowTick = fractionalTick(staleAnchor, t0, t0 + 30_000, RATE)
+    expect(nowTick).toBe(103)
+    expect(transitClock(106, nowTick, nowTick, 10)).toEqual({ etaSecs: 30, percent: 0 })
+    const later = fractionalTick(staleAnchor, t0, t0 + 45_000, RATE)
+    expect(transitClock(106, nowTick, later, 10)).toEqual({ etaSecs: 15, percent: 50 })
+  })
+
+  it('corrects an anchor that was seen late in its tick when a trip starts', () => {
+    expect(tickStartingNow(102.3)).toBe(103) // anchor seen 0.7 ticks into its tick
+    expect(tickStartingNow(103.1)).toBe(103) // anchor seen at a tick start, with a little drift
+  })
+
+  it('holds at arrival and has no ETA without an arrival tick', () => {
+    expect(transitClock(106, 103, 110, 10)).toEqual({ etaSecs: 0, percent: 100 })
+    expect(transitClock(undefined, 103, 104, 10)).toEqual({ etaSecs: null, percent: 0 })
   })
 })

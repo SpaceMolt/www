@@ -1,7 +1,9 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import { useAccountStore, useCurrentTick, useLocationState, usePendingAction, useSystem } from '@/lib/spacemolt'
 import { Navigation, Zap } from 'lucide-react'
+import { fractionalTick, tickStartingNow, transitClock } from './tickEstimate'
 import styles from './TravelProgress.module.css'
 
 type TransitLocation = Pick<NonNullable<ReturnType<typeof useLocationState>>,
@@ -23,11 +25,45 @@ export function transitDestination(
   return (location?.transit_type === 'jump' ? systemName || poiName : poiName || systemName) || pickedTarget || 'destination'
 }
 
+/**
+ * Time left and share done for the current trip. The server sends no tick with the transit state,
+ * so the clock runs from the last tick anchor, one second at a time.
+ */
+export function useTransitClock() {
+  const store = useAccountStore()
+  const location = useLocationState()
+  const pending = usePendingAction()
+  const anchorTick = useCurrentTick()
+  const inTransit = !!location?.in_transit
+  // Re-render each second during a trip; each render reads the clock.
+  const [, redraw] = useState(0)
+  useEffect(() => {
+    if (!inTransit) return
+    const timer = setInterval(() => redraw((n) => n + 1), 1000)
+    return () => clearInterval(timer)
+  }, [inTransit])
+
+  const tickSecs = store.account.welcome?.tick_rate || 10
+  const arrivalTick = location?.transit_arrival_tick
+  // ponytail: the trip starts when this client first sees it, so a reload mid-trip restarts the bar. The ETA stays right.
+  const start = useRef({ key: '', tick: 0, anchorTick: 0, shift: 0 })
+  const key = inTransit ? `${location?.transit_type}@${arrivalTick}` : ''
+  const estimate = fractionalTick(anchorTick, store.getTickObservedAt(), Date.now(), tickSecs * 1000)
+  if (start.current.key !== key) {
+    // A trip this client began starts on a tick, which places the anchor inside its tick.
+    const began = pending?.command === 'travel' || pending?.command === 'jump'
+    const tick = began ? tickStartingNow(estimate) : estimate - (location?.transit_ticks_elapsed ?? 0)
+    start.current = { key, tick, anchorTick, shift: began ? tick - estimate : 0 }
+  }
+  // The shift holds until the server sends a newer anchor.
+  const nowTick = estimate + (start.current.anchorTick === anchorTick ? start.current.shift : 0)
+  return transitClock(inTransit ? arrivalTick : undefined, start.current.tick, nowTick, tickSecs)
+}
+
 export function TravelProgress() {
   const location = useLocationState()
-  const currentTick = useCurrentTick()
   const pending = usePendingAction()
-  const tickSecs = useAccountStore().account.welcome?.tick_rate || 10
+  const { etaSecs, percent: progress } = useTransitClock()
   const systemData = useSystem().data
   const pois = systemData && 'system' in systemData ? systemData.system.pois : undefined
 
@@ -35,13 +71,6 @@ export function TravelProgress() {
 
   const isJump = location.transit_type === 'jump'
   const destination = transitDestination(location, pending?.target, pois)
-
-  const arrivalTick = location.transit_arrival_tick
-  const elapsed = location.transit_ticks_elapsed ?? 0
-  const eta = arrivalTick !== undefined ? Math.max(0, arrivalTick - currentTick) : null
-  const totalTicks = eta !== null ? elapsed + eta : null
-  const progress =
-    totalTicks && totalTicks > 0 ? Math.max(0, Math.min(100, (elapsed / totalTicks) * 100)) : 0
 
   return (
     <div className={`${styles.container} ${styles.pulse}`}>
@@ -61,12 +90,10 @@ export function TravelProgress() {
             <span className={styles.destLabel}>to</span>
             <span className={styles.destName}>{destination}</span>
           </div>
-          {eta !== null && (
+          {etaSecs !== null && (
             <div className={styles.eta}>
               <span className={styles.etaValue}>
-                {eta * tickSecs >= 60
-                  ? `${Math.floor((eta * tickSecs) / 60)}m ${(eta * tickSecs) % 60}s`
-                  : `${eta * tickSecs}s`}
+                {etaSecs >= 60 ? `${Math.floor(etaSecs / 60)}m ${etaSecs % 60}s` : `${etaSecs}s`}
               </span>
             </div>
           )}

@@ -25,8 +25,13 @@ export async function findRoute(account: Account, id: string): Promise<PlannedRo
   }
 }
 
+/** The speed the server times trips with: ship speed after crew efficiency. */
+export const travelSpeed = (ship: { speed?: number; operational_speed?: number } | null | undefined): number =>
+  ship?.operational_speed || ship?.speed || 1
+
+/** A jump: 7 − speed ticks, cut to whole ticks as the server does, at least one. Disruption, skills and wormholes change it. */
 export function jumpEstimateMs(shipSpeed: number): number {
-  return Math.max(10, 70 - 10 * shipSpeed) * 1000
+  return Math.max(1, Math.trunc(7 - shipSpeed)) * 10_000
 }
 
 type Position = { x?: number; y?: number } | undefined

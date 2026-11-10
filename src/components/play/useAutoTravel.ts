@@ -7,7 +7,6 @@ export interface AutoTravelProgress {
   currentJumpIndex: number    // 0-based, which jump we're on (-1 = not started)
   totalJumps: number
   phase: 'jumping' | 'traveling_to_station' | 'arrived' | 'aborted'
-  jumpStartTime: number       // Date.now() when current jump started
   estimatedSecsPerJump: number // refined from actual timing
   totalElapsedMs: number
   completedJumps: number
@@ -17,7 +16,6 @@ export interface AutoTravelProgress {
   refuelStops: string[]       // stations (or "fuel cells") used mid-route
   stationName?: string        // name of station being traveled to (traveling_to_station phase)
   stationTravelSecs?: number  // predicted travel time in seconds
-  stationTravelStart?: number // Date.now() when station travel began
 }
 
 export interface UseAutoTravelReturn {
@@ -78,7 +76,6 @@ export function useAutoTravel(): UseAutoTravelReturn {
         currentJumpIndex: -1,
         totalJumps: route.totalJumps,
         phase: 'jumping',
-        jumpStartTime: startTime,
         estimatedSecsPerJump: avgSecsPerJump(),
         totalElapsedMs: 0,
         completedJumps: 0,
@@ -98,7 +95,7 @@ export function useAutoTravel(): UseAutoTravelReturn {
         stopReason,
         onJumpStart: (i) => {
           jumpStart = Date.now()
-          update({ currentJumpIndex: i, phase: 'jumping', jumpStartTime: jumpStart, estimatedSecsPerJump: avgSecsPerJump() })
+          update({ currentJumpIndex: i, phase: 'jumping', estimatedSecsPerJump: avgSecsPerJump() })
         },
         onJumpDone: (i) => {
           jumpTimes.push(Date.now() - jumpStart)
@@ -125,7 +122,6 @@ export function useAutoTravel(): UseAutoTravelReturn {
             completedJumps: route.totalJumps,
             stationName: target.base_name || target.name,
             stationTravelSecs: travelSecs,
-            stationTravelStart: Date.now(),
           })
           // Two-phase contract — resolves once travel has arrived.
           await run((c) => c.spacemolt.travel({ id: target.id }), { label: 'travel', estimatedMs: travelSecs * 1000, target: target.base_name || target.name })
