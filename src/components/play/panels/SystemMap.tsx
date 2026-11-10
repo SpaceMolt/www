@@ -149,7 +149,10 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
     })
   }, [system, systemId, galaxyMap])
 
-  const pois: Poi[] = system?.pois ?? []
+  const pois = useMemo<Poi[]>(
+    () => (system?.pois ?? []).map((p: Poi) => ({ ...p, stronghold: system?.is_stronghold && p.base_type === 'station' })),
+    [system],
+  )
   const inTransit = Boolean(location?.in_transit) && location?.transit_type !== 'jump'
   const blocked = busy || usePendingAction() !== null
 

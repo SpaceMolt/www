@@ -6,7 +6,9 @@ import type { Point } from './systemMapMath'
 
 export interface Poi {
   id: string; name: string; type: string; class?: string
-  base_name?: string; base_type?: string; has_base?: boolean; ship_count?: number
+  base_id?: string; base_name?: string; base_type?: string; has_base?: boolean; ship_count?: number
+  /** The base here belongs to a pirate stronghold crew. */
+  stronghold?: boolean
   position?: { x?: number; y?: number }
 }
 
@@ -207,6 +209,72 @@ function drawBase(ctx: Ctx, baseType: string | undefined, x: number, y: number, 
   ctx.restore()
 }
 
+/** Hulls welded into one base: the Frontier's Patchwork, and the smaller mobile bases players build. */
+function drawWelded(ctx: Ctx, id: string, x: number, y: number, hulls: number, t: number) {
+  const rand = seeded(id)
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rand() * TAU)
+  ctx.lineWidth = 1
+  const boxes = Array.from({ length: hulls }, (_, i) => ({
+    cx: (rand() - 0.5) * 5, cy: (i - (hulls - 1) / 2) * 5 + (rand() - 0.5) * 1.5,
+    w: 11 + rand() * 7, h: 3.6 + rand() * 1.6, tilt: (rand() - 0.5) * 0.35,
+    hull: ['#8fa3ad', '#b08a5a', '#6f8796', '#a39a84'][i % 4],
+  }))
+  // Gantries first, so the hulls sit on top of the welds.
+  ctx.strokeStyle = 'rgba(232,244,248,0.55)'; ctx.beginPath()
+  boxes.slice(1).forEach((b, i) => [-3, 3].forEach((dx) => { ctx.moveTo(boxes[i].cx + dx, boxes[i].cy); ctx.lineTo(b.cx + dx, b.cy) }))
+  ctx.stroke()
+  for (const b of boxes) {
+    ctx.save(); ctx.translate(b.cx, b.cy); ctx.rotate(b.tilt)
+    ctx.fillStyle = b.hull; ctx.strokeStyle = COLOR.bg
+    ctx.beginPath(); ctx.moveTo(-b.w / 2, -b.h / 2); ctx.lineTo(b.w / 2 - b.h, -b.h / 2); ctx.lineTo(b.w / 2, 0); ctx.lineTo(b.w / 2 - b.h, b.h / 2); ctx.lineTo(-b.w / 2, b.h / 2)
+    ctx.closePath(); ctx.fill(); ctx.stroke()
+    // Mismatched running lights, and a drive that still burns.
+    ctx.fillStyle = `rgba(255,190,90,${0.5 + 0.4 * Math.sin(t * 0.004 + b.cx)})`; ctx.fillRect(-b.w / 2 - 1.5, -0.6, 1.5, 1.2)
+    ctx.fillStyle = COLOR.cyan; ctx.fillRect(b.w / 6, -0.5, 1, 1)
+    ctx.restore()
+  }
+  ctx.restore()
+  return hulls * 2.5 + 6
+}
+
+/** A pirate stronghold: a spiked, dark-red fortress with a slow warning pulse. */
+function drawStronghold(ctx: Ctx, x: number, y: number, t: number) {
+  const red: Rgb = [255, 71, 87]
+  drawGlow(ctx, x, y, red, 20, 0.22 + 0.1 * Math.sin(t * 0.003))
+  ctx.fillStyle = '#1a0a0e'; ctx.strokeStyle = hex(red); ctx.lineWidth = 1.5
+  ctx.beginPath()
+  for (let i = 0; i < 16; i++) { const a = i * TAU / 16 - TAU / 4, d = i % 2 ? 4.5 : i % 4 ? 8 : 11; ctx.lineTo(x + Math.cos(a) * d, y + Math.sin(a) * d) }
+  ctx.closePath(); ctx.fill(); ctx.stroke()
+  ctx.fillStyle = hex(red); circle(ctx, x, y, 1.8); ctx.fill()
+  return 11
+}
+
+/** Krynn's Blood Arena: a ringed pit with a duel that never stops. */
+function drawArena(ctx: Ctx, x: number, y: number, t: number) {
+  const red: Rgb = [255, 71, 87]
+  drawGlow(ctx, x, y, red, 26, 0.3)
+  ctx.save(); ctx.translate(x, y)
+  // Stands: two counter-rotating segmented rings.
+  ;[[13, 10, 0.0002], [9.5, 7, -0.00035]].forEach(([radius, segments, spin], ring) => {
+    ctx.strokeStyle = rgba(red, ring ? 0.6 : 0.95); ctx.lineWidth = ring ? 1.4 : 2.4
+    for (let i = 0; i < segments; i++) {
+      const a = i * TAU / segments + t * spin
+      ctx.beginPath(); ctx.arc(0, 0, radius, a, a + TAU / segments * 0.72); ctx.stroke()
+    }
+  })
+  ctx.fillStyle = '#12070a'; circle(ctx, 0, 0, 6); ctx.fill()
+  // Two fighters circle the pit and trade fire.
+  const a = t * 0.0011, d = 3.6
+  const [ax, ay, bx, by] = [Math.cos(a) * d, Math.sin(a) * d, -Math.cos(a) * d, -Math.sin(a) * d]
+  const shot = (t * 0.004) % 2
+  ctx.strokeStyle = rgba([255, 217, 61], shot < 1 ? 0.9 : 0.15); ctx.lineWidth = 1
+  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + (bx - ax) * Math.min(shot, 1), ay + (by - ay) * Math.min(shot, 1)); ctx.stroke()
+  ctx.fillStyle = COLOR.white; circle(ctx, ax, ay, 1.3); ctx.fill()
+  ctx.fillStyle = hex(red); circle(ctx, bx, by, 1.3); ctx.fill()
+  ctx.restore()
+  return 14
+}
+
 function drawRelic(ctx: Ctx, p: Poi, x: number, y: number, t: number): number {
   const color = poiColor(p)
   ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 1.4
@@ -267,6 +335,10 @@ function drawBrackets(ctx: Ctx, x: number, y: number, color: string) {
 export function drawPoi(ctx: Ctx, p: Poi, x: number, y: number, lit: [number, number], t: number): number {
   let r: number
   if (p.type === 'sun') return drawStar(ctx, p.class, x, y, t)
+  if (p.id === 'blood_arena') return drawArena(ctx, x, y, t)
+  if (p.stronghold) return drawStronghold(ctx, x, y, t)
+  if (p.base_id === 'frontier_station') return drawWelded(ctx, p.id, x, y, 4, t)
+  if (p.type === 'station' && p.base_type === 'mobile_base') return drawWelded(ctx, p.id, x, y, 2, t)
   if (p.type === 'station') { drawBase(ctx, p.base_type, x, y); return 7 }
   if (p.type === 'planet') {
     const [color, size] = PLANET[p.class ?? ''] ?? ['#9fb3c0', 5]
