@@ -31,6 +31,46 @@ describe('battle notifications', () => {
     } finally { f.close() }
   })
 
+  const fighter = (player_id: string, kind: string) =>
+    ({ player_id, kind, username: player_id, side_id: 0, zone: 'outer' })
+
+  test('bystander alerts for creature fights log nothing', async () => {
+    const f = await fixture()
+    try {
+      const before = f.store.getState().eventLog.length
+      f.send('battle_alert', {
+        battle_id: 'hunt', sides: [], system_id: 'lhs_1140',
+        participants: [fighter('other', 'player'), fighter('crt_1', 'creature')],
+        message: 'A battle is underway in LHS 1140!',
+      })
+      expect(f.store.getState().eventLog.length).toBe(before)
+    } finally { f.close() }
+  })
+
+  test('creature alerts still log when you are a participant', async () => {
+    const f = await fixture()
+    try {
+      f.send('battle_alert', {
+        battle_id: 'hunted', sides: [], system_id: 'lhs_1140',
+        participants: [fighter('plr_1', 'player'), fighter('crt_1', 'creature')],
+        message: 'Void Eel is attacking you!',
+      })
+      expect(f.store.getState().eventLog[0]?.text).toBe('Void Eel is attacking you!')
+    } finally { f.close() }
+  })
+
+  test('bystander alerts for non-creature fights still log', async () => {
+    const f = await fixture()
+    try {
+      f.send('battle_alert', {
+        battle_id: 'pvp', sides: [], system_id: 'lhs_1140',
+        participants: [fighter('other', 'player'), fighter('prt_1', 'pirate')],
+        message: 'A battle is underway in LHS 1140!',
+      })
+      expect(f.store.getState().eventLog[0]?.text).toBe('A battle is underway in LHS 1140!')
+    } finally { f.close() }
+  })
+
   test('starts retain IDs; another pilot leaving does not end your fight', async () => {
     const f = await fixture()
     try {
