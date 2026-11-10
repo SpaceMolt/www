@@ -8,6 +8,7 @@
 
 /* Channel Tabs */
 .tabs {
+  container-type: inline-size;
   display: flex;
   border-bottom: 1px solid rgba(61, 90, 108, 0.4);
   flex-shrink: 0;
@@ -15,6 +16,7 @@
 
 .tab {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -44,6 +46,12 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* Too narrow for every label: only the active tab keeps its label. */
+@container (max-width: 26rem) {
+  .tab:not(.tabActive) .tabLabel { display: none; }
+  .tabActive { flex: 2 0 auto; }
 }
 
 /* Messages Area */

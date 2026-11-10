@@ -5,7 +5,7 @@ import type { ChatHistoryMessage } from '@spacemolt/lib'
 import { useAccountStore, usePlayer } from '@/lib/spacemolt'
 import type { ChatMessage } from '@/lib/spacemolt/uiStore'
 import { usePlay, usePlayUi } from './PlayProvider'
-import { Send, Hash, Users, Shield, MessageSquare, Siren, ArrowLeft, History } from 'lucide-react'
+import { Send, Hash, Orbit, Users, Shield, MessageSquare, Siren, ArrowLeft, History } from 'lucide-react'
 import { Loading, errorMessage, shared } from './shared'
 import styles from './ChatPanel.module.css'
 
@@ -13,7 +13,7 @@ type Channel = 'local' | 'system' | 'faction' | 'private' | 'emergency'
 
 const CHANNEL_CONFIG: Record<Channel, { icon: typeof Hash; label: string }> = {
   local:     { icon: Hash,          label: 'Local' },
-  system:    { icon: Hash,          label: 'System' },
+  system:    { icon: Orbit,         label: 'System' },
   faction:   { icon: Users,         label: 'Faction' },
   private:   { icon: MessageSquare, label: 'Private' },
   emergency: { icon: Siren,         label: 'Distress' },
@@ -222,6 +222,7 @@ export function ChatPanel() {
               className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
               onClick={() => setActiveChannel(ch)}
               title={config.label}
+              aria-label={config.label}
             >
               <Icon size={12} />
               <span className={styles.tabLabel}>{config.label}</span>
