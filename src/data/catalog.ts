@@ -33,7 +33,7 @@ export interface ItemStack {
 export interface RawItemEffect {
   /** e.g. "buff", "ammo", "repair" */
   type?: string
-  /** e.g. "torpedo", "missile" (ammo only) */
+  /** Ammo only: the weapon family it feeds (matches the weapon's ammo_type), e.g. "torpedo", "missile" */
   subtype?: string
   /** Buff magnitude */
   amount?: number
@@ -90,7 +90,7 @@ export interface RawCatalogItem {
   effect?: RawItemEffect
   /** Consumables: e.g. "alcohol", "meal" */
   food_type?: string
-  /** Ammo: the weapon family this ammo feeds, e.g. "autocannon" */
+  /** Weapons: the ammo family this weapon loads, e.g. "autocannon". Ammo names it in effect.subtype. */
   ammo_type?: string
   magazine_size?: number
   /** How this item is obtained, e.g. "mining" */

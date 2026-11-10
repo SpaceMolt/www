@@ -522,8 +522,8 @@ export function CombatPanel() {
         </details>
       )}
 
-      {/* Nearby players and pirates */}
-      <div>
+      {/* Nearby ships are attack targets; in a battle you can only fight its participants. */}
+      {!inCombat && <div>
         <div className={shared.sectionTitle}>
           Nearby ({nearbyCount})
         </div>
@@ -650,7 +650,7 @@ export function CombatPanel() {
             No other vessels detected at this location
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Reload Section */}
       {weapons.length > 0 && (
@@ -679,10 +679,14 @@ export function CombatPanel() {
                 <div key={instanceId} className={styles.reloadCard}>
                   <div className={styles.reloadWeaponName}>
                     {weapon.name}
+                    {!weapon.current_ammo && <span className={styles.emptyTag}>Empty</span>}
                     <span className={styles.participantShip}>
                       {' '}{weapon.current_ammo ?? 0}/{weapon.magazine_size}{weapon.loaded_ammo_name ? ` · ${weapon.loaded_ammo_name}` : ''}
                     </span>
                   </div>
+                  {options.length === 0 && (
+                    <span className={styles.participantShip}>No {weapon.ammo_type ? `${weapon.ammo_type} ` : ''}ammo in cargo</span>
+                  )}
                   {options.length > 0 && <div className={styles.reloadControls}>
                     <select
                       className={shared.selectInput}
