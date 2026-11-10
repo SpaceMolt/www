@@ -108,7 +108,6 @@ export interface PublicFactionProfile {
   charter?: string
   primary_color?: string
   secondary_color?: string
-  emblem?: string
   created_at: string
   leader?: string
   founder?: string
