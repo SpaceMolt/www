@@ -63,8 +63,21 @@ export function ActionBanner({ autoTravelActive }: { autoTravelActive?: boolean 
   }, [pending])
 
   if (!pending || autoTravelActive) return null
-  // TravelProgress shows this trip with the server's arrival tick.
-  if (inTransit && (pending.command === 'travel' || pending.command === 'jump')) return null
+  // A trip starts on the next tick. Until then the drive charges; after that TravelProgress shows the trip.
+  const charging = { travel: 'Powering engines', jump: 'Charging jump drive' }[pending.command]
+  if (charging) {
+    return inTransit ? null : (
+      <div className={styles.banner}>
+        <div className={styles.content}>
+          <Loader2 size={20} className={styles.spinner} />
+          <span className={styles.label}>{charging}</span>
+        </div>
+        <div className={styles.progressTrack}>
+          <div className={`${styles.progressBar} ${styles.progressBarCharging}`} />
+        </div>
+      </div>
+    )
+  }
 
   // Use client-side estimate if available, otherwise assume one tick (10s)
   const totalMs = pending.estimatedMs || 10000

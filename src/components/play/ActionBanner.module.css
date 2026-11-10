@@ -54,3 +54,16 @@
   box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
   transition: width 0.1s linear;
 }
+
+/* No known length yet (a trip that waits for the next tick): the bar sweeps. */
+.progressBarCharging {
+  width: 30%;
+  opacity: 0.7;
+  transition: none;
+  animation: charge 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes charge {
+  from { transform: translateX(0); }
+  to { transform: translateX(233%); }
+}
