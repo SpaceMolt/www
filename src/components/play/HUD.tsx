@@ -271,9 +271,13 @@ export function HUD() {
 
   const maps = (
     <div className={mapStyles.mapStack}>
-      {mapView === 'system'
-        ? <SystemMap busy={pilotBusy} onTravel={(id) => navRef.current?.travel(id)} onJump={(id, name) => navRef.current?.jump(id, name)} />
-        : galaxy}
+      {/* The galaxy map stays mounted under the system map: the sidebar reads and pans it through galaxyRef, and it keeps its pan and zoom. */}
+      <div className={`${mapStyles.layer} ${mapView === 'system' ? mapStyles.hidden : ''}`}>{galaxy}</div>
+      {mapView === 'system' && (
+        <div className={mapStyles.layer}>
+          <SystemMap busy={pilotBusy} onTravel={(id) => navRef.current?.travel(id)} onJump={(id, name) => navRef.current?.jump(id, name)} />
+        </div>
+      )}
       <div className={mapStyles.viewSwitch} role="group" aria-label="Map view">
         <button type="button" aria-pressed={mapView === 'galaxy'} onClick={() => setMapView('galaxy')}><Globe size={12} /> Galaxy</button>
         <button type="button" aria-pressed={mapView === 'system'} onClick={() => setMapView('system')}><Orbit size={12} /> System</button>

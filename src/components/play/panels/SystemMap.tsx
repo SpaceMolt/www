@@ -412,6 +412,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
         const left = hover.x + 18 + tip.offsetWidth > W ? hover.x - tip.offsetWidth - 18 : hover.x + 18
         tip.style.left = `${Math.max(4, Math.min(W - tip.offsetWidth - 4, left))}px`
         tip.style.top = `${Math.max(4, Math.min(H - tip.offsetHeight - 4, hover.y - tip.offsetHeight / 2))}px`
+        tip.style.visibility = 'visible'
       }
     }
     raf = requestAnimationFrame(frame)
@@ -471,7 +472,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
 
   return (
     <div className={galaxy.mapContainer}>
-      <canvas ref={canvasRef} className={styles.canvas} aria-label={`Map of the ${system.name} system`} />
+      <canvas ref={canvasRef} className={styles.canvas} role="img" aria-label={`Map of the ${system.name} system`} />
 
       {(hoverPoi || hoverExit) && (
         <div ref={tooltipRef} className={styles.tooltip}>

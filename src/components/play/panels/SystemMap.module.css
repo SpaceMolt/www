@@ -19,6 +19,7 @@
 .tooltip {
   position: absolute;
   z-index: 200;
+  visibility: hidden; /* shown by the frame that first positions it */
   width: 240px;
   pointer-events: none;
   background: rgba(10, 14, 23, 0.96);
@@ -70,6 +71,15 @@
   position: relative;
   width: 100%;
   height: 100%;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+}
+
+.hidden {
+  visibility: hidden;
 }
 
 .viewSwitch {
