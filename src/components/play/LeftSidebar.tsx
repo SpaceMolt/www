@@ -231,7 +231,6 @@ function scanRows(s: ScanContact | ScanResponse): [string, string][] {
     ['Hull', s.hull],
     ['Shield', s.shield],
     ['Cloaked', s.cloaked === undefined ? undefined : s.cloaked ? 'Yes' : 'No'],
-    ['Cargo', 'cargo_types' in s ? s.cargo_types?.map(formatLabel).join(', ') : undefined],
   ]
   return rows.filter((r): r is [string, string | number] => r[1] !== undefined && r[1] !== '').map(([k, v]) => [k, String(v)])
 }

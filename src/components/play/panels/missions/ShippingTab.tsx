@@ -160,7 +160,7 @@ function Board({ actor, dockedAt }: { actor: Actor; dockedAt: string | null }) {
       )}
 
       {q.data?.shipments.map((l) => (
-        <ListingCard key={l.contract.id} listing={l} destName={stationNames.get(l.contract.destination_base_id)} disabled={pending || !l.eligible} onAccept={() => accept(l.contract.id)} />
+        <ListingCard key={l.contract.id} listing={l} destName={stationNames.get(l.contract.destination_base_id)} disabled={pending} onAccept={() => accept(l.contract.id)} />
       ))}
 
       {pages > 1 && (
@@ -198,7 +198,6 @@ function ListingCard({ listing: l, destName, disabled, onAccept }: { listing: Sh
       <div className={css.meta}>
         Full bonus within {ticks(l.target_ticks)}; deadline {ticks(l.deadline_ticks)}; recovery {ticks(l.recovery_ticks)} after that.
       </div>
-      {!l.eligible && l.reason && <div className={`${css.hint} ${css.warn}`}>{l.reason}</div>}
       {confirming ? (
         <ConfirmAction
           variant="accent"
@@ -649,10 +648,7 @@ function CarrierRecord({ actor, canPay }: { actor: Actor; canPay: boolean }) {
         ? 'at maximum tier'
         : `${g.next_tier}: ${g.remaining_successful_deliveries} more runs, ${g.remaining_delivered_value.toLocaleString()} cr more value`,
     ],
-    [
-      'Contracts',
-      cap.active_contracts_unlimited ? `${cap.active_contracts} active` : `${cap.active_contracts} / ${cap.active_contract_limit ?? '?'} active`,
-    ],
+    ['Contracts', `${cap.active_contracts} active`],
     [
       'Liability',
       cap.liability_unlimited
