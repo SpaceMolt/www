@@ -93,10 +93,17 @@ interface LeftSidebarProps {
   onTabChange: (tab: SidebarTab) => void
   autoTravelActive: boolean
   onHighlightedSystemsChange?: (systems: Set<string> | null) => void
+  /** Travel and jump as the sidebar does them, for the system map. */
+  navRef?: RefObject<NavActions | null>
+  /** The player set off: in-system travel suits the system map, a jump the galaxy map. */
+  onMapViewChange?: (view: MapView) => void
   /** Phone only: show the sidebar as a drawer. */
   mobileOpen?: boolean
   onMobileClose?: () => void
 }
+
+export type MapView = 'galaxy' | 'system'
+export interface NavActions { travel: (poiId: string) => void; jump: (systemId: string, systemName: string) => void }
 
 type SupplyKind = 'refuel' | 'repair'
 interface SupplyArgs { id?: string; quantity?: number; target?: string }
@@ -120,7 +127,7 @@ const DEPOSIT_KIND = {
 } as const
 type DepositKind = keyof typeof DEPOSIT_KIND
 
-function depositKind(itemId: string): DepositKind {
+export function depositKind(itemId: string): DepositKind {
   const by = getItem(itemId)?.extracted_by
   return by && by in DEPOSIT_KIND ? by as DepositKind : 'mining'
 }
@@ -156,13 +163,13 @@ export function canSurvey(fitted: RawCatalogItem[], shipClassId: string | undefi
     hullHasFlag(shipClassId, 'anomaly_detection')
 }
 
-function DepositIcon({ itemId }: { itemId: string }) {
+export function DepositIcon({ itemId }: { itemId: string }) {
   const { Icon, label, className } = DEPOSIT_KIND[depositKind(itemId)]
   return <Icon size={10} className={`${styles.depositIcon} ${className}`}><title>{label}</title></Icon>
 }
 
 /** A deposit's rating, colored by level, and the units left ('Depleted' when empty). Yield and refill are in the hover text. */
-function DepositRating({ itemId, richness, remaining }: { itemId: string; richness: number; remaining?: number }) {
+export function DepositRating({ itemId, richness, remaining }: { itemId: string; richness: number; remaining?: number }) {
   if (remaining === 0) return <span className={styles.depositDepleted}>Depleted</span>
   const { level, label } = rateRichness(itemId, richness)
   return (
@@ -266,7 +273,7 @@ function ScanResultModal({ scan, onClose }: { scan: ScanResponse; onClose: () =>
   )
 }
 
-export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, plannedRoute, onPlannedRouteChange, activeTab, onTabChange, autoTravelActive, onHighlightedSystemsChange, mobileOpen = false, onMobileClose }: LeftSidebarProps) {
+export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, plannedRoute, onPlannedRouteChange, activeTab, onTabChange, autoTravelActive, onHighlightedSystemsChange, navRef, onMapViewChange, mobileOpen = false, onMobileClose }: LeftSidebarProps) {
   const store = useAccountStore()
   const { uiStore } = usePlay()
   const mutate = useCommandMutation()
@@ -441,6 +448,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
       }
       const name = targetPoi?.base_name || targetPoi?.name || 'destination'
       logEvent(`Traveling to ${name}...`)
+      onMapViewChange?.('system')
       onMobileClose?.() // the drawer would hide the progress banner and toasts
       try {
         const result = await mutate((c) => c.spacemolt.travel({ id: poiId }), { label: 'travel', estimatedMs, target: name })
@@ -449,13 +457,14 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
         reportError(err)
       }
     },
-    [mutate, system, poi, ship, logEvent, reportError, onMobileClose],
+    [mutate, system, poi, ship, logEvent, reportError, onMobileClose, onMapViewChange],
   )
 
   const handleJump = useCallback(
     async (systemId: string, systemName: string) => {
       const estimatedMs = jumpEstimateMs(travelSpeed(ship))
       logEvent(`Jumping to ${systemName}...`)
+      onMapViewChange?.('galaxy')
       onMobileClose?.()
       try {
         const result = await mutate((c) => c.spacemolt.jump({ id: systemId }), { label: 'jump', estimatedMs, target: systemName })
@@ -464,8 +473,9 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
         reportError(err)
       }
     },
-    [mutate, ship, logEvent, reportError, onMobileClose],
+    [mutate, ship, logEvent, reportError, onMobileClose, onMapViewChange],
   )
+  if (navRef) navRef.current = { travel: handleTravel, jump: handleJump }
 
   const handleDock = useCallback(async () => {
     try {
