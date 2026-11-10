@@ -67,7 +67,7 @@ export function ActionBanner({ autoTravelActive }: { autoTravelActive?: boolean 
   const charging = { travel: 'Powering engines', jump: 'Charging jump drive' }[pending.command]
   if (charging) {
     return inTransit ? null : (
-      <div className={styles.banner}>
+      <div className={styles.banner} data-action-banner>
         <div className={styles.content}>
           <Loader2 size={20} className={styles.spinner} />
           <span className={styles.label}>{charging}</span>
@@ -94,7 +94,7 @@ export function ActionBanner({ autoTravelActive }: { autoTravelActive?: boolean 
   }
 
   return (
-    <div className={styles.banner}>
+    <div className={styles.banner} data-action-banner>
       <div className={styles.content}>
         <Loader2 size={20} className={styles.spinner} />
         <span className={styles.label}>{getLabel(pending.command)}</span>

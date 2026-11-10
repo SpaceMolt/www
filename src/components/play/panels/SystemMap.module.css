@@ -93,6 +93,12 @@
   border-radius: 6px;
   overflow: hidden;
   background: rgba(10, 14, 23, 0.85);
+  transition: top 0.15s ease;
+}
+
+/* The action banner covers the top of the panel: sit under it while it shows. */
+:global([data-action-banner]) ~ * .viewSwitch {
+  top: 3.6rem;
 }
 
 .viewSwitch button {
