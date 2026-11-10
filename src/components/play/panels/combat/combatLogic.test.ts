@@ -1,7 +1,7 @@
 import { test, expect } from 'bun:test'
-import type { BattleLogEntry, NotificationBattleDamage } from '@spacemolt/lib'
+import type { BattleLogEntry } from '@spacemolt/lib'
 import type { BattleView } from '@/lib/spacemolt'
-import { compatibleAmmo, describeTick, enemiesOf, formatDamage, nextTickStart, objectiveText, reloadPlan, rulesText } from './combatLogic'
+import { compatibleAmmo, describeTick, enemiesOf, nextEnemy, nextTickStart, objectiveText, reachZone, reloadPlan, rulesText, weaponState, zoneDistance } from './combatLogic'
 
 test('enemiesOf drops your own side', () => {
   const battle = {
@@ -41,12 +41,6 @@ test('reloadPlan skips unpicked weapons and full magazines with the same ammo', 
     { weapon_instance_id: 'w1', ammo_item_id: 'a' },
     { weapon_instance_id: 'w3', ammo_item_id: 'b' },
   ])
-})
-
-test('formatDamage shows hits and misses', () => {
-  const base = { tick: 7, attacker_id: 'a', attacker_name: 'Ana', target_id: 'b', target_name: 'Bo', total_damage: 30, shield_hit: 20, hull_hit: 10 }
-  expect(formatDamage({ ...base, hit_success: true } as NotificationBattleDamage)).toBe('T7 Ana > Bo: 30 dmg (20 shd / 10 hull)')
-  expect(formatDamage({ ...base, hit_success: false } as NotificationBattleDamage)).toBe('T7 Ana > Bo: miss')
 })
 
 test('nextTickStart continues after the last tick', () => {
@@ -91,4 +85,33 @@ test('rulesText lists only set rules', () => {
     'no cloak',
     'banned modules: a, b',
   ])
+})
+
+test('zoneDistance matches the gameserver: 0 when both engaged, 6 when both outer', () => {
+  expect(zoneDistance('engaged', 'engaged')).toBe(0)
+  expect(zoneDistance('outer', 'outer')).toBe(6)
+  expect(zoneDistance('mid', 'inner')).toBe(3)
+})
+
+test('reachZone is the outermost zone a weapon hits from your zone', () => {
+  expect(reachZone('outer', 6)).toBe(0)
+  expect(reachZone('outer', 3)).toBe(3)
+  expect(reachZone('mid', 3)).toBe(2)
+  expect(reachZone('outer', 2)).toBeUndefined()
+  expect(reachZone('engaged', 9)).toBe(0)
+})
+
+test('weaponState: empty before range, then ready or how far to advance', () => {
+  expect(weaponState({ ammo: 0, magazine: 8, reach: 6, distance: 2 })).toEqual({ kind: 'empty' })
+  expect(weaponState({ reach: 3 })).toEqual({ kind: 'idle' })
+  expect(weaponState({ reach: 3, distance: 3 })).toEqual({ kind: 'ready' })
+  expect(weaponState({ ammo: 5, magazine: 8, reach: 3, distance: 5 })).toEqual({ kind: 'far', advances: 2 })
+})
+
+test('nextEnemy cycles and starts at the first enemy', () => {
+  const enemies = [{ player_id: 'a' }, { player_id: 'b' }]
+  expect(nextEnemy(enemies, undefined)?.player_id).toBe('a')
+  expect(nextEnemy(enemies, 'a')?.player_id).toBe('b')
+  expect(nextEnemy(enemies, 'b')?.player_id).toBe('a')
+  expect(nextEnemy([], 'a')).toBeUndefined()
 })

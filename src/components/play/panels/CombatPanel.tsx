@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import type { NotificationShipCaptured } from '@spacemolt/lib'
-import { useTranslation } from '@/i18n'
 import {
   Swords,
   Search,
@@ -10,17 +9,9 @@ import {
   EyeOff,
   Skull,
   Shield,
-  ShieldHalf,
   RefreshCw,
-  Target,
-  ChevronUp,
-  ChevronDown,
   RotateCw,
-  Flame,
-  Wind,
-  Rabbit,
   PawPrint,
-  Crosshair,
   Flag,
   Trophy,
   History,
@@ -42,12 +33,12 @@ import { useFittedModules } from '../hooks/useGates'
 import { CombatBattleView } from './CombatBattleView'
 import { ArenaTab } from './combat/ArenaTab'
 import { HistoryTab } from './combat/HistoryTab'
-import { compatibleAmmo, enemiesOf, formatDamage, reloadPlan } from './combat/combatLogic'
+import { BattleHud, type Stance } from './combat/BattleHud'
+import { compatibleAmmo, reloadPlan } from './combat/combatLogic'
 import { usePlay, usePlayUi } from '../PlayProvider'
 import { PanelWithTabs, Modal, ConfirmAction, shared, useAction } from '../shared'
 import styles from './CombatPanel.module.css'
 
-type Stance = 'fire' | 'evade' | 'brace' | 'flee'
 type TabId = 'battle' | 'arena' | 'history'
 
 const TABS = [
@@ -55,18 +46,8 @@ const TABS = [
   { id: 'arena', label: 'Arena', icon: <Trophy size={12} /> },
   { id: 'history', label: 'History', icon: <History size={12} /> },
 ]
-const FEED_LINES = 20
-let feedSeq = 0
-
-const STANCES: { id: Stance; icon: typeof Swords }[] = [
-  { id: 'fire', icon: Flame },
-  { id: 'evade', icon: Wind },
-  { id: 'brace', icon: ShieldHalf },
-  { id: 'flee', icon: Rabbit },
-]
 
 export function CombatPanel() {
-  const { t } = useTranslation()
   const store = useAccountStore()
   const { phase } = useConnectionPhase()
   const { uiStore } = usePlay()
@@ -109,24 +90,9 @@ export function CombatPanel() {
   const [confirmSelfDestruct, setConfirmSelfDestruct] = useState(false)
   const [selectedAmmo, setSelectedAmmo] = useState<Record<string, string>>({})
   const [engageSide, setEngageSide] = useState<number | null>(null)
-  const [feed, setFeed] = useState<{ id: number; line: string }[]>([])
   const [captured, setCaptured] = useState<NotificationShipCaptured | null>(null)
 
-  useEffect(() => {
-    setFeed([])
-  }, [activeBattleId])
-
-  useEffect(() => {
-    const add = (line: string) => setFeed((lines) => [...lines, { id: feedSeq++, line }].slice(-FEED_LINES))
-    const offDamage = store.account.on('battle_damage', (d) => add(formatDamage(d)))
-    const offJoined = store.account.on('battle_joined', (j) => add(`${j.username} joined side ${j.side_id}`))
-    const offCaptured = store.account.on('ship_captured', setCaptured)
-    return () => {
-      offDamage()
-      offJoined()
-      offCaptured()
-    }
-  }, [store])
+  useEffect(() => store.account.on('ship_captured', setCaptured), [store])
 
   useEffect(() => {
     if (isDocked) setConfirmSelfDestruct(false)
@@ -260,13 +226,11 @@ export function CombatPanel() {
   // gameserver State.HasCloakDevice; the server refuses to engage a cloak in battle.
   const hasCloak = fittedModules.some((m) => (m.cloak_strength ?? 0) > 0) ||
     Boolean(shipClassId && getShip(shipClassId)?.inherent_capabilities?.some((c) => c.type === 'integrated_cloak' && c.value > 0))
-  const showCloak = isCloaked || (hasCloak && !inCombat)
+  const showCloak = isCloaked || hasCloak
   const nearbyPlayers = location?.nearby_players ?? []
   const nearbyPirates = location?.nearby_pirates ?? []
   const nearbyCreatures = nearbyQuery.data?.creatures ?? []
   const nearbyCount = nearbyPlayers.length + nearbyPirates.length + nearbyCreatures.length
-  const yourStance = battle?.your_stance
-  const currentTarget = battle?.participants.find((p) => p.player_id === battle.your_target_id)
 
   const observed = systemBattle.error ? undefined : systemBattle.data
   const observedSides = !inCombat && observed && !observed.is_participant ? (observed.sides ?? []) : []
@@ -315,7 +279,27 @@ export function CombatPanel() {
       {tab === 'arena' && <ArenaTab inCombat={inCombat} />}
       {tab === 'history' && <HistoryTab lastBattleId={lastBattleId} username={player?.username} />}
       {tab === 'battle' && isDocked && dockedBattleTab}
-      {tab === 'battle' && !isDocked && <>
+      {tab === 'battle' && !isDocked && inCombat && (battle && activeBattleId ? (
+        <BattleHud
+          battle={battle}
+          battleId={activeBattleId}
+          canControl={canControl}
+          status={phase !== 'ready' ? 'Connection lost · controls disabled' : battleSyncPending ? 'Syncing battle state' : undefined}
+          weapons={(modules ?? []).filter((m) => m.type === 'weapon')}
+          ammoFor={ammoFor}
+          ammoChoice={ammoChoice}
+          onPickAmmo={(weaponId, itemId) => setSelectedAmmo((prev) => ({ ...prev, [weaponId]: itemId }))}
+          reloadAllCount={reloadAll.length}
+          onStance={handleStance}
+          onAdvance={handleAdvance}
+          onRetreat={handleRetreat}
+          onTarget={handleTarget}
+          onReload={handleReload}
+          onReloadAll={handleReloadAll}
+          onSelfDestruct={() => setConfirmSelfDestruct(true)}
+        />
+      ) : <div className={shared.emptyState}>Fetching battle data...</div>)}
+      {tab === 'battle' && !isDocked && !inCombat && <>
       {/* Controls */}
       <div className={styles.controlsRow}>
         {showCloak && (
@@ -342,62 +326,6 @@ export function CombatPanel() {
           Self-Destruct
         </button>
       </div>
-
-      {/* Authenticated commands are independent of the visualizer's historical playhead. */}
-      {inCombat && (
-        <fieldset className={styles.commandDeck} disabled={!canControl}>
-          <legend>{t('battles.playCombat.liveControls')}</legend>
-          <div className={styles.commandPosture}>
-            <Target size={12} aria-hidden />
-            <span>{battleSyncPending ? t('battles.playCombat.awaitingState') : <>{battle?.your_zone || t('battles.playCombat.awaitingState')}{yourStance ? ` · ${yourStance}` : ''}</>}</span>
-            {phase !== 'ready' && <span>{t('battles.playCombat.disconnected')}</span>}
-          </div>
-          <div className={styles.stanceRow}>
-            {STANCES.map(({ id, icon: Icon }) => (
-              <button key={id} className={`${styles.stanceBtn} ${yourStance === id ? styles.stanceActive : ''}`} onClick={() => handleStance(id)} aria-pressed={yourStance === id} title={t(`battles.playCombat.stanceHint.${id}`)} type="button">
-                <Icon size={12} aria-hidden /> {t(`battles.playCombat.stance.${id}`)}
-              </button>
-            ))}
-          </div>
-          <div className={styles.tacticalRow}>
-            <button className={styles.tacticalBtn} onClick={handleAdvance} type="button"><ChevronUp size={14} aria-hidden /> {t('battles.playCombat.advance')}</button>
-            <button className={styles.tacticalBtn} onClick={handleRetreat} type="button"><ChevronDown size={14} aria-hidden /> {t('battles.playCombat.retreat')}</button>
-          </div>
-          <small>{t('battles.playCombat.controlsHint')}</small>
-        </fieldset>
-      )}
-
-      {inCombat && (
-        <div>
-          <div className={shared.sectionTitle}>
-            <Crosshair size={12} /> Target: {currentTarget ? currentTarget.username : 'auto'}
-          </div>
-          <div className={styles.controlsRow}>
-            {battle && enemiesOf(battle).map((p) => (
-              <button
-                key={p.player_id}
-                className={`${styles.stanceBtn} ${p.player_id === battle.your_target_id ? styles.stanceActive : ''}`}
-                onClick={() => handleTarget(p.player_id)}
-                disabled={!canControl}
-                aria-pressed={p.player_id === battle.your_target_id}
-                title={`Focus fire on ${p.username}`}
-                type="button"
-              >
-                <Crosshair size={11} aria-hidden /> {p.username} {p.hull_pct ?? 0}%
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {inCombat && feed.length > 0 && (
-        <div>
-          <div className={shared.sectionTitle}>Damage feed</div>
-          <ol className={styles.feed}>
-            {feed.map(({ id, line }) => <li key={id}>{line}</li>)}
-          </ol>
-        </div>
-      )}
 
       {observedSides.length > 0 && (
         <div className={styles.reloadCard}>
@@ -436,94 +364,10 @@ export function CombatPanel() {
         </div>
       )}
 
-      {viewedBattleId && <CombatBattleView key={viewedBattleId} battleId={viewedBattleId} playerId={player?.id} participating={inCombat} />}
-
-      {/* Keep the authoritative roster available even if public replay data is delayed. */}
-      {inCombat && (
-        <details className={styles.battleSection}>
-          <summary className={styles.rosterSummary}>{t('battles.playCombat.currentRoster')}</summary>
-          {battle ? (
-            <div className={styles.battleInfo}>
-              {/* Your posture */}
-              {(battle.your_zone || yourStance) && (
-                <div className={styles.sideCount}>
-                  {battle.your_zone ? `Zone: ${battle.your_zone}` : ''}
-                  {battle.your_zone && yourStance ? ' · ' : ''}
-                  {yourStance ? `Stance: ${yourStance}` : ''}
-                  {battle.auto_pilot ? ' · auto-pilot' : ''}
-                </div>
-              )}
-
-              {/* Sides */}
-              <div className={styles.sidesRow}>
-                {battle.sides.map((side) => (
-                  <div key={side.side_id} className={styles.sideCard}>
-                    <span className={styles.sideName}>Side {side.side_id}</span>
-                    <span className={styles.sideCount}>
-                      {side.player_count}{' '}
-                      {side.player_count === 1 ? 'pilot' : 'pilots'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Participants */}
-              <div className={styles.participantList}>
-                {battle.participants.map((p) => (
-                  <div
-                    key={p.player_id}
-                    className={styles.participantCard}
-                  >
-                    <div className={styles.participantHeader}>
-                      <span className={styles.participantName}>
-                        {p.username}
-                      </span>
-                      <span className={styles.participantShip}>
-                        {p.ship_class}
-                        {p.player_id === battle.your_target_id && ' · your target'}
-                      </span>
-                    </div>
-                    <div className={styles.barGroup}>
-                      <div className={styles.barRow}>
-                        <span className={styles.barLabel}>SHD</span>
-                        <div className={styles.barTrack}>
-                          <div
-                            className={styles.barFillShield}
-                            style={{ width: `${p.shield_pct ?? 0}%` }}
-                          />
-                        </div>
-                        <span className={styles.barValue}>
-                          {p.shield_pct ?? 0}%
-                        </span>
-                      </div>
-                      <div className={styles.barRow}>
-                        <span className={styles.barLabel}>HUL</span>
-                        <div className={styles.barTrack}>
-                          <div
-                            className={styles.barFillHull}
-                            style={{ width: `${p.hull_pct ?? 0}%` }}
-                          />
-                        </div>
-                        <span className={styles.barValue}>
-                          {p.hull_pct ?? 0}%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className={shared.emptyState}>
-              Fetching battle data...
-            </div>
-          )}
-
-        </details>
-      )}
+      {viewedBattleId && <CombatBattleView key={viewedBattleId} battleId={viewedBattleId} playerId={player?.id} participating={false} />}
 
       {/* Nearby ships are attack targets; in a battle you can only fight its participants. */}
-      {!inCombat && <div>
+      <div>
         <div className={shared.sectionTitle}>
           Nearby ({nearbyCount})
         </div>
@@ -650,7 +494,7 @@ export function CombatPanel() {
             No other vessels detected at this location
           </div>
         )}
-      </div>}
+      </div>
 
       {/* Reload Section */}
       {weapons.length > 0 && (

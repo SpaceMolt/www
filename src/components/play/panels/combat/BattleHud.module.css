@@ -1,0 +1,326 @@
+/* === Combat HUD: the Battle tab while you are in a fight === */
+
+.hud {
+  container-type: inline-size;
+  display: grid;
+  gap: 0.6rem;
+  min-width: 0;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.75rem;
+  color: var(--star-white);
+}
+
+.box {
+  min-width: 0;
+  margin: 0;
+  background: #0d131f;
+  border: 1px solid var(--nebula-blue);
+  border-radius: 4px;
+}
+
+.label {
+  color: var(--chrome-silver);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.muted { color: var(--chrome-silver); }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Battle bar */
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.9rem;
+  padding: 0.45rem 0.7rem;
+}
+
+.live {
+  padding: 0.1rem 0.45rem;
+  border: 1px solid rgba(230, 57, 70, 0.6);
+  border-radius: 3px;
+  color: var(--claw-red);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.warn { color: var(--warning-yellow); }
+.barHint { margin-left: auto; color: var(--chrome-silver); font-size: 0.68rem; }
+
+/* Face-off: you | range | target */
+.faceoff {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
+.ship { display: grid; gap: 0.4rem; align-content: start; padding: 0.6rem 0.7rem; }
+.you { border-left: 3px solid var(--plasma-cyan); }
+.target { border-right: 3px solid var(--claw-red); }
+.noTarget { align-content: center; }
+
+.shipName {
+  overflow: hidden;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meter {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.track {
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  background: var(--void-purple);
+  border-radius: 2px;
+}
+
+.track i { display: block; height: 100%; transition: width 0.3s ease; }
+.shd { background: var(--plasma-cyan); }
+.hul { background: var(--bio-green); }
+.hulLow { background: var(--claw-red); }
+.ammoFill { background: var(--warning-yellow); }
+
+.pills { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+.pill {
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--nebula-blue);
+  border-radius: 3px;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stancePill { color: var(--plasma-cyan); border-color: rgba(0, 212, 255, 0.4); }
+
+.range {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.1rem;
+  min-width: 5.5rem;
+  padding: 0.5rem 0.8rem;
+}
+
+.rangeNum {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Main columns */
+.main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.col { display: grid; gap: 0.6rem; min-width: 0; }
+.sect { display: grid; gap: 0.5rem; padding: 0.6rem 0.7rem; }
+fieldset.sect { padding-top: 0.4rem; }
+
+/* Hotbar */
+.hotbar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; }
+
+.hk {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 0.2rem;
+  min-height: 4.2rem;
+  padding: 0.45rem 0.5rem;
+  color: var(--star-white);
+  text-align: left;
+  background: var(--space-black);
+  border: 1px solid var(--nebula-blue);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.hk:hover:not(:disabled) { border-color: rgba(0, 212, 255, 0.55); }
+.hk:disabled { opacity: 0.45; cursor: not-allowed; }
+.hk:focus-visible { outline: 2px solid var(--plasma-cyan); outline-offset: 1px; }
+
+.hkOn {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: var(--plasma-cyan);
+  box-shadow: inset 0 0 0 1px var(--plasma-cyan);
+}
+
+.hkTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding-right: 1.4rem;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hkOn .hkTitle { color: var(--plasma-cyan); }
+.hkFlee .hkTitle { color: var(--warning-yellow); }
+.hkDetail { color: var(--chrome-silver); font-size: 0.65rem; line-height: 1.35; }
+
+.key {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.4rem;
+  padding: 0 0.3rem;
+  color: var(--chrome-silver);
+  border: 1px solid var(--nebula-blue);
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 0.6rem;
+}
+
+/* Weapons */
+.wpn {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.5rem 0.6rem;
+  background: var(--space-black);
+  border: 1px solid var(--nebula-blue);
+  border-radius: 4px;
+}
+
+.wpnEmpty { border-color: rgba(230, 57, 70, 0.6); }
+.wpnHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.4rem; }
+.wpnName { font-family: var(--font-space-grotesk), sans-serif; font-size: 0.85rem; font-weight: 600; }
+
+.chip {
+  padding: 0.05rem 0.4rem;
+  border: 1px solid;
+  border-radius: 3px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chip_ready { color: var(--bio-green); border-color: rgba(45, 212, 191, 0.5); }
+.chip_far { color: var(--warning-yellow); border-color: rgba(255, 183, 3, 0.5); }
+.chip_empty { color: var(--claw-red); border-color: rgba(230, 57, 70, 0.6); }
+.chip_idle { color: var(--chrome-silver); border-color: var(--nebula-blue); }
+
+.reload { display: flex; gap: 0.4rem; }
+.reload select { flex: 1; min-width: 0; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.btn:hover:not(:disabled) { background: rgba(0, 212, 255, 0.18); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Log */
+.totals { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+.tot { display: grid; gap: 0.1rem; padding: 0.4rem 0.55rem; background: var(--space-black); border: 1px solid var(--nebula-blue); border-radius: 4px; }
+.totNum { font-family: var(--font-space-grotesk), sans-serif; font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.log {
+  display: grid;
+  gap: 2px;
+  max-height: 16rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.log li {
+  display: grid;
+  grid-template-columns: 4.2rem minmax(0, 1fr) auto;
+  gap: 0.4rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+}
+
+.dmg { font-variant-numeric: tabular-nums; font-weight: 700; }
+.out { color: var(--plasma-cyan); }
+.in { color: var(--claw-red); }
+li.out { color: var(--star-white); background: rgba(0, 212, 255, 0.06); }
+li.out .dmg { color: var(--plasma-cyan); }
+li.in { color: var(--star-white); background: rgba(230, 57, 70, 0.08); }
+li.in .dmg { color: var(--claw-red); }
+li.miss, li.other { color: var(--chrome-silver); }
+li.sys { color: var(--warning-yellow); }
+
+/* Roster */
+.roster { display: grid; gap: 0.3rem; }
+
+.rrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5rem 3.6rem;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  color: var(--star-white);
+  text-align: left;
+  background: var(--space-black);
+  border: 1px solid var(--nebula-blue);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.7rem;
+}
+
+.rrow.ally { border-left: 3px solid rgba(0, 212, 255, 0.5); }
+.rrow.foe { border-left: 3px solid rgba(230, 57, 70, 0.6); cursor: pointer; }
+.rrow.foe:hover:not(:disabled) { border-color: var(--claw-red); }
+.rrow.targeted { background: rgba(230, 57, 70, 0.12); border-color: var(--claw-red); }
+.rrow:disabled { cursor: not-allowed; }
+.rosterName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.duo { display: grid; gap: 3px; }
+.duo .track { height: 4px; }
+
+/* Footer */
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.7rem;
+}
+
+@container (max-width: 640px) {
+  .faceoff, .main { grid-template-columns: minmax(0, 1fr); }
+  .target { border-right: 1px solid var(--nebula-blue); border-left: 3px solid var(--claw-red); }
+  .hotbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .barHint { margin-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track i { transition: none; }
+}
