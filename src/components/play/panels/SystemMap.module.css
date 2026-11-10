@@ -1,0 +1,108 @@
+/* In-system map. The container, zoom buttons and tooltip title come from GalaxyPanel.module.css. */
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 200;
+  width: 240px;
+  pointer-events: none;
+  background: rgba(10, 14, 23, 0.96);
+  border: 1px solid var(--plasma-cyan);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.8rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.tooltipMeta {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hull-grey);
+}
+
+.tooltipRows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 0.75rem;
+  margin: 0.4rem 0 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+}
+
+.tooltipRows dt { color: var(--hull-grey); }
+.tooltipRows dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+.tooltipAction {
+  margin-top: 0.45rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--dim-grey);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--plasma-cyan);
+}
+
+/* A toggle that is switched off. */
+.off {
+  color: var(--hull-grey);
+}
+
+/* Galaxy / System switch, top center over either map (rendered by HUD). */
+.mapStack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.viewSwitch {
+  position: absolute;
+  top: 0.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 150;
+  display: flex;
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(10, 14, 23, 0.85);
+}
+
+.viewSwitch button {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  background: none;
+  border: none;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.viewSwitch button:hover { color: var(--star-white); }
+
+.viewSwitch button[aria-pressed='true'] {
+  background: rgba(0, 212, 255, 0.15);
+  color: var(--plasma-cyan);
+}
