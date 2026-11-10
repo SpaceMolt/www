@@ -10,6 +10,25 @@ import type { GetPoiResponse, GetSystemResponse } from '@spacemolt/lib'
 import { useLocationState } from './hooks'
 import { useCommandQuery, type CommandQueryResult } from './useCommandQuery'
 
+/**
+ * Descriptions of the POIs this browser has visited. get_system charts carry none, and get_poi
+ * only answers for the POI you are at, so the map shows what you have seen before.
+ */
+const DESCRIPTIONS_KEY = 'spacemolt.poiDescriptions'
+let descriptions: Record<string, string> | undefined
+const loadDescriptions = () => {
+  if (!descriptions) {
+    try { descriptions = JSON.parse(localStorage.getItem(DESCRIPTIONS_KEY) ?? '{}') } catch { descriptions = {} }
+  }
+  return descriptions!
+}
+function rememberPoiDescription(id: string, description?: string) {
+  if (!description || loadDescriptions()[id] === description) return
+  loadDescriptions()[id] = description
+  try { localStorage.setItem(DESCRIPTIONS_KEY, JSON.stringify(descriptions)) } catch { /* storage full or blocked: keep it for this session */ }
+}
+export const knownPoiDescription = (id: string): string | undefined => loadDescriptions()[id]
+
 export function useSystem(): CommandQueryResult<GetSystemResponse | undefined> {
   const location = useLocationState()
   return useCommandQuery(
@@ -29,7 +48,9 @@ export function usePoi(): CommandQueryResult<GetPoiResponse | undefined> {
   const query = useCommandQuery(
     async (account) => {
       const response = (await account.commands.spacemolt.get_poi()).structuredContent
-      return response?.kind === 'normal' ? response : undefined
+      if (response?.kind !== 'normal') return undefined
+      rememberPoiDescription(response.poi.id, response.poi.description)
+      return response
     },
     [location?.poi_id],
     { enabled: Boolean(location?.poi_id), refreshOnSections: ['location'] },

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Maximize, Radar } from 'lucide-react'
 import type { FactionQueryIntelResponse } from '@spacemolt/lib'
 import {
+  knownPoiDescription,
   useAccountStore,
   useLocationState,
   useMap,
@@ -22,12 +23,12 @@ import sidebar from '../LeftSidebar.module.css'
 import shared from '../shared.module.css'
 import galaxy from './GalaxyPanel.module.css'
 import styles from './SystemMap.module.css'
+import { circle, classLabel, COLOR, drawnBySpecial, drawPoi, drawSystemSpecial, KIND_COLOR, poiColor, seeded, TAU, type Poi } from './systemMapBodies'
 import { edgePoint, formatSecs, stepToward, type Point } from './systemMapMath'
 
 type IntelPoi = NonNullable<FactionQueryIntelResponse['entries'][number]['pois']>[number]
 interface Deposit { id: string; name: string; richness: number; remaining?: number; capacity?: number }
 interface Exit { id: string; systemId: string; name: string; distance?: number; angle: number }
-interface Poi { id: string; name: string; type: string; class?: string; base_name?: string; ship_count?: number; position?: { x?: number; y?: number } }
 
 interface SystemMapProps {
   /** A loop or auto-travel is flying the ship. */
@@ -36,35 +37,9 @@ interface SystemMapProps {
   onJump: (systemId: string, systemName: string) => void
 }
 
-const TAU = Math.PI * 2
-const COLOR = { bg: '#0d1321', cyan: '#00d4ff', white: '#e8f4f8', silver: '#a8c5d6', grey: '#6b8fa3', green: '#2dd4bf', purple: '#9b59b6' }
-const KIND_COLOR = { mining: '#ff9f6b', ice: '#bfe6ff', gas: '#2dd4bf', rad: '#ffd93d' }
 const MONO = '"JetBrains Mono", monospace'
-/** Planet color and radius in px, by class. */
-const PLANET: Record<string, [string, number]> = {
-  scorched: ['#b9764a', 4.5], lava_world: ['#e0562f', 5], arid: ['#c9a26b', 5], hothouse: ['#e3c16f', 5.5],
-  terran: ['#4d9de0', 6], super_terran: ['#5fb37a', 7], oceanic: ['#3d7fe0', 6], tundra: ['#9fb8c4', 5],
-  glacial: ['#cfe6f2', 5], ice_world: ['#d8eef8', 5], jovian: ['#d8a26a', 11], ice_giant: ['#8fd8e8', 8.5],
-}
-/** Star color by spectral letter. */
-const STAR: Record<string, string> = { M: '#ff9b6b', K: '#ffc47a', G: '#ffe9a8', F: '#fff6dc' }
-
 const point = (p: Poi | undefined): Point | undefined => (p ? { x: p.position?.x ?? 0, y: p.position?.y ?? 0 } : undefined)
 const isRing = (p: Poi) => p.type === 'asteroid_belt' || p.type === 'ice_field'
-const isCloud = (p: Poi) => p.type === 'gas_cloud' || p.type === 'nebula'
-const poiColor = (p: Poi) => (p.type === 'ice_field' ? KIND_COLOR.ice : isCloud(p) ? KIND_COLOR.gas : p.type === 'relic' ? COLOR.purple : KIND_COLOR.mining)
-
-/** Seeded random, so a belt looks the same each time you enter the system. */
-function seeded(text: string) {
-  let seed = [...text].reduce((h, c) => (Math.imul(h, 31) + c.charCodeAt(0)) | 0, 7)
-  return () => {
-    seed = (seed + 0x6d2b79f5) | 0
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
 interface Rock { atSpot: boolean; angle: number; offset: number; size: number; alpha: number }
 /** A belt is a full ring of rock around the star, thickest at the charted mining spot. */
 function rocks(p: Poi): Rock[] {
@@ -77,48 +52,7 @@ function rocks(p: Poi): Rock[] {
   })
 }
 
-const circle = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number) => { ctx.beginPath(); ctx.arc(x, y, r, 0, TAU) }
 const unit = (dx: number, dy: number): [number, number] => { const d = Math.hypot(dx, dy); return d < 1e-6 ? [0, 1] : [dx / d, dy / d] }
-
-/** Draw a POI; returns its radius. `lit` is the unit vector away from the star. */
-function drawPoi(ctx: CanvasRenderingContext2D, p: Poi, x: number, y: number, lit: [number, number]): number {
-  if (p.type === 'sun') {
-    const color = STAR[p.class?.[0] ?? 'G'] ?? STAR.G
-    const glow = ctx.createRadialGradient(x, y, 2, x, y, 40)
-    glow.addColorStop(0, `${color}e6`); glow.addColorStop(0.25, `${color}55`); glow.addColorStop(1, `${color}00`)
-    ctx.fillStyle = glow; circle(ctx, x, y, 40); ctx.fill()
-    ctx.fillStyle = color; circle(ctx, x, y, p.class?.endsWith('III') ? 11 : 8); ctx.fill()
-    return 10
-  }
-  if (p.type === 'planet') {
-    const [color, r] = PLANET[p.class ?? ''] ?? ['#9fb3c0', 5]
-    ctx.fillStyle = color; circle(ctx, x, y, r); ctx.fill()
-    const shade = ctx.createLinearGradient(x - lit[0] * r, y - lit[1] * r, x + lit[0] * r, y + lit[1] * r)
-    shade.addColorStop(0.3, 'rgba(4,7,13,0)'); shade.addColorStop(1, 'rgba(4,7,13,0.85)')
-    ctx.fillStyle = shade; circle(ctx, x, y, r + 0.5); ctx.fill()
-    return r
-  }
-  if (p.type === 'station') {
-    ctx.save(); ctx.translate(x, y); ctx.rotate(Math.PI / 4)
-    ctx.fillStyle = COLOR.bg; ctx.strokeStyle = COLOR.cyan; ctx.lineWidth = 1.6
-    ctx.fillRect(-4.2, -4.2, 8.4, 8.4); ctx.strokeRect(-4.2, -4.2, 8.4, 8.4)
-    ctx.fillStyle = COLOR.cyan; ctx.fillRect(-1.3, -1.3, 2.6, 2.6); ctx.restore()
-    return 7
-  }
-  const color = poiColor(p)
-  if (isCloud(p)) {
-    const cloud = ctx.createRadialGradient(x, y, 1, x, y, 22)
-    cloud.addColorStop(0, 'rgba(45,212,191,0.34)'); cloud.addColorStop(1, 'rgba(45,212,191,0)')
-    ctx.fillStyle = cloud; circle(ctx, x, y, 22); ctx.fill()
-  }
-  // Corner brackets around the spot.
-  ctx.strokeStyle = color; ctx.lineWidth = 1.5
-  for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
-    ctx.beginPath(); ctx.moveTo(x + sx * 6.5, y + sy * 3.5); ctx.lineTo(x + sx * 6.5, y + sy * 6.5); ctx.lineTo(x + sx * 3.5, y + sy * 6.5); ctx.stroke()
-  }
-  ctx.fillStyle = color; circle(ctx, x, y, 1.8); ctx.fill()
-  return 8
-}
 
 /** A name beside a body, pushed along (ux, uy), with deposit-kind marks and the ship count after it. Kept inside `width`. */
 function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, ux: number, uy: number, gap: number, width: number, color: string, kinds: string[] = [], ships = 0) {
@@ -328,6 +262,9 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
         ctx.globalAlpha = 1
       }
 
+      const t = reduced ? 0 : now
+      drawSystemSpecial(ctx, d.systemId, { pois: d.pois, project, scale: z, t })
+
       // --- travel-time rings, hidden while the ship moves ---
       if (d.showRings && !dest) {
         const tickSecs = d.tickMs / 1000
@@ -356,14 +293,15 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
         if (edge) {
           const [ux, uy] = unit(screen.x - cx, screen.y - cy)
           nodes.set(p.id, edge)
-          drawArrow(ctx, edge.x, edge.y, Math.atan2(uy, ux), p.type === 'station' ? COLOR.cyan : p.type === 'planet' || p.type === 'sun' ? COLOR.silver : poiColor(p))
+          drawArrow(ctx, edge.x, edge.y, Math.atan2(uy, ux), poiColor(p))
           drawLabel(ctx, `${(p.base_name || p.name).toUpperCase()} · ${formatSecs(secsTo(world))}`, edge.x, edge.y, -ux, -uy, 12, W, d.hoverId === p.id ? COLOR.white : COLOR.grey)
           continue
         }
         nodes.set(p.id, screen)
         const lit = unit(screen.x - star.x, screen.y - star.y)
-        const r = drawPoi(ctx, p, screen.x, screen.y, lit)
-        if (p.type === 'sun') continue
+        const r = drawPoi(ctx, drawnBySpecial(d.systemId, p) ? { ...p, type: 'marker' } : p, screen.x, screen.y, lit, t)
+        // A plain star at the center needs no name. A black hole or a companion star does.
+        if (p.type === 'sun' && classLabel(p)?.includes('·') && !world.x && !world.y) continue
         const here = Math.hypot(screen.x - cx, screen.y - cy) < 4
         const kinds = [...new Set((d.deposits.get(p.id) ?? []).map((dep) => depositKind(dep.id)))]
         drawLabel(ctx, (p.base_name || p.name).toUpperCase(), screen.x, screen.y, here ? 0 : lit[0], here ? 1 : lit[1], here ? 22 : r + 7, W, color, kinds, p.ship_count)
@@ -462,6 +400,8 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
   const hoverPoi = pois.find((p) => p.id === hoverId)
   const hoverExit = exits.find((x) => x.id === hoverId)
   const hoverDeposits = hoverPoi ? deposits.get(hoverPoi.id) : undefined
+  // Known from a visit, or from faction intel.
+  const hoverDescription = hoverPoi && (knownPoiDescription(hoverPoi.id) || (intel?.systemId === systemId ? intel?.pois.find((p) => p.id === hoverPoi.id)?.description : undefined))
   const atPoi = point(pois.find((p) => p.id === location?.poi_id))
   const isHere = hoverPoi?.id === location?.poi_id && !inTransit
   // Distance from where the ship was last reported; the map itself draws the live position.
@@ -476,8 +416,9 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
         <div ref={tooltipRef} className={styles.tooltip}>
           <div className={galaxy.tooltipName}>{hoverPoi ? hoverPoi.name : hoverExit!.name}</div>
           <div className={styles.tooltipMeta}>
-            {hoverPoi ? `${formatLabel(hoverPoi.type)}${hoverPoi.class ? ` · ${formatLabel(hoverPoi.class)}` : ''}` : 'Jump exit'}
+            {hoverPoi ? [formatLabel(hoverPoi.type), classLabel(hoverPoi)].filter(Boolean).join(' · ') : 'Jump exit'}
           </div>
+          {hoverDescription && <p className={styles.tooltipDescription}>{hoverDescription}</p>}
           <dl className={styles.tooltipRows}>
             {hoverPoi?.base_name && <><dt>Station</dt><dd>{hoverPoi.base_name}</dd></>}
             {hoverPoi && !isHere && travelSecs !== undefined && from && (

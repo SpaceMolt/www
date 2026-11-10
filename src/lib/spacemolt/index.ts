@@ -35,5 +35,5 @@ export type { BattleView, ChatMessage, CraftJob, EventLogEntry, TradeOffer, UiAc
 export { mergeTradeSnapshot, seedFromLogin, wireNotifications } from './wireNotifications'
 export { useMarket } from './useMarket'
 export { useObservation } from './useObservation'
-export { usePoi, useSystem } from './useSystemPoi'
+export { knownPoiDescription, usePoi, useSystem } from './useSystemPoi'
 export { loadCatalog, loadMap, loadStations, useCatalog, useMap, useStations } from './worldData'
