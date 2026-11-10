@@ -1,7 +1,7 @@
 import { test, expect } from 'bun:test'
 import type { BattleLogEntry } from '@spacemolt/lib'
 import type { BattleView } from '@/lib/spacemolt'
-import { compatibleAmmo, describeTick, enemiesOf, nextEnemy, nextTickStart, objectiveText, reachZone, reloadPlan, rulesText, weaponState, zoneDistance } from './combatLogic'
+import { addLogLine, compatibleAmmo, describeTick, enemiesOf, logFor, nextEnemy, nextTickStart, objectiveText, reachZone, reloadPlan, rulesText, weaponState, zoneDistance } from './combatLogic'
 
 test('enemiesOf drops your own side', () => {
   const battle = {
@@ -106,6 +106,7 @@ test('weaponState: empty before range, then ready or how far to advance', () => 
   expect(weaponState({ reach: 3 })).toEqual({ kind: 'idle' })
   expect(weaponState({ reach: 3, distance: 3 })).toEqual({ kind: 'ready' })
   expect(weaponState({ ammo: 5, magazine: 8, reach: 3, distance: 5 })).toEqual({ kind: 'far', advances: 2 })
+  expect(weaponState({ ammo: 5, magazine: 8, distance: 3 })).toEqual({ kind: 'unknown' })
 })
 
 test('nextEnemy cycles and starts at the first enemy', () => {
@@ -114,4 +115,13 @@ test('nextEnemy cycles and starts at the first enemy', () => {
   expect(nextEnemy(enemies, 'a')?.player_id).toBe('b')
   expect(nextEnemy(enemies, 'b')?.player_id).toBe('a')
   expect(nextEnemy([], 'a')).toBeUndefined()
+})
+
+test('battle log: counts your damage, and starts over in a new battle', () => {
+  const hit = (id: number, kind: 'out' | 'in' | 'miss', dmg?: number) => ({ id, kind, who: 'a > b', dmg })
+  const a = [hit(1, 'out', 10), hit(2, 'in', 4), hit(3, 'miss')].reduce((log, line) => addLogLine(log, 'a', line), logFor({ lines: [], dealt: 0, taken: 0 }, 'a'))
+  expect(a).toMatchObject({ battleId: 'a', dealt: 10, taken: 4 })
+  expect(a.lines.map((l) => l.id)).toEqual([3, 2, 1])
+  expect(logFor(a, 'b')).toEqual({ battleId: 'b', lines: [], dealt: 0, taken: 0 })
+  expect(addLogLine(a, 'b', hit(4, 'out', 7))).toMatchObject({ battleId: 'b', dealt: 7, taken: 0, lines: [{ id: 4 }] })
 })

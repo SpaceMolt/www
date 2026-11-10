@@ -24,13 +24,34 @@ export function reachZone(yourZone: string, reach: number): number | undefined {
   return zone > 3 ? undefined : Math.max(0, zone)
 }
 
-export type WeaponState = { kind: 'empty' } | { kind: 'idle' } | { kind: 'ready' } | { kind: 'far'; advances: number }
+export type WeaponState = { kind: 'empty' } | { kind: 'idle' } | { kind: 'unknown' } | { kind: 'ready' } | { kind: 'far'; advances: number }
 
-/** What a weapon can do against the target this tick. An empty magazine wins over range. */
-export function weaponState({ ammo = 0, magazine, reach = 0, distance }: { ammo?: number; magazine?: number; reach?: number; distance?: number }): WeaponState {
+/** What a weapon can do against the target this tick. An empty magazine wins over range; a reach missing from the catalog is unknown. */
+export function weaponState({ ammo = 0, magazine, reach, distance }: { ammo?: number; magazine?: number; reach?: number; distance?: number }): WeaponState {
   if (magazine !== undefined && ammo === 0) return { kind: 'empty' }
   if (distance === undefined) return { kind: 'idle' }
+  if (reach === undefined) return { kind: 'unknown' }
   return distance <= reach ? { kind: 'ready' } : { kind: 'far', advances: distance - reach }
+}
+
+export type LogLine = { id: number; tick?: number; kind: 'out' | 'in' | 'miss' | 'other' | 'sys'; who: string; dmg?: number }
+export interface BattleLog { battleId?: string; lines: LogLine[]; dealt: number; taken: number }
+const LOG_LINES = 40
+
+/** The log for this battle; a log left over from another battle starts over. */
+export const logFor = (log: BattleLog, battleId?: string): BattleLog =>
+  log.battleId === battleId ? log : { battleId, lines: [], dealt: 0, taken: 0 }
+
+/** Add a line to this battle's log, newest first, and count its damage. */
+export function addLogLine(log: BattleLog, battleId: string | undefined, line: LogLine): BattleLog {
+  const { lines, dealt, taken } = logFor(log, battleId)
+  const dmg = line.dmg ?? 0
+  return {
+    battleId,
+    lines: [line, ...lines].slice(0, LOG_LINES),
+    dealt: dealt + (line.kind === 'out' ? dmg : 0),
+    taken: taken + (line.kind === 'in' ? dmg : 0),
+  }
 }
 
 export function compatibleAmmo<C extends { item_id: string }>(

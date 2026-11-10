@@ -11,7 +11,7 @@ import type { ReachRing } from '@/lib/battle/render'
 import { combatKey, COMBAT_SHORTCUTS, shortcutKey, type CombatAction } from '../../shortcuts'
 import { shared } from '../../shared'
 import { CombatBattleView } from '../CombatBattleView'
-import { enemiesOf, nextEnemy, reachZone, weaponState, zoneDistance, type WeaponState } from './combatLogic'
+import { addLogLine, enemiesOf, logFor, nextEnemy, reachZone, weaponState, zoneDistance, type BattleLog, type LogLine, type WeaponState } from './combatLogic'
 import styles from './BattleHud.module.css'
 
 export type Stance = 'fire' | 'evade' | 'brace' | 'flee'
@@ -26,16 +26,38 @@ const STANCES: { id: Stance; icon: typeof Flame }[] = [
   { id: 'flee', icon: Rabbit },
 ]
 const REACH_COLORS = ['#00d4ff', '#ffb703', '#2dd4bf', '#c084fc']
-const LOG_LINES = 40
 // Fitted modules carry no combat stats; the catalog has them.
 const reachOf = (w: Weapon) => getItem(w.type_id)?.reach
 let logSeq = 0
+const NO_LOG: BattleLog = { lines: [], dealt: 0, taken: 0 }
 
-type LogLine = { id: number; tick?: number; kind: 'out' | 'in' | 'miss' | 'other' | 'sys'; who: string; dmg?: number }
+/** Shots and joins in the active battle. Call it from the panel so the log survives tab changes. */
+export function useBattleLog(battleId?: string): BattleLog {
+  const store = useAccountStore()
+  const me = usePlayer()?.id
+  const [log, setLog] = useState(NO_LOG)
+  useEffect(() => {
+    const add = (line: Omit<LogLine, 'id'>) => setLog((l) => addLogLine(l, battleId, { ...line, id: logSeq++ }))
+    const name = (id: string, n?: string) => (id === me ? 'You' : n || id)
+    const offDamage = store.account.on('battle_damage', (d: NotificationBattleDamage) => add({
+      tick: d.tick,
+      kind: !d.hit_success ? 'miss' : d.attacker_id === me ? 'out' : d.target_id === me ? 'in' : 'other',
+      who: `${name(d.attacker_id, d.attacker_name)} > ${name(d.target_id, d.target_name)}`,
+      dmg: d.hit_success ? d.total_damage : undefined,
+    }))
+    const offJoined = store.account.on('battle_joined', (j) => add({ kind: 'sys', who: `${j.username} joined side ${j.side_id}` }))
+    return () => {
+      offDamage()
+      offJoined()
+    }
+  }, [store, me, battleId])
+  return logFor(log, battleId)
+}
 
 export interface BattleHudProps {
   battle: BattleView
   battleId: string
+  log: BattleLog
   canControl: boolean
   status?: string
   weapons: Weapon[]
@@ -54,9 +76,8 @@ export interface BattleHudProps {
 
 /** The Battle tab while you are in a fight: you vs your target, the field, a keyed hotbar, weapons and the log. */
 export function BattleHud(props: BattleHudProps) {
-  const { battle, battleId, canControl, status, weapons, reloadAllCount, onStance, onAdvance, onRetreat, onTarget, onReloadAll } = props
+  const { battle, battleId, log, canControl, status, weapons, reloadAllCount, onStance, onAdvance, onRetreat, onTarget, onReloadAll } = props
   const { t } = useTranslation()
-  const store = useAccountStore()
   const player = usePlayer()
   const ship = useShip()
   const me = player?.id
@@ -66,26 +87,6 @@ export function BattleHud(props: BattleHudProps) {
   const yourZone = battle.your_zone ?? you?.zone ?? ''
   const distance = target ? zoneDistance(yourZone, target.zone) : undefined
   const isEnemy = (id: string) => enemies.some((e) => e.player_id === id)
-
-  const [log, setLog] = useState<LogLine[]>([])
-  const [dealt, setDealt] = useState(0)
-  const [taken, setTaken] = useState(0)
-  useEffect(() => {
-    const add = (line: Omit<LogLine, 'id'>) => setLog((lines) => [{ ...line, id: logSeq++ }, ...lines].slice(0, LOG_LINES))
-    const onDamage = (d: NotificationBattleDamage) => {
-      const kind = !d.hit_success ? 'miss' : d.attacker_id === me ? 'out' : d.target_id === me ? 'in' : 'other'
-      if (kind === 'out') setDealt((n) => n + d.total_damage)
-      if (kind === 'in') setTaken((n) => n + d.total_damage)
-      const name = (id: string, n?: string) => (id === me ? 'You' : n || id)
-      add({ tick: d.tick, kind, who: `${name(d.attacker_id, d.attacker_name)} > ${name(d.target_id, d.target_name)}`, dmg: d.hit_success ? d.total_damage : undefined })
-    }
-    const offDamage = store.account.on('battle_damage', onDamage)
-    const offJoined = store.account.on('battle_joined', (j) => add({ kind: 'sys', who: `${j.username} joined side ${j.side_id}` }))
-    return () => {
-      offDamage()
-      offJoined()
-    }
-  }, [store, me])
 
   // Keys go through a ref so the listener never re-binds mid-fight.
   const actions = useRef<Record<CombatAction, () => void>>(null!)
@@ -193,12 +194,12 @@ export function BattleHud(props: BattleHudProps) {
           <section className={`${styles.box} ${styles.sect}`}>
             <span className={styles.label}>This battle</span>
             <div className={styles.totals}>
-              <div className={styles.tot}><span className={styles.label}>Damage dealt</span><span className={`${styles.totNum} ${styles.out}`}>{dealt}</span></div>
-              <div className={styles.tot}><span className={styles.label}>Damage taken</span><span className={`${styles.totNum} ${styles.in}`}>{taken}</span></div>
+              <div className={styles.tot}><span className={styles.label}>Damage dealt</span><span className={`${styles.totNum} ${styles.out}`}>{log.dealt}</span></div>
+              <div className={styles.tot}><span className={styles.label}>Damage taken</span><span className={`${styles.totNum} ${styles.in}`}>{log.taken}</span></div>
             </div>
             <ol className={styles.log} aria-live="polite">
-              {log.length === 0 && <li className={styles.muted}>No shots yet.</li>}
-              {log.map((l) => (
+              {log.lines.length === 0 && <li className={styles.muted}>No shots yet.</li>}
+              {log.lines.map((l) => (
                 <li key={l.id} className={styles[l.kind]}>
                   <span className={styles.muted}>{l.tick !== undefined ? `T${l.tick}` : ''}</span>
                   <span>{l.who}</span>
@@ -269,7 +270,7 @@ function HotKey({ action, title, detail, on, disabled, onClick }: {
   )
 }
 
-const STATE_TEXT = { ready: 'Can hit', idle: 'No target', empty: 'Empty' } as const
+const STATE_TEXT = { ready: 'Can hit', idle: 'No target', unknown: 'Reach unknown', empty: 'Empty' } as const
 
 function WeaponCard({ weapon: w, state, canClose, canControl, ammoFor, ammoChoice, onPickAmmo, onReload }: {
   weapon: Weapon; state: WeaponState; canClose: number; canControl: boolean

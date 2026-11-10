@@ -33,7 +33,7 @@ import { useFittedModules } from '../hooks/useGates'
 import { CombatBattleView } from './CombatBattleView'
 import { ArenaTab } from './combat/ArenaTab'
 import { HistoryTab } from './combat/HistoryTab'
-import { BattleHud, type Stance } from './combat/BattleHud'
+import { BattleHud, useBattleLog, type Stance } from './combat/BattleHud'
 import { compatibleAmmo, reloadPlan } from './combat/combatLogic'
 import { usePlay, usePlayUi } from '../PlayProvider'
 import { PanelWithTabs, Modal, ConfirmAction, shared, useAction } from '../shared'
@@ -65,6 +65,7 @@ export function CombatPanel() {
   const activeBattleId = usePlayUi((s) => s.activeBattleId)
   const lastBattleId = usePlayUi((s) => s.lastBattleId)
   const viewedBattleId = activeBattleId ?? lastBattleId
+  const battleLog = useBattleLog(activeBattleId ?? undefined)
   const canControl = !isDocked && inCombat && !battleSyncPending && phase === 'ready'
 
   // Wildlife is only on the get_nearby response — the cached location state
@@ -283,6 +284,7 @@ export function CombatPanel() {
         <BattleHud
           battle={battle}
           battleId={activeBattleId}
+          log={battleLog}
           canControl={canControl}
           status={phase !== 'ready' ? 'Connection lost · controls disabled' : battleSyncPending ? 'Syncing battle state' : undefined}
           weapons={(modules ?? []).filter((m) => m.type === 'weapon')}

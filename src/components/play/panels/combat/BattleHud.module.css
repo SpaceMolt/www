@@ -218,7 +218,7 @@ fieldset.sect { padding-top: 0.4rem; }
 .chip_ready { color: var(--bio-green); border-color: rgba(45, 212, 191, 0.5); }
 .chip_far { color: var(--warning-yellow); border-color: rgba(255, 183, 3, 0.5); }
 .chip_empty { color: var(--claw-red); border-color: rgba(230, 57, 70, 0.6); }
-.chip_idle { color: var(--chrome-silver); border-color: var(--nebula-blue); }
+.chip_idle, .chip_unknown { color: var(--chrome-silver); border-color: var(--nebula-blue); }
 
 .reload { display: flex; gap: 0.4rem; }
 .reload select { flex: 1; min-width: 0; }
