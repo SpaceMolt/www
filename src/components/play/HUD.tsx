@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { AlertTriangle, CircleHelp, Compass, Globe, Keyboard, LockOpen, Orbit, X } from 'lucide-react'
-import { useAccountStore, useLocationState, usePlayer, useShip } from '@/lib/spacemolt'
+import { useAccountStore, useLocationState, usePendingAction, usePlayer, useShip } from '@/lib/spacemolt'
 import { useStationServices } from './hooks/useGates'
 import { usePlayUi } from './PlayProvider'
 import { TopBar } from './TopBar'
@@ -181,6 +181,16 @@ export function HUD() {
   const [plannedRoute, setPlannedRoute] = useState<PlannedRoute | null>(null)
   const [mapView, setMapView] = useState<MapView>('galaxy')
   const navRef = useRef<NavActions | null>(null)
+  // A jump that starts on the system map plays on the galaxy map, then the system map comes back.
+  const returnToSystem = useRef(false)
+  const jumping = usePendingAction()?.command === 'jump' || (Boolean(location?.in_transit) && location?.transit_type === 'jump')
+  useEffect(() => {
+    if (jumping || !returnToSystem.current) return
+    returnToSystem.current = false
+    setMapView('system')
+  }, [jumping])
+  const pickMapView = (view: MapView) => { returnToSystem.current = false; setMapView(view) }
+  const followSidebar = (view: MapView) => { returnToSystem.current = view === 'galaxy' && mapView === 'system'; setMapView(view) }
   const autoTravel = useAutoTravel()
   const loop = useLoopRunner()
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('current')
@@ -195,6 +205,7 @@ export function HUD() {
     if (!plannedRoute || !ship) return
     if (loop.isActive) { setTravelGate('confirm'); return }
     autoTravel.start(plannedRoute, { shipSpeed: travelSpeed(ship) })
+    returnToSystem.current = false
     setMapView('galaxy')
     setPlannedRoute(null) // clear the planned route, auto-travel takes over
   }, [plannedRoute, ship, autoTravel, loop.isActive])
@@ -265,8 +276,8 @@ export function HUD() {
   )
 
   // Picking a system or a route in the sidebar is galaxy-map work.
-  const exploreOnGalaxy = (system: MapSystemData | null) => { setExploreSystem(system); if (system) setMapView('galaxy') }
-  const planOnGalaxy = (route: PlannedRoute | null) => { setPlannedRoute(route); if (route) setMapView('galaxy') }
+  const exploreOnGalaxy = (system: MapSystemData | null) => { setExploreSystem(system); if (system) pickMapView('galaxy') }
+  const planOnGalaxy = (route: PlannedRoute | null) => { setPlannedRoute(route); if (route) pickMapView('galaxy') }
 
   const maps = (
     <div className={mapStyles.mapStack}>
@@ -278,8 +289,8 @@ export function HUD() {
         </div>
       )}
       <div className={mapStyles.viewSwitch} role="group" aria-label="Map view">
-        <button type="button" aria-pressed={mapView === 'galaxy'} onClick={() => setMapView('galaxy')}><Globe size={12} /> Galaxy</button>
-        <button type="button" aria-pressed={mapView === 'system'} onClick={() => setMapView('system')}><Orbit size={12} /> System</button>
+        <button type="button" aria-pressed={mapView === 'galaxy'} onClick={() => pickMapView('galaxy')}><Globe size={12} /> Galaxy</button>
+        <button type="button" aria-pressed={mapView === 'system'} onClick={() => pickMapView('system')}><Orbit size={12} /> System</button>
       </div>
     </div>
   )
@@ -309,7 +320,7 @@ export function HUD() {
 
         {/* Main Content: Left Sidebar + Panel + Right Pane */}
         <div className={styles.main}>
-          <LeftSidebar galaxyRef={galaxyRef} exploreSystem={exploreSystem} onExploreSystemChange={exploreOnGalaxy} plannedRoute={plannedRoute} onPlannedRouteChange={planOnGalaxy} navRef={navRef} onMapViewChange={setMapView} activeTab={sidebarTab} onTabChange={setSidebarTab} autoTravelActive={pilotBusy} onHighlightedSystemsChange={setHighlightedSystems} mobileOpen={navOpen} onMobileClose={() => setNavOpen(false)} />
+          <LeftSidebar galaxyRef={galaxyRef} exploreSystem={exploreSystem} onExploreSystemChange={exploreOnGalaxy} plannedRoute={plannedRoute} onPlannedRouteChange={planOnGalaxy} navRef={navRef} onMapViewChange={followSidebar} activeTab={sidebarTab} onTabChange={setSidebarTab} autoTravelActive={pilotBusy} onHighlightedSystemsChange={setHighlightedSystems} mobileOpen={navOpen} onMobileClose={() => setNavOpen(false)} />
           <div className={styles.panel}>
             <ActionBanner autoTravelActive={autoTravel.isActive} />
             {!autoTravel.isActive && <TravelProgress />}

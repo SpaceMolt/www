@@ -300,11 +300,16 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     durationMs: number
     key: string
   } | null>(null)
+  // The server sends an empty system_id during a jump, so the origin is the last system it named.
+  // ponytail: a reload mid-jump has no origin, so that jump shows no dot.
+  const originRef = useRef('')
+  if (location?.system_id) originRef.current = location.system_id
+  const origin = originRef.current
   if (
     location?.in_transit &&
     location.transit_type === 'jump' &&
     location.transit_dest_system_id &&
-    location.system_id
+    origin
   ) {
     const arrival = location.transit_arrival_tick
     const elapsed = location.transit_ticks_elapsed ?? 0
@@ -312,10 +317,10 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     const nowTick = fractionalTick(currentTick, store.getTickObservedAt(), Date.now(), TRANSIT_TICK_DURATION_MS)
     const remaining = arrival != null ? Math.max(0, arrival - nowTick) : 0
     const totalTicks = elapsed + remaining
-    const key = `${location.system_id}->${location.transit_dest_system_id}@${arrival ?? 0}`
+    const key = `${origin}->${location.transit_dest_system_id}@${arrival ?? 0}`
     if (totalTicks > 0 && transitAnimRef.current?.key !== key) {
       transitAnimRef.current = {
-        fromId: location.system_id,
+        fromId: origin,
         toId: location.transit_dest_system_id,
         startedAtMs: Date.now() - elapsed * TRANSIT_TICK_DURATION_MS,
         durationMs: totalTicks * TRANSIT_TICK_DURATION_MS,
