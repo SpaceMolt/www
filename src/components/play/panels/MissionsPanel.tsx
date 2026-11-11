@@ -50,6 +50,8 @@ interface RewardsView {
   credits?: number
   items?: Record<string, number>
   skill_xp?: Record<string, number>
+  /** Piloting XP for flying the route, paid on top of skill_xp. */
+  piloting_xp?: number
 }
 
 function toAvailableObjective(o: NonNullable<AvailableMission['objectives']>[number]): ObjectiveView {
@@ -353,7 +355,10 @@ export function MissionsPanel() {
 
   const renderRewards = (rewards?: RewardsView) => {
     if (!rewards) return null
-    const { credits, items, skill_xp: skillXp } = rewards
+    const { credits, items, piloting_xp: pilotingXp } = rewards
+    const skillXp = pilotingXp
+      ? { ...rewards.skill_xp, piloting: (rewards.skill_xp?.piloting ?? 0) + pilotingXp }
+      : rewards.skill_xp
     const hasContent = (credits && credits > 0) || (items && Object.keys(items).length > 0) || (skillXp && Object.keys(skillXp).length > 0)
     if (!hasContent) return null
     return (
