@@ -51,12 +51,17 @@ describe('withoutMissing', () => {
   })
 })
 
-test('moduleTotalChanges lists only the module totals the plan changes', () => {
-  const modules: Record<string, { mining_power?: number; scanner_power?: number }> = {
-    laser: { mining_power: 5 },
-    scanner: { scanner_power: 3 },
+test('moduleTotalChanges lists every module total the plan changes, and nothing fit_preview reports', () => {
+  const modules: Record<string, object> = {
+    laser: { cpu_usage: 2, mining_power: 5 },
+    scanner: { scanner_power: 3, shield_bonus: 9 },
+    suit: { hazard_resistance: { radiation: 20 }, boarding_capability: true, crew_combat_bonus_pct: 5 },
   }
-  expect(moduleTotalChanges(['laser', 'scanner'], ['laser', 'laser', 'scanner'], (id: string) => modules[id])).toEqual([
+  expect(moduleTotalChanges(['laser', 'scanner'], ['laser', 'laser', 'suit'], (id) => modules[id])).toEqual([
+    { label: 'Boarding capability', before: 0, after: 1 },
+    { label: 'Crew combat bonus %', before: 0, after: 5 },
+    { label: 'Hazard resistance: radiation', before: 0, after: 20 },
     { label: 'Mining power', before: 5, after: 10 },
+    { label: 'Scanner power', before: 3, after: 0 },
   ])
 })
