@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { addedModules, assignSources, keptFlags, withoutMissing } from './loadoutPlan'
+import { addedModules, assignSources, keptFlags, moduleTotalChanges, withoutMissing } from './loadoutPlan'
 
 describe('keptFlags / addedModules', () => {
   test('matches fitted modules by type in plan order', () => {
@@ -49,4 +49,14 @@ describe('withoutMissing', () => {
     ]
     expect(withoutMissing(plan, ['laser'], sourced)).toEqual(['laser', 'cannon'])
   })
+})
+
+test('moduleTotalChanges lists only the module totals the plan changes', () => {
+  const modules: Record<string, { mining_power?: number; scanner_power?: number }> = {
+    laser: { mining_power: 5 },
+    scanner: { scanner_power: 3 },
+  }
+  expect(moduleTotalChanges(['laser', 'scanner'], ['laser', 'laser', 'scanner'], (id: string) => modules[id])).toEqual([
+    { label: 'Mining power', before: 5, after: 10 },
+  ])
 })

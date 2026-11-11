@@ -14,6 +14,11 @@ export interface FitPreviewStats {
   armor: number
   speed: number
   max_fuel: number
+  /** Net module fuel efficiency in percent: positive cuts fuel use. Absent on an older game server, as are the next two. */
+  fuel_efficiency?: number
+  fuel_per_jump?: number
+  /** Jumps a full tank covers. */
+  jump_range?: number
   cargo_capacity: number
   cargo_used: number
   cpu_capacity: number
@@ -119,6 +124,43 @@ export function withoutMissing(plan: string[], fitted: string[], sourced: Source
     if (kept[i] || !drop[id]) return true
     drop[id]--
     return false
+  })
+}
+
+/** Module stats the server's fit_preview does not report, summed over the fit. */
+const MODULE_TOTALS = [
+  ['damage', 'Weapon damage'],
+  ['mining_power', 'Mining power'],
+  ['harvest_power', 'Harvest power'],
+  ['survey_power', 'Survey power'],
+  ['scanner_power', 'Scanner power'],
+  ['cloak_strength', 'Cloak strength'],
+  ['signature_bonus', 'Signature'],
+  ['damage_reduction', 'Damage reduction'],
+  ['armor_repair_rate', 'Armor repair'],
+  ['remote_repair_power', 'Remote repair'],
+  ['generator_output', 'Generator output'],
+  ['drone_capacity', 'Drone capacity'],
+  ['drone_bandwidth', 'Drone bandwidth'],
+  ['tow_speed_penalty', 'Tow speed penalty'],
+  ['webify_strength', 'Webifier strength'],
+  ['warp_stabilization', 'Warp stabilization'],
+  ['disruptor_power', 'Disruptor power'],
+  ['scramble_power', 'Scrambler power'],
+  ['passenger_economy_berths', 'Economy berths'],
+  ['passenger_business_berths', 'Business berths'],
+  ['passenger_first_berths', 'First-class berths'],
+] as const
+
+type ModuleTotals = Partial<Record<(typeof MODULE_TOTALS)[number][0], number>>
+
+/** The module totals that differ between the fitted modules and the plan. */
+export function moduleTotalChanges(fitted: string[], plan: string[], module: (id: string) => ModuleTotals | undefined) {
+  return MODULE_TOTALS.flatMap(([key, label]) => {
+    const total = (ids: string[]) => ids.reduce((n, id) => n + (module(id)?.[key] ?? 0), 0)
+    const before = total(fitted)
+    const after = total(plan)
+    return before === after ? [] : [{ label, before, after }]
   })
 }
 

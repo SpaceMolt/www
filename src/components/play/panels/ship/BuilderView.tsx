@@ -26,6 +26,7 @@ import {
   assignSources,
   countBy,
   keptFlags,
+  moduleTotalChanges,
   quantities,
   withoutMissing,
   type FitPreview,
@@ -91,6 +92,8 @@ export function BuilderView() {
     (account) => fetchPreview(account, debouncedPlan),
     [debouncedPlan.join(','), fittedKey],
   )
+  // The current fit through the same math: the ship state does not carry the fuel numbers.
+  const { data: current } = useCommandQuery((account) => fetchPreview(account, fitted), [fittedKey])
 
   const holdings = useHoldings()
   const credits = usePlayer()?.credits ?? 0
@@ -113,7 +116,7 @@ export function BuilderView() {
       </div>
 
       {previewError && <div className={shipStyles.modError}><AlertTriangle size={12} /> {errorMessage(previewError)}</div>}
-      {preview && <StatsTable preview={preview.stats} />}
+      {preview && <StatsTable preview={preview.stats} current={current?.stats} fitted={fitted} plan={debouncedPlan} />}
       {preview && preview.issues.length > 0 && (
         <ul className={styles.issues}>
           {preview.issues.map((issue, i) => <li key={i}><AlertTriangle size={11} /> {issue.message}</li>)}
@@ -174,11 +177,15 @@ function useHoldings(): Holdings & { bids: Record<string, number> } {
 type ShipState = NonNullable<ReturnType<typeof useShip>>
 type StatRow = {
   label: string
-  now: (s: ShipState) => number | undefined
-  planned: (p: FitPreviewStats) => number
+  /** From the ship state, or from the current fit's preview for what the ship state lacks. */
+  now: (s: ShipState, current?: FitPreviewStats) => number | undefined
+  /** undefined hides the row: an older game server does not report the stat. */
+  planned: (p: FitPreviewStats) => number | undefined
   /** Capacity the value is spent against, now and planned. */
   cap?: [(s: ShipState) => number | undefined, (p: FitPreviewStats) => number]
+  format?: (v: number) => string
 }
+const signedPct = (v: number) => `${v > 0 ? '+' : ''}${v}%`
 const STAT_ROWS: StatRow[] = [
   { label: 'Hull', now: (s) => s.max_hull, planned: (p) => p.max_hull },
   { label: 'Shield', now: (s) => s.max_shield, planned: (p) => p.max_shield },
@@ -186,6 +193,9 @@ const STAT_ROWS: StatRow[] = [
   { label: 'Armor', now: (s) => s.armor, planned: (p) => p.armor },
   { label: 'Speed', now: (s) => s.speed, planned: (p) => p.speed },
   { label: 'Fuel tank', now: (s) => s.max_fuel, planned: (p) => p.max_fuel },
+  { label: 'Fuel efficiency', now: (_, c) => c?.fuel_efficiency, planned: (p) => p.fuel_efficiency, format: signedPct },
+  { label: 'Fuel per jump', now: (_, c) => c?.fuel_per_jump, planned: (p) => p.fuel_per_jump },
+  { label: 'Range (jumps, full tank)', now: (_, c) => c?.jump_range, planned: (p) => p.jump_range },
   { label: 'Cargo', now: (s) => s.cargo_capacity, planned: (p) => p.cargo_capacity },
   { label: 'CPU used', now: (s) => s.cpu_used, planned: (p) => p.cpu_used, cap: [(s) => s.cpu_capacity, (p) => p.cpu_capacity] },
   { label: 'Power used', now: (s) => s.power_used, planned: (p) => p.power_used, cap: [(s) => s.power_capacity, (p) => p.power_capacity] },
@@ -193,20 +203,24 @@ const STAT_ROWS: StatRow[] = [
   { label: 'Marine berths', now: (s) => s.effective_marine_capacity, planned: (p) => p.effective_marine_capacity },
 ]
 
-/** Current ship stats beside the planned fit's. CPU and power are after your Engineering bonus. */
-function StatsTable({ preview }: { preview: FitPreviewStats }) {
+/**
+ * Current ship stats beside the planned fit's. CPU and power are after your Engineering bonus.
+ * Module totals the server does not report follow, for those the plan changes.
+ */
+function StatsTable({ preview, current, fitted, plan }: { preview: FitPreviewStats; current?: FitPreviewStats; fitted: string[]; plan: string[] }) {
   const ship = useShip()
   if (!ship) return null
   return (
     <table className={styles.stats}>
       <thead><tr><th>Stat</th><th>Now</th><th>Planned</th></tr></thead>
       <tbody>
-        {STAT_ROWS.map(({ label, now, planned, cap }) => {
-          const before = now(ship) ?? 0
+        {STAT_ROWS.map(({ label, now, planned, cap, format }) => {
+          const before = now(ship, current)
           const after = planned(preview)
-          const fmt = (v: number, c?: number) => (c === undefined ? v.toLocaleString() : `${v} / ${c}`)
+          if (after === undefined) return null
+          const fmt = (v: number | undefined, c?: number) => (v === undefined ? '-' : c !== undefined ? `${v} / ${c}` : format ? format(v) : v.toLocaleString())
           const over = cap && after > cap[1](preview)
-          const changed = after !== before || (cap && cap[0](ship) !== cap[1](preview))
+          const changed = (before !== undefined && after !== before) || (cap && cap[0](ship) !== cap[1](preview))
           return (
             <tr key={label} className={over ? styles.over : changed ? styles.changed : undefined}>
               <td>{label}</td>
@@ -215,6 +229,13 @@ function StatsTable({ preview }: { preview: FitPreviewStats }) {
             </tr>
           )
         })}
+        {moduleTotalChanges(fitted, plan, getItem).map(({ label, before, after }) => (
+          <tr key={label} className={styles.changed}>
+            <td>{label}</td>
+            <td>{before.toLocaleString()}</td>
+            <td>{after.toLocaleString()}</td>
+          </tr>
+        ))}
       </tbody>
     </table>
   )
@@ -443,7 +464,7 @@ function BuyOrderRow({ itemId, quantity, bid, station }: { itemId: string; quant
   )
 }
 
-type SourceFilter = 'any' | FitSource
+type SourceFilter = 'any' | 'available' | FitSource
 
 /** The full module catalog, searchable and filtered by slot, what still fits, and where it can come from. */
 function ModulePicker({ stats, plan, holdings, locked, onAdd }: { stats?: FitPreviewStats; plan: string[]; holdings: Holdings; locked: boolean; onAdd: (id: string) => void }) {
@@ -470,7 +491,7 @@ function ModulePicker({ stats, plan, holdings, locked, onAdd }: { stats?: FitPre
     (!q || m.name.toLowerCase().includes(q) || m.id.includes(q))
     && (slot === 'all' || slotOf(m) === slot)
     && (!fitsOnly || fits(m))
-    && (source === 'any' || available(m)[source] > 0))
+    && (source === 'any' || (source === 'available' ? Object.values(available(m)).some((n) => n > 0) : available(m)[source] > 0)))
 
   return (
     <div className={styles.picker}>
@@ -482,7 +503,8 @@ function ModulePicker({ stats, plan, holdings, locked, onAdd }: { stats?: FitPre
           {SLOTS.map(({ slot: s, label }) => <option key={s} value={s}>{label}</option>)}
         </select>
         <select className={shared.selectInput} value={source} onChange={(e) => setSource(e.target.value as SourceFilter)} title="Where it comes from" aria-label="Where it comes from">
-          <option value="any">Any source</option>
+          <option value="any">All modules</option>
+          <option value="available">Available to me here</option>
           <option value="cargo">In cargo</option>
           <option value="storage">Your storage here</option>
           <option value="faction">Faction storage here</option>
