@@ -44,6 +44,8 @@ function toMapSystemData(raw: MapSystem): MapSystemData | null {
   }
 }
 
+const NO_SYSTEMS: MapSystemData[] = []
+
 /** Keeps the get_map entries that /api/map leaves out. */
 export function toFrontierSystems(systems: (MapSystemInfo & { frontier_tier?: number })[]): MapSystemData[] {
   return systems.flatMap(({ system_id, name, position, connections, frontier_tier }) =>
@@ -306,8 +308,10 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   const store = useAccountStore()
 
   // Refetched on each arrival, so a newly charted system joins the map.
-  const [frontierSystems, setFrontierSystems] = useState<MapSystemData[]>([])
+  // Keyed by pilot, so a character switch never shows the last pilot's charts.
+  const [frontier, setFrontier] = useState<{ playerId?: string; systems: MapSystemData[] }>({ systems: NO_SYSTEMS })
   const playerId = player?.id
+  const frontierSystems = frontier.playerId === playerId ? frontier.systems : NO_SYSTEMS
   const systemId = location?.system_id
   useEffect(() => {
     if (!playerId) return
@@ -315,7 +319,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     store.account.commands.spacemolt.get_map().then(
       ({ structuredContent }) => {
         if (!cancelled && structuredContent && 'systems' in structuredContent) {
-          setFrontierSystems(toFrontierSystems(structuredContent.systems))
+          setFrontier({ playerId, systems: toFrontierSystems(structuredContent.systems) })
         }
       },
       () => {},
