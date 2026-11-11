@@ -9,6 +9,7 @@ import { test, expect } from 'bun:test'
 import {
   matchesTierFilter,
   browseAllStations,
+  sellerLabel,
   cachedListings,
   clearListingsCache,
   LISTINGS_TTL_MS,
@@ -166,14 +167,35 @@ test('cachedListings reuses one sweep per account until the TTL passes or the ca
   const account = {}
   let sweeps = 0
   const sweep = async () => { sweeps++; return [] }
-  await cachedListings(account, sweep, 0)
-  await cachedListings(account, sweep, LISTINGS_TTL_MS - 1)
+  const ids = ['base_a']
+  await cachedListings(account, ids, sweep, 0)
+  await cachedListings(account, ids, sweep, LISTINGS_TTL_MS - 1)
   expect(sweeps).toBe(1)
-  await cachedListings({}, sweep, 0)
+  await cachedListings({}, ids, sweep, 0)
   expect(sweeps).toBe(2)
-  await cachedListings(account, sweep, LISTINGS_TTL_MS)
+  await cachedListings(account, ids, sweep, LISTINGS_TTL_MS)
   expect(sweeps).toBe(3)
   clearListingsCache(account)
-  await cachedListings(account, sweep, LISTINGS_TTL_MS)
+  await cachedListings(account, ids, sweep, LISTINGS_TTL_MS)
   expect(sweeps).toBe(4)
+  // Docking at a station the directory omits changes the list, so the sweep runs again.
+  await cachedListings(account, [...ids, 'frontier_base'], sweep, LISTINGS_TTL_MS)
+  expect(sweeps).toBe(5)
+})
+
+test('browseAllStations fails when every station refuses, and a failed sweep is not cached', async () => {
+  const refuse = async () => { throw new Error('rate_limited') }
+  await expect(browseAllStations(['a', 'b'], refuse)).rejects.toThrow('rate_limited')
+  const account = {}
+  let sweeps = 0
+  const sweep = () => { sweeps++; return browseAllStations(['a'], refuse) }
+  await expect(cachedListings(account, ['a'], sweep, 0)).rejects.toThrow('rate_limited')
+  await expect(cachedListings(account, ['a'], sweep, 1)).rejects.toThrow('rate_limited')
+  expect(sweeps).toBe(2)
+})
+
+test('sellerLabel names bot sellers by what they act for', () => {
+  expect(sellerLabel('[Empire Treasury: Outer Rim Explorers]')).toBe('Outer Rim Explorers (Empire Treasury)')
+  expect(sellerLabel('[Station Manager: Grand Exchange]')).toBe('Grand Exchange (Station Manager)')
+  expect(sellerLabel('some_pilot')).toBe('some_pilot')
 })

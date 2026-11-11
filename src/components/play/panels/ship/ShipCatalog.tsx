@@ -23,6 +23,7 @@ import {
   Lock,
   Check,
   MapPin,
+  Landmark,
 } from 'lucide-react'
 import type { BrowseShipsResponse, StorageResponse } from '@spacemolt/lib'
 import { useCargo, useCatalog, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useShip, useSkills, useStations } from '@/lib/spacemolt'
@@ -76,36 +77,73 @@ function tagListings(resp: BrowseShipsResponse | undefined): ShipListing[] {
   return resp.listings.map((l) => ({ ...l, base_id: resp.base_id, base_name: resp.base_name }))
 }
 
+/** Bot sellers arrive as "[Empire Treasury: Outer Rim Explorers]"; show "Outer Rim Explorers (Empire Treasury)". */
+export function sellerLabel(seller = ''): string {
+  const bot = seller.match(/^\[([^:\]]+): (.+)\]$/)
+  return bot ? `${bot[2]} (${bot[1]})` : seller
+}
+
+function Seller({ name = '' }: { name?: string }) {
+  return (
+    <span className={listingStyles.listingStat}>
+      {name.startsWith('[') ? <Landmark size={10} /> : <User size={10} />} {sellerLabel(name)}
+    </span>
+  )
+}
+
 /** Concurrent browse_ships calls while searching all stations; keeps the sweep well under the per-session query limit. */
 export const BROWSE_BATCH = 5
 
 /**
  * Listings at every station, by one browse_ships call per station. A station
  * that refuses (uncharted frontier, gone) is skipped, so one failure does not
- * hide the rest.
+ * hide the rest. If every station refuses, the sweep fails with the first error.
  */
 export async function browseAllStations(
   baseIds: string[],
   browse: (baseId: string) => Promise<BrowseShipsResponse | undefined>,
 ): Promise<ShipListing[]> {
   const out: ShipListing[] = []
+  let firstError: unknown
+  let answered = 0
   for (let i = 0; i < baseIds.length; i += BROWSE_BATCH) {
     const results = await Promise.allSettled(baseIds.slice(i, i + BROWSE_BATCH).map(browse))
-    for (const r of results) if (r.status === 'fulfilled') out.push(...tagListings(r.value))
+    for (const r of results) {
+      if (r.status === 'fulfilled') {
+        answered++
+        out.push(...tagListings(r.value))
+      } else {
+        firstError ??= r.reason
+      }
+    }
   }
+  if (answered === 0 && baseIds.length > 0) throw firstError
   return out
 }
 
 /** How long one all-stations sweep is reused, so reopening the catalog does not query every station again. */
 export const LISTINGS_TTL_MS = 60_000
-const listingsCache = new WeakMap<object, { at: number; listings: Promise<ShipListing[]> }>()
+const listingsCache = new WeakMap<object, { at: number; baseIds: string; listings: Promise<ShipListing[]> }>()
 
-/** The account's all-stations sweep, keyed by its stable `commands` object and reused until it is LISTINGS_TTL_MS old. */
-export function cachedListings(account: object, sweep: () => Promise<ShipListing[]>, now = Date.now()): Promise<ShipListing[]> {
+/**
+ * The account's sweep of `baseIds`, keyed by its stable `commands` object and
+ * reused until it is LISTINGS_TTL_MS old or the station list changes. A failed
+ * sweep is not kept, so the next read tries again.
+ */
+export function cachedListings(
+  account: object,
+  baseIds: string[],
+  sweep: () => Promise<ShipListing[]>,
+  now = Date.now(),
+): Promise<ShipListing[]> {
+  const key = baseIds.join()
   const hit = listingsCache.get(account)
-  if (hit && now - hit.at < LISTINGS_TTL_MS) return hit.listings
+  if (hit && hit.baseIds === key && now - hit.at < LISTINGS_TTL_MS) return hit.listings
   const listings = sweep()
-  listingsCache.set(account, { at: now, listings })
+  listingsCache.set(account, { at: now, baseIds: key, listings })
+  listings.catch(() => {
+    if (listingsCache.get(account)?.listings === listings) listingsCache.delete(account)
+  })
   return listings
 }
 
@@ -261,18 +299,24 @@ export function ShipCatalog() {
     [isDocked, commissionableFromServer]
   )
 
-  const { data: stationList } = useStations()
-  const stations = useMemo(() => (stationList ?? []).filter((s) => !s.wrecked), [stationList])
+  const { data: stationList, error: stationsError } = useStations()
+  // The public directory omits frontier stations, so add the docked one; the old here-only browse covered it.
+  const baseIds = useMemo(() => {
+    const ids = (stationList ?? []).filter((s) => !s.wrecked).map((s) => s.base_id)
+    const docked = location?.docked_at
+    return docked && !ids.includes(docked) ? [...ids, docked] : ids
+  }, [stationList, location?.docked_at])
 
   // Other pilots' listings at every station, cheapest first per class. Your own are on the Sell tab.
-  const { data: browseData, loading: browseLoading, refetch: refetchBrowse } = useCommandQuery(
+  const { data: browseData, loading: browseLoading, error: browseError, refetch: refetchBrowse } = useCommandQuery(
     async (account) =>
-      cachedListings(account.commands, () =>
-        browseAllStations(stations.map((s) => s.base_id), async (baseId) =>
+      cachedListings(account.commands, baseIds, () =>
+        browseAllStations(baseIds, async (baseId) =>
           (await account.commands.spacemolt_ship.browse_ships({ base_id: baseId })).structuredContent)),
-    [stations],
-    { enabled: stations.length > 0 }
+    [baseIds],
+    { enabled: baseIds.length > 0 }
   )
+  const listingsError = browseError ?? stationsError
   const listingsByClass = useMemo(() => {
     const others = (browseData ?? []).filter((l) => l.seller !== player?.username)
     return groupBy([...others].sort((a, b) => a.price - b.price), (l) => l.class_id)
@@ -314,7 +358,7 @@ export function ShipCatalog() {
   const [category, setCategory] = useState('')
   const [shipClass, setShipClass] = useState('')
   const [search, setSearch] = useState('')
-  const [buyHereOnly, setBuyHereOnly] = useState(false)
+  const [forSaleOnly, setForSaleOnly] = useState(false)
   const [commissionHereOnly, setCommissionHereOnly] = useState(false)
   const [canFlyOnly, setCanFlyOnly] = useState(false)
 
@@ -341,13 +385,13 @@ export function ShipCatalog() {
       if (!matchesTierFilter(s, tier)) return false
       if (category && s.category !== category) return false
       if (shipClass && s.class !== shipClass) return false
-      if (buyHereOnly && !listingsByClass[s.id]) return false
+      if (forSaleOnly && !listingsByClass[s.id]) return false
       if (commissionHereOnly && !commissionableIds.has(s.id)) return false
       if (canFlyOnly && blockReasons(s).length > 0) return false
       if (q && !`${s.name} ${s.description ?? ''}`.toLowerCase().includes(q)) return false
       return true
     })
-  }, [allShips, empire, tier, category, shipClass, buyHereOnly, listingsByClass, commissionHereOnly, commissionableIds, canFlyOnly, blockReasons, search])
+  }, [allShips, empire, tier, category, shipClass, forSaleOnly, listingsByClass, commissionHereOnly, commissionableIds, canFlyOnly, blockReasons, search])
 
   const total = filteredShips.length
   const pageStart = (page - 1) * PAGE_SIZE
@@ -406,7 +450,7 @@ export function ShipCatalog() {
   )
 
   const toggles = [
-    { label: 'For sale', title: 'Show only ships listed for sale at any station', on: buyHereOnly, set: setBuyHereOnly, icon: <ShoppingCart size={11} /> },
+    { label: 'For sale', title: 'Show only ships listed for sale at any station', on: forSaleOnly, set: setForSaleOnly, icon: <ShoppingCart size={11} /> },
     { label: 'Commission here', title: 'Show only ships you can commission at this shipyard', on: commissionHereOnly, set: setCommissionHereOnly, icon: <Hammer size={11} /> },
     { label: 'Can fly', title: 'Hide ships your piloting, reputation, or a prestige lock blocks', on: canFlyOnly, set: setCanFlyOnly, icon: <Check size={11} /> },
   ]
@@ -427,7 +471,9 @@ export function ShipCatalog() {
             />
           </div>
         </div>
-        {browseLoading && <span className={styles.countLabel}>Searching listings at {stations.length} stations...</span>}
+        <span className={styles.countLabel} role="status">
+          {browseLoading ? `Searching listings at ${baseIds.length} stations...` : listingsError && `Could not load ship listings: ${listingsError}`}
+        </span>
         <div className={styles.filterRow}>
           {toggles.map((t) => (
             <button
@@ -614,15 +660,16 @@ export function ShipCatalog() {
                                   </span>
                                   <span className={listingStyles.listingStat}><Heart size={10} /> {listing.hull}/{listing.max_hull}</span>
                                   <span className={listingStyles.listingStat}><CircuitBoard size={10} /> {listing.modules_count ?? 0} modules</span>
-                                  <span className={listingStyles.listingStat}><User size={10} /> {listing.seller}</span>
+                                  <Seller name={listing.seller} />
                                   <span className={listingStyles.listingStat}><MapPin size={10} /> {listing.base_name}</span>
                                 </div>
+                                {!blocked && !buyableHere(listing) && <span className={listingStyles.listingStat}>Dock at {listing.base_name} to buy</span>}
                                 {!blocked && buyableHere(listing) && (
                                   <button
                                     className={shared.accentBtn}
                                     onClick={() => setBuyTarget({ ship: catShip, listing })}
                                     disabled={!canAfford}
-                                    title={canAfford ? `Buy from ${listing.seller}` : `Need ${(listing.price - credits).toLocaleString()} more credits`}
+                                    title={canAfford ? `Buy from ${sellerLabel(listing.seller)}` : `Need ${(listing.price - credits).toLocaleString()} more credits`}
                                     type="button"
                                   >
                                     <ShoppingCart size={12} /> Buy
@@ -706,17 +753,21 @@ export function ShipCatalog() {
                   <Credits amount={listing.price} />
                 </span>
                 <span className={listingStyles.listingStat}><Heart size={10} /> {listing.hull}/{listing.max_hull}</span>
-                <span className={listingStyles.listingStat}><User size={10} /> {listing.seller}</span>
+                <Seller name={listing.seller} />
                 <span className={listingStyles.listingStat}><MapPin size={10} /> {listing.base_name}</span>
               </div>
-              {buyableHere(listing) && <button
-                className={shared.accentBtn}
-                onClick={() => setBuyTarget({ ship: { name: listing.ship_name ?? listing.class_id }, listing })}
-                disabled={(player?.credits ?? 0) < listing.price}
-                type="button"
-              >
-                <ShoppingCart size={12} /> Buy
-              </button>}
+              {buyableHere(listing) ? (
+                <button
+                  className={shared.accentBtn}
+                  onClick={() => setBuyTarget({ ship: { name: listing.ship_name ?? listing.class_id }, listing })}
+                  disabled={(player?.credits ?? 0) < listing.price}
+                  type="button"
+                >
+                  <ShoppingCart size={12} /> Buy
+                </button>
+              ) : (
+                <span className={listingStyles.listingStat}>Dock at {listing.base_name} to buy</span>
+              )}
             </div>
           ))}
         </div>
@@ -883,7 +934,7 @@ export function ShipCatalog() {
                   </div>
                   <div className={styles.commissionRow}>
                     <span className={styles.commissionLabel}>Seller</span>
-                    <span className={styles.commissionValue}>{buyTarget.listing.seller}</span>
+                    <span className={styles.commissionValue}>{sellerLabel(buyTarget.listing.seller)}</span>
                   </div>
                   <div className={styles.commissionRow}>
                     <span className={styles.commissionLabel}>Your Credits</span>
