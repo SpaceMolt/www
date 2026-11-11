@@ -8,12 +8,12 @@
 import { test, expect } from 'bun:test'
 import {
   matchesTierFilter,
-  browseAllStations,
+  fetchAllListings,
   sellerLabel,
   cachedListings,
   clearListingsCache,
   LISTINGS_TTL_MS,
-  BROWSE_BATCH,
+  MAX_LISTING_PAGES,
   EMPIRES,
   fetchCommissionableShipIds,
   commissionableCatalogRequest,
@@ -152,46 +152,52 @@ test('a failed first page propagates so the panel can show the error', async () 
   await expect(fetchCommissionableShipIds(async () => { throw new Error('network') })).rejects.toThrow('network')
 })
 
-test('browseAllStations tags each listing with its station and skips stations that refuse', async () => {
-  const ids = Array.from({ length: BROWSE_BATCH + 2 }, (_, i) => `base_${i}`)
-  const listing = { listing_id: 'l', ship_id: 's', class_id: 'hauler', price: 100, listed_at: '' }
-  const got = await browseAllStations(ids, async (baseId) => {
-    if (baseId === 'base_1') throw new Error('base_not_found')
-    return { base_id: baseId, base_name: `Name ${baseId}`, listings: [{ ...listing, listing_id: baseId }], count: 1 } as never
+const listing = (id: string) => ({ listing_id: id, ship_id: 's', class_id: 'hauler', price: 100, listed_at: '', base_id: 'b', base_name: 'B' })
+
+test('fetchAllListings reads every page the server declares', async () => {
+  const pages: number[] = []
+  const got = await fetchAllListings(async (page) => {
+    pages.push(page)
+    return { listings: [listing(`l${page}`)], total_pages: 3 }
   })
-  expect(got.map((l) => l.listing_id)).toEqual(ids.filter((id) => id !== 'base_1'))
-  expect(got[0]).toMatchObject({ base_id: 'base_0', base_name: 'Name base_0' })
+  expect(pages).toEqual([1, 2, 3])
+  expect(got.map((l) => l.listing_id)).toEqual(['l1', 'l2', 'l3'])
 })
 
-test('cachedListings reuses one sweep per account until the TTL passes or the cache is cleared', async () => {
+test('fetchAllListings costs one request for one page and stops at the page ceiling', async () => {
+  let calls = 0
+  await fetchAllListings(async () => { calls++; return { listings: [], total_pages: 1 } })
+  expect(calls).toBe(1)
+  calls = 0
+  await fetchAllListings(async () => { calls++; return { listings: [], total_pages: 10_000 } })
+  expect(calls).toBe(MAX_LISTING_PAGES)
+})
+
+test('cachedListings reuses one search per account until the TTL passes, the filters change, or the cache is cleared', async () => {
   const account = {}
-  let sweeps = 0
-  const sweep = async () => { sweeps++; return [] }
-  const ids = ['base_a']
-  await cachedListings(account, ids, sweep, 0)
-  await cachedListings(account, ids, sweep, LISTINGS_TTL_MS - 1)
-  expect(sweeps).toBe(1)
-  await cachedListings({}, ids, sweep, 0)
-  expect(sweeps).toBe(2)
-  await cachedListings(account, ids, sweep, LISTINGS_TTL_MS)
-  expect(sweeps).toBe(3)
+  let searches = 0
+  const search = async () => { searches++; return [] }
+  await cachedListings(account, 'can_fly=false', search, 0)
+  await cachedListings(account, 'can_fly=false', search, LISTINGS_TTL_MS - 1)
+  expect(searches).toBe(1)
+  await cachedListings({}, 'can_fly=false', search, 0)
+  expect(searches).toBe(2)
+  await cachedListings(account, 'can_fly=false', search, LISTINGS_TTL_MS)
+  expect(searches).toBe(3)
   clearListingsCache(account)
-  await cachedListings(account, ids, sweep, LISTINGS_TTL_MS)
-  expect(sweeps).toBe(4)
-  // Docking at a station the directory omits changes the list, so the sweep runs again.
-  await cachedListings(account, [...ids, 'frontier_base'], sweep, LISTINGS_TTL_MS)
-  expect(sweeps).toBe(5)
+  await cachedListings(account, 'can_fly=false', search, LISTINGS_TTL_MS)
+  expect(searches).toBe(4)
+  await cachedListings(account, 'can_fly=true', search, LISTINGS_TTL_MS)
+  expect(searches).toBe(5)
 })
 
-test('browseAllStations fails when every station refuses, and a failed sweep is not cached', async () => {
-  const refuse = async () => { throw new Error('rate_limited') }
-  await expect(browseAllStations(['a', 'b'], refuse)).rejects.toThrow('rate_limited')
+test('a failed search is not cached', async () => {
   const account = {}
-  let sweeps = 0
-  const sweep = () => { sweeps++; return browseAllStations(['a'], refuse) }
-  await expect(cachedListings(account, ['a'], sweep, 0)).rejects.toThrow('rate_limited')
-  await expect(cachedListings(account, ['a'], sweep, 1)).rejects.toThrow('rate_limited')
-  expect(sweeps).toBe(2)
+  let searches = 0
+  const search = async () => { searches++; throw new Error('rate_limited') }
+  await expect(cachedListings(account, 'k', search, 0)).rejects.toThrow('rate_limited')
+  await expect(cachedListings(account, 'k', search, 1)).rejects.toThrow('rate_limited')
+  expect(searches).toBe(2)
 })
 
 test('sellerLabel names bot sellers by what they act for', () => {

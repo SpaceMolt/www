@@ -26,7 +26,7 @@ import {
   Landmark,
 } from 'lucide-react'
 import type { BrowseShipsResponse, StorageResponse } from '@spacemolt/lib'
-import { useCargo, useCatalog, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useShip, useSkills, useStations } from '@/lib/spacemolt'
+import { useCargo, useCatalog, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useShip, useSkills } from '@/lib/spacemolt'
 import { getShip, groupBy } from '@/data/catalog'
 import { usePlay } from '../../PlayProvider'
 import { ConfirmAction, Credits, Loading, Modal, errorMessage, shared } from '../../shared'
@@ -68,14 +68,11 @@ export interface CatalogShip extends MobileBaseIdentity, GatedShip {
   build_time?: number
 }
 
-/** A listing tagged with the station that holds it. */
+/** A listing with the station that holds it (browse_ships sends base_id and base_name on each listing). */
 type ShipListing = BrowseShipsResponse['listings'][number] & { base_id: string; base_name: string }
 
-/** Tags each listing in a browse_ships response with its station. */
-function tagListings(resp: BrowseShipsResponse | undefined): ShipListing[] {
-  if (!resp) return []
-  return resp.listings.map((l) => ({ ...l, base_id: resp.base_id, base_name: resp.base_name }))
-}
+/** One page of browse_ships with all_stations: listings at every charted station, cheapest first. */
+type AllStationsPage = { listings?: ShipListing[]; total_pages?: number }
 
 /** Bot sellers arrive as "[Empire Treasury: Outer Rim Explorers]"; show "Outer Rim Explorers (Empire Treasury)". */
 export function sellerLabel(seller = ''): string {
@@ -91,53 +88,48 @@ function Seller({ name = '' }: { name?: string }) {
   )
 }
 
-/** Concurrent browse_ships calls while searching all stations; keeps the sweep well under the per-session query limit. */
-export const BROWSE_BATCH = 5
+/** The server's largest page_size for browse_ships all_stations. */
+export const LISTINGS_PAGE_SIZE = 100
+/** Hard ceiling on pages, so a bad total_pages cannot loop. */
+export const MAX_LISTING_PAGES = 20
 
-/**
- * Listings at every station, by one browse_ships call per station. A station
- * that refuses (uncharted frontier, gone) is skipped, so one failure does not
- * hide the rest. If every station refuses, the sweep fails with the first error.
- */
-export async function browseAllStations(
-  baseIds: string[],
-  browse: (baseId: string) => Promise<BrowseShipsResponse | undefined>,
+/** Every listing the search matches: reads page 1, then each further page the server declares. */
+export async function fetchAllListings(
+  queryPage: (page: number) => Promise<AllStationsPage | undefined>,
 ): Promise<ShipListing[]> {
-  const settled: PromiseSettledResult<BrowseShipsResponse | undefined>[] = []
-  for (let i = 0; i < baseIds.length; i += BROWSE_BATCH) {
-    settled.push(...(await Promise.allSettled(baseIds.slice(i, i + BROWSE_BATCH).map(browse))))
-  }
-  if (settled[0]?.status === 'rejected' && settled.every((r) => r.status === 'rejected')) throw settled[0].reason
-  return settled.flatMap((r) => (r.status === 'fulfilled' ? tagListings(r.value) : []))
+  const first = await queryPage(1)
+  const listings = [...(first?.listings ?? [])]
+  const lastPage = Math.min(first?.total_pages ?? 1, MAX_LISTING_PAGES)
+  for (let page = 2; page <= lastPage; page++) listings.push(...((await queryPage(page))?.listings ?? []))
+  return listings
 }
 
-/** How long one all-stations sweep is reused, so reopening the catalog does not query every station again. */
+/** How long one listing search is reused, so reopening the catalog does not query again. */
 export const LISTINGS_TTL_MS = 60_000
-const listingsCache = new WeakMap<object, { at: number; baseIds: string; listings: Promise<ShipListing[]> }>()
+const listingsCache = new WeakMap<object, { at: number; key: string; listings: Promise<ShipListing[]> }>()
 
 /**
- * The account's sweep of `baseIds`, keyed by its stable `commands` object and
- * reused until it is LISTINGS_TTL_MS old or the station list changes. A failed
- * sweep is not kept, so the next read tries again.
+ * The account's search for `key` (its filters), keyed by the account's stable
+ * `commands` object and reused until it is LISTINGS_TTL_MS old or the filters
+ * change. A failed search is not kept, so the next read tries again.
  */
 export function cachedListings(
   account: object,
-  baseIds: string[],
-  sweep: () => Promise<ShipListing[]>,
+  key: string,
+  search: () => Promise<ShipListing[]>,
   now = Date.now(),
 ): Promise<ShipListing[]> {
-  const key = baseIds.join()
   const hit = listingsCache.get(account)
-  if (hit && hit.baseIds === key && now - hit.at < LISTINGS_TTL_MS) return hit.listings
-  const listings = sweep()
-  listingsCache.set(account, { at: now, baseIds: key, listings })
+  if (hit && hit.key === key && now - hit.at < LISTINGS_TTL_MS) return hit.listings
+  const listings = search()
+  listingsCache.set(account, { at: now, key, listings })
   listings.catch(() => {
     if (listingsCache.get(account)?.listings === listings) listingsCache.delete(account)
   })
   return listings
 }
 
-/** Drops the cached sweep, so the next read sees a purchase at once. */
+/** Drops the cached search, so the next read sees a purchase at once. */
 export const clearListingsCache = (account: object) => listingsCache.delete(account)
 
 /**
@@ -289,31 +281,6 @@ export function ShipCatalog() {
     [isDocked, commissionableFromServer]
   )
 
-  const { data: stationList, error: stationsError } = useStations()
-  // The public directory omits frontier stations, so add the docked one; the old here-only browse covered it.
-  const baseIds = useMemo(() => {
-    const ids = (stationList ?? []).filter((s) => !s.wrecked).map((s) => s.base_id)
-    const docked = location?.docked_at
-    return docked && !ids.includes(docked) ? [...ids, docked] : ids
-  }, [stationList, location?.docked_at])
-
-  // Other pilots' listings at every station, cheapest first per class. Your own are on the Sell tab.
-  const { data: browseData, loading: browseLoading, error: browseError, refetch: refetchBrowse } = useCommandQuery(
-    async (account) =>
-      cachedListings(account.commands, baseIds, () =>
-        browseAllStations(baseIds, async (baseId) =>
-          (await account.commands.spacemolt_ship.browse_ships({ base_id: baseId })).structuredContent)),
-    [baseIds],
-    { enabled: baseIds.length > 0 }
-  )
-  const listingsError = browseError ?? stationsError
-  const listingsByClass = useMemo(() => {
-    const others = (browseData ?? []).filter((l) => l.seller !== player?.username)
-    return groupBy([...others].sort((a, b) => a.price - b.price), (l) => l.class_id)
-  }, [browseData, player?.username])
-  // buy_listed_ship only works at the listing's own station.
-  const buyableHere = (l: ShipListing) => l.base_id === location?.docked_at
-
   const [buyTarget, setBuyTarget] = useState<{ ship: Pick<CatalogShip, 'name'>; listing: ShipListing } | null>(null)
   const [buying, setBuying] = useState(false)
 
@@ -351,6 +318,25 @@ export function ShipCatalog() {
   const [forSaleOnly, setForSaleOnly] = useState(false)
   const [commissionHereOnly, setCommissionHereOnly] = useState(false)
   const [canFlyOnly, setCanFlyOnly] = useState(false)
+
+  // Other pilots' listings at every charted station, cheapest first per class. Your own are on the Sell tab.
+  // With "Can fly" on, the server keeps only listings you could buy and fly, including each listing's fit.
+  // The raw query carries all_stations and can_fly, which the published lib types do not list yet.
+  const { data: browseData, loading: browseLoading, error: browseError, refetch: refetchBrowse } = useCommandQuery(
+    async (account) =>
+      cachedListings(account.commands, `can_fly=${canFlyOnly}`, () =>
+        fetchAllListings(async (page) =>
+          (await account.query('spacemolt_ship', 'browse_ships', {
+            all_stations: true, can_fly: canFlyOnly, page, page_size: LISTINGS_PAGE_SIZE,
+          })).structuredContent as AllStationsPage | undefined)),
+    [canFlyOnly]
+  )
+  const listingsByClass = useMemo(() => {
+    const others = (browseData ?? []).filter((l) => l.seller !== player?.username)
+    return groupBy([...others].sort((a, b) => a.price - b.price), (l) => l.class_id)
+  }, [browseData, player?.username])
+  // buy_listed_ship only works at the listing's own station.
+  const buyableHere = (l: ShipListing) => l.base_id === location?.docked_at
 
   // The spec's ShipClass omits mobile_base and marks every stat optional; the dump always carries them.
   const allShips = useMemo(() => (catalog?.ships ?? []) as unknown as CatalogShip[], [catalog])
@@ -442,7 +428,7 @@ export function ShipCatalog() {
   const toggles = [
     { label: 'For sale', title: 'Show only ships listed for sale at any station', on: forSaleOnly, set: setForSaleOnly, icon: <ShoppingCart size={11} /> },
     { label: 'Commission here', title: 'Show only ships you can commission at this shipyard', on: commissionHereOnly, set: setCommissionHereOnly, icon: <Hammer size={11} /> },
-    { label: 'Can fly', title: 'Hide ships your piloting, reputation, or a prestige lock blocks', on: canFlyOnly, set: setCanFlyOnly, icon: <Check size={11} /> },
+    { label: 'Can fly', title: 'Hide ships and listings you cannot fly: piloting, reputation, a prestige lock, or a listed fit your Engineering cannot run', on: canFlyOnly, set: setCanFlyOnly, icon: <Check size={11} /> },
   ]
 
   return (
@@ -462,7 +448,7 @@ export function ShipCatalog() {
           </div>
         </div>
         <span className={styles.countLabel} role="status">
-          {browseLoading ? `Searching listings at ${baseIds.length} stations...` : listingsError && `Could not load ship listings: ${listingsError}`}
+          {browseLoading ? 'Searching listings...' : browseError && `Could not load ship listings: ${browseError}`}
         </span>
         <div className={styles.filterRow}>
           {toggles.map((t) => (
