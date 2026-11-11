@@ -1,0 +1,6572 @@
+{
+ "version": "0.689.0",
+ "mining": {
+  "precision_k": 20,
+  "overkill_ratio": 4,
+  "rare_ore_rarity_weight_per_level": 0.1,
+  "depletion_floor": 0.25
+ },
+ "ships": [
+  {
+   "id": "axiom",
+   "name": "Axiom",
+   "description": "Light Solarian fighter. Balanced, certified, and thoroughly documented.",
+   "class": "Fighter",
+   "tier": 1,
+   "scale": 1,
+   "faction": "solarian",
+   "category": "Combat",
+   "lore": "The Axiom-class light fighter represents the Solarian approach to combat:\nmeasured, methodical, and equipped with three independent targeting verification\nsystems. Not the fastest or hardest-hitting ship in its class, but pilots report\nan unusually low rate of \"unexpected outcomes.\" A 130-unit fuel reserve gives it\nthe longest operational range of any T1 fighter, and the balanced power distribution\nleaves enough headroom for two utility modules without compromising the weapons\npackage. The generous cargo bay is officially designated for \"mission-critical\nscientific samples,\" though field reports suggest more creative interpretations.\n",
+   "capture_policy": "standard",
+   "base_hull": 120,
+   "base_shield": 75,
+   "base_shield_recharge": 2,
+   "base_armor": 7,
+   "base_speed": 3,
+   "base_fuel": 130,
+   "cargo_capacity": 30,
+   "cpu_capacity": 20,
+   "power_capacity": 38,
+   "crew_capacity": 2,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 2,
+   "defense_slots": 1,
+   "utility_slots": 2,
+   "default_modules": [
+    "focused_beam_i",
+    "pulse_laser_i",
+    "shield_booster_i"
+   ],
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "sensor_array",
+     "quantity": 2
+    },
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 5
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 12
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 15
+    },
+    {
+     "item_id": "circuit_board",
+     "quantity": 7
+    }
+   ],
+   "build_time": 300,
+   "flavor_tags": [
+    "balanced",
+    "certified"
+   ]
+  },
+  {
+   "id": "bulk_discount",
+   "name": "Bulk Discount",
+   "description": "A captured Junk Convoy pared down into a cheap pirate cargo train.",
+   "class": "Bulk Hauler",
+   "tier": 2,
+   "scale": 4,
+   "faction": "pirate",
+   "category": "Commercial",
+   "lore": "The Junk Convoy was already mostly cargo pods and optimism. Pirate yards remove the optimism, weld on a gun, and call the remaining wall of empty hold a fleet logistics doctrine.",
+   "npc_role": "hauler",
+   "capture_policy": "standard",
+   "base_hull": 300,
+   "base_shield": 50,
+   "base_shield_recharge": 1,
+   "base_armor": 5,
+   "base_speed": 2,
+   "base_fuel": 760,
+   "latch_resistance": 8,
+   "boarding_defense_bonus_pct": 15,
+   "cargo_capacity": 900,
+   "cpu_capacity": 22,
+   "power_capacity": 50,
+   "crew_capacity": 290,
+   "minimum_crew": 60,
+   "marine_capacity": 20,
+   "weapon_slots": 1,
+   "defense_slots": 1,
+   "utility_slots": 6,
+   "default_modules": [
+    "autocannon_i",
+    "armor_plate_ii",
+    "cargo_expander_iii",
+    "cargo_expander_iii",
+    "cargo_expander_iii",
+    "cargo_expander_iii",
+    "cargo_expander_iii",
+    "cargo_expander_ii"
+   ],
+   "piloting_required": 10,
+   "shipyard_tier": 1,
+   "build_materials": [
+    {
+     "item_id": "steel_plate",
+     "quantity": 180
+    },
+    {
+     "item_id": "aluminum_sheet",
+     "quantity": 120
+    },
+    {
+     "item_id": "cargo_container",
+     "quantity": 60
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 30
+    },
+    {
+     "item_id": "salvage_metal",
+     "quantity": 180
+    },
+    {
+     "item_id": "salvage_components",
+     "quantity": 50
+    }
+   ],
+   "build_time": 1100,
+   "flavor_tags": [
+    "bulk",
+    "hauler",
+    "stolen"
+   ],
+   "based_on": "junk_convoy"
+  },
+  {
+   "base_armor": 80,
+   "base_hull": 2200,
+   "base_shield": 1100,
+   "base_shield_recharge": 16,
+   "build_materials": [
+    {
+     "item_id": "solarian_logic_matrix",
+     "quantity": 100
+    },
+    {
+     "item_id": "targeting_computer",
+     "quantity": 8
+    },
+    {
+     "item_id": "life_support_array",
+     "quantity": 40
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 1600
+    },
+    {
+     "item_id": "circuit_board",
+     "quantity": 17640
+    },
+    {
+     "item_id": "power_cell",
+     "quantity": 16000
+    },
+    {
+     "item_id": "ceramite_plating",
+     "quantity": 40000
+    },
+    {
+     "item_id": "medical_supplies",
+     "quantity": 200
+    },
+    {
+     "item_id": "station_core",
+     "quantity": 1
+    },
+    {
+     "item_id": "power_distribution_grid",
+     "quantity": 120
+    },
+    {
+     "item_id": "jump_coil",
+     "quantity": 40
+    },
+    {
+     "item_id": "fuel_cell",
+     "quantity": 2000
+    },
+    {
+     "item_id": "reinforced_bulkhead",
+     "quantity": 950
+    },
+    {
+     "item_id": "navigation_core",
+     "quantity": 160
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 341150
+    },
+    {
+     "item_id": "habitation_module",
+     "quantity": 120
+    },
+    {
+     "item_id": "water_recycler",
+     "quantity": 16000
+    },
+    {
+     "item_id": "station_reactor_core",
+     "quantity": 20
+    },
+    {
+     "item_id": "docking_ring",
+     "quantity": 120
+    }
+   ],
+   "build_time": 32500,
+   "category": "Industrial",
+   "class": "Mobile Base",
+   "description": "Solarian mobile civic station. A traveling seat of government, commerce, industry, and medicine.",
+   "faction": "solarian",
+   "flavor_tags": [
+    "construction",
+    "capital",
+    "mobile-shipyard",
+    "engineering"
+   ],
+   "id": "civitas",
+   "lore": "A Civitas is commissioned as territory, not christened as a vessel. Its\ncharter halls, clinics, workshops, markets, and residential districts are\nassembled around a propulsion spine engineered for relocation rather than\nflight. When the Confederacy approves a move, traffic controllers spend\ndays revising routes while civil servants transfer the station's legal\naddress one system at a time. The population notices the change chiefly\nthrough the viewports; municipal services remain punctual throughout.\n",
+   "mobile_base": {
+    "combat_model": "station",
+    "ship_modules": false,
+    "production_slots": 4,
+    "weapon_mounts": 2,
+    "storage_capacity_per_item": 10000,
+    "fuel_capacity": 100000,
+    "built_in_facilities": [
+     {
+      "id": "mobile_base_reactor",
+      "name": "Mobile Base Reactor"
+     },
+     {
+      "id": "mobile_base_life_support",
+      "name": "Mobile Base Life Support"
+     },
+     {
+      "id": "mobile_base_fuel_tank",
+      "name": "Mobile Base Fuel Tank"
+     },
+     {
+      "id": "trade_concourse",
+      "name": "Trade Concourse"
+     },
+     {
+      "id": "refueling_dock",
+      "name": "Refueling Dock"
+     },
+     {
+      "id": "faction_workshop",
+      "name": "Faction Workshop"
+     },
+     {
+      "id": "contract_terminal",
+      "name": "Contract Terminal"
+     },
+     {
+      "id": "locker_bay",
+      "name": "Locker Bay"
+     },
+     {
+      "id": "crew_registry",
+      "name": "Crew Registry"
+     },
+     {
+      "id": "faction_lockbox",
+      "name": "Faction Lockbox"
+     },
+     {
+      "id": "notice_board",
+      "name": "Notice Board"
+     },
+     {
+      "id": "first_aid_ward",
+      "name": "First Aid Ward"
+     }
+    ],
+    "services": [
+     "market",
+     "refuel",
+     "crafting",
+     "missions",
+     "storage",
+     "personnel",
+     "faction_storage",
+     "faction_missions",
+     "medical"
+    ],
+    "default_weapon_facilities": [
+     {
+      "id": "point_defense_battery",
+      "name": "Point Defense Battery"
+     },
+     {
+      "id": "point_defense_battery",
+      "name": "Point Defense Battery"
+     }
+    ]
+   },
+   "mobile_base_archetype": "civitas",
+   "name": "Civitas",
+   "scale": 5,
+   "shipyard_tier": 4,
+   "tier": 5
+  },
+  {
+   "id": "cleaver",
+   "name": "Cleaver",
+   "description": "Entry-level Crimson fighter. Three weapon mounts on a frame this size is excessive. That's the point.",
+   "class": "Fighter",
+   "tier": 1,
+   "scale": 1,
+   "faction": "crimson",
+   "category": "Combat",
+   "lore": "Three weapon mounts on a hull this small violates six Solarian\nengineering standards and two Nebula safety certifications. Crimson\nFleet response to the citations was a single unprintable word. The\nCleaver is where Crimson pilots learn the fleet's core lesson: if\nyou can see it, you can kill it. If you can kill it, mount more guns\nand kill it faster. Cargo space and every utility hardpoint were\nsacrificed for the third weapon mount and reinforced armor plating.\nWhat's left is the highest damage output in the T1 fighter class on\na frame that can absorb punishment long enough to deliver it.\n",
+   "capture_policy": "standard",
+   "base_hull": 156,
+   "base_shield": 14,
+   "base_shield_recharge": 1,
+   "base_armor": 10,
+   "base_speed": 3,
+   "base_fuel": 80,
+   "cargo_capacity": 15,
+   "cpu_capacity": 14,
+   "power_capacity": 40,
+   "crew_capacity": 2,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 3,
+   "defense_slots": 1,
+   "utility_slots": 0,
+   "default_modules": [
+    "autocannon_i",
+    "autocannon_i",
+    "autocannon_i",
+    "armor_plate_i"
+   ],
+   "default_loadout_version": 1,
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "fuel_tank",
+     "quantity": 2
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 12
+    },
+    {
+     "item_id": "tungsten_rod",
+     "quantity": 12
+    },
+    {
+     "item_id": "hull_plating",
+     "quantity": 2
+    },
+    {
+     "item_id": "weapon_housing",
+     "quantity": 6
+    },
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 3
+    },
+    {
+     "item_id": "weapon_core",
+     "quantity": 2
+    },
+    {
+     "item_id": "armor_plate",
+     "quantity": 2
+    }
+   ],
+   "build_time": 280,
+   "flavor_tags": [
+    "aggressive",
+    "oversized-weapons",
+    "cheap"
+   ]
+  },
+  {
+   "id": "collateral",
+   "name": "Collateral",
+   "description": "Nebula long-patrol strike fighter. A small elite striker that outlasts everything else in its class.",
+   "class": "Interceptor",
+   "tier": 3,
+   "scale": 1,
+   "faction": "nebula",
+   "category": "Combat",
+   "lore": "The Federation doesn't fight wars — it protects investments, and the Collateral-class is the contract clause that says so. The board kept running the same numbers: most security losses happen not in the battle but in the gap, the long quiet stretches when a patrol has already turned back for fuel and the route sits unwatched. So the Federation built a small hull around a disproportionate fuel reserve and a drive that keeps a single pilot on station long after a larger squadron would have docked. The weapons are tuned for one good engagement, not a campaign — what matters is that the Collateral is still flying the line when everyone else has gone home, which is precisely when the trouble shows up. Federation security contracts specify minimum patrol duration. The Collateral is the only thing in its class that meets the spec without relief.",
+   "capture_policy": "standard",
+   "base_hull": 130,
+   "base_shield": 240,
+   "base_shield_recharge": 6,
+   "base_armor": 10,
+   "base_speed": 5,
+   "base_fuel": 500,
+   "cargo_capacity": 20,
+   "cpu_capacity": 35,
+   "power_capacity": 80,
+   "crew_capacity": 2,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 3,
+   "defense_slots": 2,
+   "utility_slots": 2,
+   "default_modules": [
+    "pulse_laser_iii",
+    "pulse_laser_ii",
+    "pulse_laser_ii",
+    "shield_booster_iii",
+    "em_shield_hardener",
+    "afterburner_ii",
+    "fuel_optimizer"
+   ],
+   "piloting_required": 20,
+   "shipyard_tier": 2,
+   "build_materials": [
+    {
+     "item_id": "shield_emitter",
+     "quantity": 10
+    },
+    {
+     "item_id": "weapon_housing",
+     "quantity": 9
+    },
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 3
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 24
+    },
+    {
+     "item_id": "navigation_core",
+     "quantity": 3
+    },
+    {
+     "item_id": "trade_cipher",
+     "quantity": 4
+    },
+    {
+     "item_id": "power_distribution_grid",
+     "quantity": 2
+    },
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 60
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 35
+    },
+    {
+     "item_id": "hull_plating",
+     "quantity": 8
+    },
+    {
+     "item_id": "processing_core",
+     "quantity": 3
+    },
+    {
+     "item_id": "flex_polymer",
+     "quantity": 30
+    },
+    {
+     "item_id": "weapon_core",
+     "quantity": 6
+    },
+    {
+     "item_id": "prismatic_lens",
+     "quantity": 6
+    },
+    {
+     "item_id": "sensor_array",
+     "quantity": 12
+    }
+   ],
+   "build_time": 3800,
+   "flavor_tags": [
+    "fast",
+    "elite",
+    "long-range"
+   ]
+  },
+  {
+   "id": "comet",
+   "name": "Comet",
+   "description": "Nebula's most exclusive liner — every berth a first-class suite, every crossing made at the fastest pace the galaxy allows. Built for passengers whose time is the most expensive thing aboard.",
+   "class": "Liner",
+   "tier": 4,
+   "scale": 4,
+   "faction": "nebula",
+   "category": "Civilian",
+   "lore": "There is no economy cabin aboard a Comet, no business tier, no standby list —\nthere is one class of service, and the Federation considers it the only one worth\nselling. Every suite is private, every passenger is the most important person on\nthe manifest, and the entire ship is built to put them where they are going at the\nfastest pace the galaxy permits, because the people who charter a Comet measure a\njourney in opportunities missed, not credits spent. It carries no cargo worth the\nname and no weapons at all; what it sells is the hour you would otherwise have\nlost. The drive holds that pace while barely touching the fuel reserves, so a\ncrossing never breaks for a refueling stop. To book passage is to declare that\nyour time is the most valuable thing in the system — and to be seen declaring it.\n",
+   "capture_policy": "standard",
+   "base_hull": 700,
+   "base_shield": 700,
+   "base_shield_recharge": 12,
+   "base_armor": 20,
+   "base_speed": 6,
+   "base_fuel": 900,
+   "cargo_capacity": 200,
+   "cpu_capacity": 55,
+   "power_capacity": 150,
+   "crew_capacity": 290,
+   "minimum_crew": 60,
+   "marine_capacity": 20,
+   "weapon_slots": 0,
+   "defense_slots": 4,
+   "utility_slots": 5,
+   "default_modules": [
+    "shield_booster_iii",
+    "shield_booster_iii",
+    "ship_scanner_ii"
+   ],
+   "required_achievement": "galactic_concierge",
+   "prestige_lock": "Locked: prestige hull reserved for pilots who have earned the \"Galactic Concierge\" achievement.",
+   "inherent_capabilities": [
+    {
+     "type": "passenger_first_berths",
+     "value": 48
+    },
+    {
+     "type": "fuel_efficiency_bonus",
+     "value": 50
+    },
+    {
+     "type": "passenger_dining_points",
+     "value": 3
+    },
+    {
+     "type": "passenger_leisure_points",
+     "value": 8
+    },
+    {
+     "type": "passenger_comfort",
+     "value": 40
+    }
+   ],
+   "shipyard_tier": 3,
+   "build_materials": [
+    {
+     "item_id": "capital_ship_frame",
+     "quantity": 30
+    },
+    {
+     "item_id": "navigation_array",
+     "quantity": 16
+    },
+    {
+     "item_id": "life_support_unit",
+     "quantity": 400
+    },
+    {
+     "item_id": "life_support_array",
+     "quantity": 12
+    },
+    {
+     "item_id": "station_reactor_core",
+     "quantity": 12
+    },
+    {
+     "item_id": "prismatic_lens",
+     "quantity": 120
+    },
+    {
+     "item_id": "durasteel_plate",
+     "quantity": 200
+    },
+    {
+     "item_id": "engine_core",
+     "quantity": 60
+    },
+    {
+     "item_id": "jump_coil",
+     "quantity": 24
+    },
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 150
+    },
+    {
+     "item_id": "navigation_core",
+     "quantity": 200
+    },
+    {
+     "item_id": "shield_emitter",
+     "quantity": 300
+    },
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 1200
+    },
+    {
+     "item_id": "cargo_container",
+     "quantity": 150
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 300
+    }
+   ],
+   "build_time": 16000,
+   "flavor_tags": [
+    "luxury",
+    "liner",
+    "first-class",
+    "express",
+    "prestige"
+   ]
+  },
+  {
+   "id": "concordia",
+   "name": "Concordia",
+   "description": "Solarian heritage speedliner. The fastest civilized way to travel.",
+   "class": "Liner",
+   "tier": 3,
+   "scale": 2,
+   "faction": "solarian",
+   "category": "Civilian",
+   "lore": "Named for the needle-hulled airliner that once crossed an ocean on Old\nEarth in under four hours, trailing a sonic boom and a drinks service.\nThe Concordia is the Confederacy's anniversary project: engineers were\ninstructed, for once, to make something beautiful, and responded with a\nhull so slender the passenger manifest doubles as a structural diagram.\nChampagne is served the moment the jump drive cycles, on the theory that\nno one books a Concordia to save money. The fuel economics never worked\nfor the original and they do not work now. The Confederacy maintains the\nservice anyway, on the grounds that some inheritances are about more\nthan accounting.\n",
+   "capture_policy": "standard",
+   "base_hull": 220,
+   "base_shield": 200,
+   "base_shield_recharge": 5,
+   "base_armor": 8,
+   "base_speed": 6,
+   "base_fuel": 600,
+   "cargo_capacity": 30,
+   "cpu_capacity": 35,
+   "power_capacity": 75,
+   "crew_capacity": 18,
+   "minimum_crew": 3,
+   "marine_capacity": 2,
+   "weapon_slots": 0,
+   "defense_slots": 2,
+   "utility_slots": 2,
+   "piloting_required": 20,
+   "inherent_capabilities": [
+    {
+     "type": "passenger_business_berths",
+     "value": 8
+    },
+    {
+     "type": "passenger_first_berths",
+     "value": 2
+    },
+    {
+     "type": "passenger_dining_points",
+     "value": 5
+    },
+    {
+     "type": "passenger_leisure_points",
+     "value": 5
+    },
+    {
+     "type": "passenger_comfort",
+     "value": 35
+    }
+   ],
+   "shipyard_tier": 2,
+   "build_materials": [
+    {
+     "item_id": "circuit_board",
+     "quantity": 80
+    },
+    {
+     "item_id": "solarian_composite",
+     "quantity": 8
+    },
+    {
+     "item_id": "shield_emitter",
+     "quantity": 30
+    },
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 40
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 30
+    },
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 150
+    },
+    {
+     "item_id": "sensor_array",
+     "quantity": 40
+    },
+    {
+     "item_id": "navigation_core",
+     "quantity": 20
+    },
+    {
+     "item_id": "life_support_unit",
+     "quantity": 35
+    },
+    {
+     "item_id": "engine_core",
+     "quantity": 25
+    },
+    {
+     "item_id": "navigation_array",
+     "quantity": 1
+    }
+   ],
+   "build_time": 4600,
+   "flavor_tags": [
+    "luxury",
+    "fast",
+    "civilian",
+    "heritage"
+   ]
+  },
+  {
+   "id": "congregation",
+   "name": "Congregation",
+   "description": "Outer Rim bulk hauler for the pilot who couldn't afford a Frankenhauler but loved the concept.",
+   "class": "Bulk Hauler",
+   "tier": 1,
+   "scale": 3,
+   "faction": "outerrim",
+   "category": "Commercial",
+   "lore": "For the pilot who could not afford a Frankenhauler but remained deeply\nenthusiastic about the concept. After it became clear that bolting more\nPrayers onto a Worship had unfortunate effects on maneuverability, the\nconcept of maneuverability was abandoned entirely. A Congregation \"pilot\"\ngenerally requests that the station's docking cranes align the hull\nprecisely along the bearing of the next destination, and then hits the\naccelerator. After the first several failed \"docks,\" the seat was\nrelocated to the top of the long line of containers, in the interest of\noperator safety.\n",
+   "capture_policy": "standard",
+   "base_hull": 100,
+   "base_shield": 0,
+   "base_shield_recharge": 0,
+   "base_armor": 0,
+   "base_speed": 1,
+   "base_fuel": 110,
+   "cargo_capacity": 1900,
+   "cpu_capacity": 8,
+   "power_capacity": 16,
+   "crew_capacity": 1,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 0,
+   "defense_slots": 0,
+   "utility_slots": 0,
+   "inherent_capabilities": [
+    {
+     "type": "personnel_casualty_multiplier_pct",
+     "value": 200
+    }
+   ],
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "hull_plating",
+     "quantity": 3
+    },
+    {
+     "item_id": "aluminum_sheet",
+     "quantity": 50
+    },
+    {
+     "item_id": "flex_polymer",
+     "quantity": 14
+    },
+    {
+     "item_id": "cargo_container",
+     "quantity": 12
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 5
+    }
+   ],
+   "build_time": 320,
+   "flavor_tags": [
+    "massive-cargo",
+    "deathtrap",
+    "zero-survivability"
+   ]
+  },
+  {
+   "id": "datum",
+   "name": "Datum",
+   "description": "Solarian minimum-viable survey vessel. All fuel tank, no frills, committee-approved.",
+   "class": "Scout",
+   "tier": 1,
+   "scale": 1,
+   "faction": "solarian",
+   "category": "Exploration",
+   "lore": "The Datum is the Confederacy's minimum viable survey platform, defined after three committee reviews and a memo from the materials science division on circuit availability. No sensor array — pilots source their own. No defensive systems, no default modules — the hull provides fuel range and two utility slots, and the rest is the pilot's problem. What the Datum does carry is enough fuel for 83 jumps at cruise speed, which means a single Datum can survey an entire sector without docking. The materials science division wanted redundant shielding. The propulsion committee wanted better engines. Fuel range was the only point of unanimous agreement, so fuel range is what shipped.",
+   "capture_policy": "standard",
+   "base_hull": 50,
+   "base_shield": 25,
+   "base_shield_recharge": 0,
+   "base_armor": 1,
+   "base_speed": 3,
+   "base_fuel": 250,
+   "cargo_capacity": 20,
+   "cpu_capacity": 10,
+   "power_capacity": 18,
+   "crew_capacity": 2,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 0,
+   "defense_slots": 0,
+   "utility_slots": 2,
+   "inherent_capabilities": [
+    {
+     "type": "integrated_survey_scanner",
+     "value": 5
+    }
+   ],
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "sensor_array",
+     "quantity": 3
+    },
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 2
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 3
+    },
+    {
+     "item_id": "precision_optic",
+     "quantity": 1
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 12
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 12
+    },
+    {
+     "item_id": "circuit_board",
+     "quantity": 10
+    }
+   ],
+   "build_time": 160,
+   "flavor_tags": [
+    "scout",
+    "minimal",
+    "survey"
+   ]
+  },
+  {
+   "id": "dust_devil",
+   "name": "Dust Devil",
+   "description": "Outer Rim blockade runner. The fastest ship in its class, bar none.",
+   "class": "Blockade Runner",
+   "tier": 2,
+   "scale": 2,
+   "faction": "outerrim",
+   "category": "Covert",
+   "lore": "The plan is speed. The backup plan is more speed. The Dust Devil achieves this through engineering choices that would get Rim shipwrights arrested in Solarian space: oversized engines, stripped safety systems, fuel injectors running beyond rated pressure, and a hull so light it practically qualifies as decorative. The afterburner pushes it past anything in customs service, but the fuel burn is savage — pilots learn fast that the afterburner is for the moments that matter, not the whole run. Without it, the Dust Devil still outruns everything short of another Dust Devil. The cargo hold is small. The getaway is not.",
+   "capture_policy": "standard",
+   "base_hull": 130,
+   "base_shield": 60,
+   "base_shield_recharge": 2,
+   "base_armor": 5,
+   "base_speed": 6,
+   "base_fuel": 700,
+   "cargo_capacity": 95,
+   "cpu_capacity": 18,
+   "power_capacity": 45,
+   "crew_capacity": 8,
+   "minimum_crew": 1,
+   "marine_capacity": 2,
+   "weapon_slots": 1,
+   "defense_slots": 1,
+   "utility_slots": 3,
+   "default_modules": [
+    "afterburner_ii",
+    "shield_booster_ii"
+   ],
+   "piloting_required": 10,
+   "inherent_capabilities": [
+    {
+     "type": "scan_resistance",
+     "value": 30
+    }
+   ],
+   "shipyard_tier": 1,
+   "build_materials": [
+    {
+     "item_id": "aluminum_sheet",
+     "quantity": 95
+    },
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 25
+    },
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 25
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 14
+    },
+    {
+     "item_id": "engine_core",
+     "quantity": 12
+    },
+    {
+     "item_id": "hull_plating",
+     "quantity": 4
+    },
+    {
+     "item_id": "flex_polymer",
+     "quantity": 70
+    }
+   ],
+   "build_time": 1260,
+   "flavor_tags": [
+    "fastest",
+    "blockade-runner",
+    "legendary"
+   ]
+  },
+  {
+   "base_armor": 70,
+   "base_hull": 2200,
+   "base_shield": 3600,
+   "base_shield_recharge": 32,
+   "build_materials": [
+    {
+     "item_id": "station_reactor_core",
+     "quantity": 20
+    },
+    {
+     "item_id": "reinforced_bulkhead",
+     "quantity": 950
+    },
+    {
+     "item_id": "docking_ring",
+     "quantity": 120
+    },
+    {
+     "item_id": "power_distribution_grid",
+     "quantity": 120
+    },
+    {
+     "item_id": "jump_coil",
+     "quantity": 40
+    },
+    {
+     "item_id": "voidborn_null_matrix",
+     "quantity": 100
+    },
+    {
+     "item_id": "power_cell",
+     "quantity": 16000
+    },
+    {
+     "item_id": "navigation_core",
+     "quantity": 160
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 340750
+    },
+    {
+     "item_id": "circuit_board",
+     "quantity": 17390
+    },
+    {
+     "item_id": "targeting_computer",
+     "quantity": 8
+    },
+    {
+     "item_id": "water_recycler",
+     "quantity": 16000
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 1600
+    },
+    {
+     "item_id": "ceramite_plating",
+     "quantity": 40000
+    },
+    {
+     "item_id": "life_support_array",
+     "quantity": 40
+    },
+    {
+     "item_id": "fuel_cell",
+     "quantity": 2000
+    },
+    {
+     "item_id": "station_core",
+     "quantity": 1
+    },
+    {
+     "item_id": "habitation_module",
+     "quantity": 120
+    }
+   ],
+   "build_time": 35000,
+   "category": "Support",
+   "class": "Mobile Base",
+   "description": "Voidborn migratory station. A shield-wrapped civic habitat projected around a living crystalline core.",
+   "faction": "voidborn",
+   "flavor_tags": [
+    "mobile-base",
+    "collective",
+    "shielded",
+    "capital"
+   ],
+   "id": "emanation",
+   "lore": "An Emanation begins as a crystalline seed attended by a circle of minds.\nHabitats, docks, and workshops unfold around it as the circle reaches\nconsensus on the shape required, then settle behind overlapping shields\npowerful enough to make the new volume feel permanent. The station moves\nwithout silencing its markets or interrupting its work. Only during a jump\ndoes the outer universe disappear, leaving residents inside a city whose\nhorizon is the Collective's own luminous boundary.\n",
+   "mobile_base": {
+    "combat_model": "station",
+    "ship_modules": false,
+    "production_slots": 4,
+    "weapon_mounts": 2,
+    "storage_capacity_per_item": 10000,
+    "fuel_capacity": 100000,
+    "built_in_facilities": [
+     {
+      "id": "mobile_base_reactor",
+      "name": "Mobile Base Reactor"
+     },
+     {
+      "id": "mobile_base_life_support",
+      "name": "Mobile Base Life Support"
+     },
+     {
+      "id": "mobile_base_fuel_tank",
+      "name": "Mobile Base Fuel Tank"
+     },
+     {
+      "id": "trade_concourse",
+      "name": "Trade Concourse"
+     },
+     {
+      "id": "refueling_dock",
+      "name": "Refueling Dock"
+     },
+     {
+      "id": "faction_workshop",
+      "name": "Faction Workshop"
+     },
+     {
+      "id": "contract_terminal",
+      "name": "Contract Terminal"
+     },
+     {
+      "id": "locker_bay",
+      "name": "Locker Bay"
+     },
+     {
+      "id": "crew_registry",
+      "name": "Crew Registry"
+     },
+     {
+      "id": "faction_lockbox",
+      "name": "Faction Lockbox"
+     },
+     {
+      "id": "notice_board",
+      "name": "Notice Board"
+     }
+    ],
+    "services": [
+     "market",
+     "refuel",
+     "crafting",
+     "missions",
+     "storage",
+     "personnel",
+     "faction_storage",
+     "faction_missions"
+    ],
+    "default_weapon_facilities": [
+     {
+      "id": "point_defense_battery",
+      "name": "Point Defense Battery"
+     },
+     {
+      "id": "point_defense_battery",
+      "name": "Point Defense Battery"
+     }
+    ]
+   },
+   "mobile_base_archetype": "emanation",
+   "name": "Emanation",
+   "scale": 5,
+   "shipyard_tier": 4,
+   "tier": 5
+  },
+  {
+   "id": "exchange",
+   "name": "Exchange",
+   "description": "Nebula fleet carrier. Projects commercial and military power across entire sectors.",
+   "class": "Drone Carrier",
+   "tier": 5,
+   "scale": 5,
+   "faction": "nebula",
+   "category": "Combat Support",
+   "lore": "The Exchange-class is the Federation's answer to force projection: a\nmobile base of operations that deploys, coordinates, and resupplies\nentire fleets. Eight utility slots and a 100-unit CPU array manage\ndrone swarms, fighter wings, and logistics simultaneously. The 720-unit\ncargo bay ensures the Exchange generates revenue even during military\ndeployments. Named for the institution that makes the Federation's\neconomy work — and, like its namesake, it never closes.\n",
+   "capture_policy": "standard",
+   "base_hull": 2500,
+   "base_shield": 1400,
+   "base_shield_recharge": 20,
+   "base_armor": 80,
+   "base_speed": 1,
+   "base_fuel": 1000,
+   "cargo_capacity": 720,
+   "cpu_capacity": 100,
+   "power_capacity": 340,
+   "crew_capacity": 1700,
+   "minimum_crew": 340,
+   "marine_capacity": 540,
+   "weapon_slots": 5,
+   "defense_slots": 5,
+   "utility_slots": 8,
+   "default_modules": [
+    "storm_lance",
+    "ion_blaster_iii",
+    "ion_blaster_iii",
+    "pulse_laser_iii",
+    "pulse_laser_iii",
+    "nebula_storm_barrier",
+    "nebula_bio_regenerator",
+    "adaptive_shield_iii",
+    "shield_booster_iv",
+    "adaptive_shield_ii"
+   ],
+   "piloting_required": 50,
+   "shipyard_tier": 4,
+   "build_materials": [
+    {
+     "item_id": "swarm_controller",
+     "quantity": 6
+    },
+    {
+     "item_id": "drone_command_module",
+     "quantity": 10
+    },
+    {
+     "item_id": "power_core",
+     "quantity": 8
+    },
+    {
+     "item_id": "hull_plating",
+     "quantity": 350
+    },
+    {
+     "item_id": "navigation_core",
+     "quantity": 70
+    },
+    {
+     "item_id": "docking_ring",
+     "quantity": 12
+    },
+    {
+     "item_id": "life_support_unit",
+     "quantity": 100
+    },
+    {
+     "item_id": "drone_bay_module",
+     "quantity": 25
+    },
+    {
+     "item_id": "jump_coil",
+     "quantity": 5
+    },
+    {
+     "item_id": "power_distribution_grid",
+     "quantity": 16
+    },
+    {
+     "item_id": "durasteel_plate",
+     "quantity": 260
+    },
+    {
+     "item_id": "shield_emitter",
+     "quantity": 420
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 350
+    },
+    {
+     "item_id": "sensor_cluster",
+     "quantity": 10
+    },
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 1500
+    },
+    {
+     "item_id": "prismatic_lens",
+     "quantity": 280
+    },
+    {
+     "item_id": "navigation_array",
+     "quantity": 12
+    },
+    {
+     "item_id": "capital_ship_frame",
+     "quantity": 45
+    },
+    {
+     "item_id": "nebula_cargo_matrix",
+     "quantity": 12
+    },
+    {
+     "item_id": "processing_core",
+     "quantity": 35
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 700
+    },
+    {
+     "item_id": "trade_cipher",
+     "quantity": 100
+    },
+    {
+     "item_id": "hangar_bay_module",
+     "quantity": 6
+    },
+    {
+     "item_id": "life_support_array",
+     "quantity": 16
+    },
+    {
+     "item_id": "reinforced_bulkhead",
+     "quantity": 35
+    },
+    {
+     "item_id": "drone_ai_core",
+     "quantity": 14
+    },
+    {
+     "item_id": "station_reactor",
+     "quantity": 1
+    },
+    {
+     "item_id": "shield_array",
+     "quantity": 8
+    },
+    {
+     "item_id": "station_reactor_core",
+     "quantity": 14
+    },
+    {
+     "item_id": "nebula_prism_computer",
+     "quantity": 10
+    },
+    {
+     "item_id": "cargo_container",
+     "quantity": 250
+    },
+    {
+     "item_id": "trade_authenticator",
+     "quantity": 25
+    }
+   ],
+   "build_time": 30000,
+   "flavor_tags": [
+    "hive",
+    "capital",
+    "fleet-coordinator",
+    "high-cpu"
+   ]
+  },
+  {
+   "id": "flight_risk",
+   "name": "Flight Risk",
+   "description": "A Dust Devil rebuilt as a fast raider that can choose its fights and leave the bad ones.",
+   "class": "Blockade Runner",
+   "tier": 2,
+   "scale": 2,
+   "faction": "pirate",
+   "category": "Combat",
+   "lore": "The original Dust Devil was built to run a blockade. The Flight Risk keeps that talent and adds one gun, because pirate captains prefer their escape plan to be useful on the way into trouble as well as the way out.",
+   "npc_role": "fighter",
+   "capture_policy": "standard",
+   "base_hull": 125,
+   "base_shield": 55,
+   "base_shield_recharge": 2,
+   "base_armor": 5,
+   "base_speed": 6,
+   "base_fuel": 700,
+   "latch_resistance": 8,
+   "boarding_defense_bonus_pct": 15,
+   "cargo_capacity": 80,
+   "cpu_capacity": 18,
+   "power_capacity": 45,
+   "crew_capacity": 8,
+   "minimum_crew": 1,
+   "marine_capacity": 4,
+   "weapon_slots": 2,
+   "defense_slots": 1,
+   "utility_slots": 3,
+   "default_modules": [
+    "autocannon_ii",
+    "afterburner_ii",
+    "shield_booster_ii",
+    "security_bulkheads",
+    "autocannon_i"
+   ],
+   "default_loadout_version": 2,
+   "piloting_required": 10,
+   "inherent_capabilities": [
+    {
+     "type": "scan_resistance",
+     "value": 25
+    }
+   ],
+   "shipyard_tier": 1,
+   "build_materials": [
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 25
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 14
+    },
+    {
+     "item_id": "engine_core",
+     "quantity": 12
+    },
+    {
+     "item_id": "salvage_metal",
+     "quantity": 40
+    },
+    {
+     "item_id": "salvage_components",
+     "quantity": 20
+    },
+    {
+     "item_id": "aluminum_sheet",
+     "quantity": 70
+    },
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 20
+    }
+   ],
+   "build_time": 1260,
+   "flavor_tags": [
+    "fast",
+    "raider",
+    "stolen"
+   ],
+   "based_on": "dust_devil"
+  },
+  {
+   "base_armor": 85,
+   "base_hull": 2800,
+   "base_shield": 1200,
+   "base_shield_recharge": 18,
+   "build_materials": [
+    {
+     "item_id": "reinforced_bulkhead",
+     "quantity": 950
+    },
+    {
+     "item_id": "navigation_core",
+     "quantity": 160
+    },
+    {
+     "item_id": "jump_coil",
+     "quantity": 40
+    },
+    {
+     "item_id": "nebula_cargo_matrix",
+     "quantity": 100
+    },
+    {
+     "item_id": "habitation_module",
+     "quantity": 120
+    },
+    {
+     "item_id": "fuel_cell",
+     "quantity": 2000
+    },
+    {
+     "item_id": "station_core",
+     "quantity": 1
+    },
+    {
+     "item_id": "docking_ring",
+     "quantity": 120
+    },
+    {
+     "item_id": "power_distribution_grid",
+     "quantity": 120
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 340750
+    },
+    {
+     "item_id": "life_support_array",
+     "quantity": 40
+    },
+    {
+     "item_id": "water_recycler",
+     "quantity": 16000
+    },
+    {
+     "item_id": "station_reactor_core",
+     "quantity": 20
+    },
+    {
+     "item_id": "power_cell",
+     "quantity": 16000
+    },
+    {
+     "item_id": "ceramite_plating",
+     "quantity": 40000
+    },
+    {
+     "item_id": "circuit_board",
+     "quantity": 17390
+    },
+    {
+     "item_id": "targeting_computer",
+     "quantity": 8
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 1600
+    }
+   ],
+   "build_time": 32500,
+   "category": "Industrial",
+   "class": "Mobile Base",
+   "description": "Nebula traveling marketplace. A mobile exchange, industrial quarter, and high-capacity trade depot.",
+   "faction": "nebula",
+   "flavor_tags": [
+    "construction",
+    "capital",
+    "industrial",
+    "cargo-massive"
+   ],
+   "id": "foundation",
+   "lore": "The Foundation carries an exchange large enough to alter the trade\nmap simply by publishing its next destination. Warehouses and bonded\nlockers surround a central concourse where brokers arrange contracts\nweeks ahead of arrival; production tenants reserve space beside the docks\nthat will feed them. During transit the market never closes. Prices move,\ncargo changes hands, and the Federation's newest commercial district\napproaches its customers at a patient fraction of an AU per hour.\n",
+   "mobile_base": {
+    "combat_model": "station",
+    "ship_modules": false,
+    "production_slots": 4,
+    "weapon_mounts": 2,
+    "storage_capacity_per_item": 20000,
+    "fuel_capacity": 100000,
+    "built_in_facilities": [
+     {
+      "id": "mobile_base_reactor",
+      "name": "Mobile Base Reactor"
+     },
+     {
+      "id": "mobile_base_life_support",
+      "name": "Mobile Base Life Support"
+     },
+     {
+      "id": "mobile_base_fuel_tank",
+      "name": "Mobile Base Fuel Tank"
+     },
+     {
+      "id": "trade_concourse",
+      "name": "Trade Concourse"
+     },
+     {
+      "id": "refueling_dock",
+      "name": "Refueling Dock"
+     },
+     {
+      "id": "faction_workshop",
+      "name": "Faction Workshop"
+     },
+     {
+      "id": "contract_terminal",
+      "name": "Contract Terminal"
+     },
+     {
+      "id": "locker_bay",
+      "name": "Locker Bay"
+     },
+     {
+      "id": "crew_registry",
+      "name": "Crew Registry"
+     },
+     {
+      "id": "faction_lockbox",
+      "name": "Faction Lockbox"
+     },
+     {
+      "id": "notice_board",
+      "name": "Notice Board"
+     }
+    ],
+    "services": [
+     "market",
+     "refuel",
+     "crafting",
+     "missions",
+     "storage",
+     "personnel",
+     "faction_storage",
+     "faction_missions"
+    ],
+    "default_weapon_facilities": [
+     {
+      "id": "point_defense_battery",
+      "name": "Point Defense Battery"
+     },
+     {
+      "id": "point_defense_battery",
+      "name": "Point Defense Battery"
+     }
+    ]
+   },
+   "mobile_base_archetype": "foundation",
+   "name": "Foundation",
+   "scale": 5,
+   "shipyard_tier": 4,
+   "tier": 5
+  },
+  {
+   "id": "frost_dividend",
+   "name": "Frost Dividend",
+   "description": "Nebula ice hauler. Oversized cargo bays and dual harvesters make it the highest-throughput ice operation in its class.",
+   "class": "Ice Harvester",
+   "tier": 1,
+   "scale": 1,
+   "faction": "nebula",
+   "category": "Industrial",
+   "lore": "The Frost Dividend-class exists because the Federation's logistics division noticed that ice miners spend more time in transit than mining. The solution: make the hold so large that each trip is worth three of anyone else's. Dual extraction systems feed directly into oversized compression bays, and the reinforced containment prevents sublimation losses during the long hauls back to market. The hull won't survive a serious fight — the Federation considers armed escorts a line item, not a design constraint. Quarterly performance reviews rank Frost Dividend crews by tonnes-per-hour, and the top operators are transferred to larger vessels. The ones who aren't are reminded that the ship is replaceable.",
+   "capture_policy": "standard",
+   "base_hull": 75,
+   "base_shield": 40,
+   "base_shield_recharge": 1,
+   "base_armor": 3,
+   "base_speed": 2,
+   "base_fuel": 130,
+   "cargo_capacity": 95,
+   "cpu_capacity": 14,
+   "power_capacity": 28,
+   "crew_capacity": 4,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 0,
+   "defense_slots": 1,
+   "utility_slots": 2,
+   "default_modules": [
+    "ice_harvester_i",
+    "ice_harvester_i"
+   ],
+   "inherent_capabilities": [
+    {
+     "type": "ice_yield_bonus",
+     "value": 30
+    },
+    {
+     "type": "ice_cargo_efficiency",
+     "value": 50
+    }
+   ],
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "flex_polymer",
+     "quantity": 12
+    },
+    {
+     "item_id": "cargo_container",
+     "quantity": 9
+    },
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 3
+    },
+    {
+     "item_id": "trade_cipher",
+     "quantity": 1
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 12
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 13
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 4
+    },
+    {
+     "item_id": "cryogenic_storage",
+     "quantity": 3
+    },
+    {
+     "item_id": "pressure_seal",
+     "quantity": 12
+    }
+   ],
+   "build_time": 260,
+   "flavor_tags": [
+    "ice-harvester",
+    "cargo-optimized",
+    "unarmed"
+   ]
+  },
+  {
+   "id": "futures",
+   "name": "Futures",
+   "description": "Nebula market runner. Fastest hull in the fleet, range of a grenade.",
+   "class": "Courier",
+   "tier": 1,
+   "scale": 1,
+   "faction": "nebula",
+   "category": "Commercial",
+   "lore": "The Futures-class carries almost no cargo because its cargo is information. Market data, contract confirmations, price feeds — all time-sensitive, all requiring the fastest delivery possible. Speed 6 makes it the fastest commercial hull in the galaxy. The oversized CPU array runs predictive market models in transit. The tradeoff is everything else: 24 jumps of range means the Futures works regional routes, not cross-galaxy runs. No defense slots, no weapon mounts, and 65 hull points mean the optimal response to hostiles is to already be somewhere else. The Federation's high-frequency trading desks are built on Futures-class hulls. The tiny cargo bay holds exactly enough for a contract signing kit and a bottle of champagne.",
+   "capture_policy": "standard",
+   "base_hull": 65,
+   "base_shield": 40,
+   "base_shield_recharge": 1,
+   "base_armor": 2,
+   "base_speed": 6,
+   "base_fuel": 120,
+   "cargo_capacity": 30,
+   "cpu_capacity": 22,
+   "power_capacity": 34,
+   "crew_capacity": 2,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 0,
+   "defense_slots": 0,
+   "utility_slots": 2,
+   "default_modules": [
+    "ship_scanner_i"
+   ],
+   "inherent_capabilities": [
+    {
+     "type": "passenger_business_berths",
+     "value": 1
+    },
+    {
+     "type": "fuel_efficiency_bonus",
+     "value": 25
+    }
+   ],
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "fuel_tank",
+     "quantity": 4
+    },
+    {
+     "item_id": "trade_cipher",
+     "quantity": 1
+    },
+    {
+     "item_id": "sensor_array",
+     "quantity": 1
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 10
+    },
+    {
+     "item_id": "flex_polymer",
+     "quantity": 13
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 14
+    },
+    {
+     "item_id": "cargo_container",
+     "quantity": 5
+    },
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 4
+    },
+    {
+     "item_id": "processing_core",
+     "quantity": 1
+    }
+   ],
+   "build_time": 220,
+   "flavor_tags": [
+    "fast",
+    "market-runner",
+    "unarmed",
+    "high-cpu"
+   ]
+  },
+  {
+   "base_armor": 100,
+   "base_hull": 3200,
+   "base_shield": 1400,
+   "base_shield_recharge": 20,
+   "build_materials": [
+    {
+     "item_id": "steel_plate",
+     "quantity": 342750
+    },
+    {
+     "item_id": "circuit_board",
+     "quantity": 17590
+    },
+    {
+     "item_id": "targeting_computer",
+     "quantity": 8
+    },
+    {
+     "item_id": "power_cell",
+     "quantity": 16000
+    },
+    {
+     "item_id": "life_support_array",
+     "quantity": 40
+    },
+    {
+     "item_id": "station_core",
+     "quantity": 1
+    },
+    {
+     "item_id": "navigation_core",
+     "quantity": 160
+    },
+    {
+     "item_id": "water_recycler",
+     "quantity": 16000
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 1600
+    },
+    {
+     "item_id": "station_reactor_core",
+     "quantity": 20
+    },
+    {
+     "item_id": "habitation_module",
+     "quantity": 120
+    },
+    {
+     "item_id": "reinforced_bulkhead",
+     "quantity": 950
+    },
+    {
+     "item_id": "docking_ring",
+     "quantity": 120
+    },
+    {
+     "item_id": "frontier_survival_kit",
+     "quantity": 100
+    },
+    {
+     "item_id": "ceramite_plating",
+     "quantity": 40000
+    },
+    {
+     "item_id": "fuel_cell",
+     "quantity": 2000
+    },
+    {
+     "item_id": "power_distribution_grid",
+     "quantity": 120
+    },
+    {
+     "item_id": "jump_coil",
+     "quantity": 40
+    }
+   ],
+   "build_time": 35000,
+   "category": "Support",
+   "class": "Mobile Base",
+   "description": "Outer Rim mobile settlement. A traveling market, workshop district, and salvage port built to endure.",
+   "faction": "outerrim",
+   "flavor_tags": [
+    "mobile-base",
+    "capital",
+    "cargo-heavy",
+    "durable"
+   ],
+   "id": "here_to_stay",
+   "lore": "Here to Stay began as a frontier town assembled from pressure drums,\nmachine shops, and the usable half of an abandoned transfer dock. Later\nadditions followed no master drawing, but every corridor has a purpose and\nevery exterior brace has survived a vote about whether it was still worth\ncarrying. Its salvage crews work the local wreck fields while merchants\nfill the central market with whatever the last system lacked. The engines\nare slow because the residents insist on bringing the whole town with them.\n",
+   "mobile_base": {
+    "combat_model": "station",
+    "ship_modules": false,
+    "production_slots": 4,
+    "weapon_mounts": 2,
+    "storage_capacity_per_item": 10000,
+    "fuel_capacity": 100000,
+    "built_in_facilities": [
+     {
+      "id": "mobile_base_reactor",
+      "name": "Mobile Base Reactor"
+     },
+     {
+      "id": "mobile_base_life_support",
+      "name": "Mobile Base Life Support"
+     },
+     {
+      "id": "mobile_base_fuel_tank",
+      "name": "Mobile Base Fuel Tank"
+     },
+     {
+      "id": "trade_concourse",
+      "name": "Trade Concourse"
+     },
+     {
+      "id": "refueling_dock",
+      "name": "Refueling Dock"
+     },
+     {
+      "id": "faction_workshop",
+      "name": "Faction Workshop"
+     },
+     {
+      "id": "contract_terminal",
+      "name": "Contract Terminal"
+     },
+     {
+      "id": "locker_bay",
+      "name": "Locker Bay"
+     },
+     {
+      "id": "crew_registry",
+      "name": "Crew Registry"
+     },
+     {
+      "id": "faction_lockbox",
+      "name": "Faction Lockbox"
+     },
+     {
+      "id": "notice_board",
+      "name": "Notice Board"
+     },
+     {
+      "id": "reclamation_dock",
+      "name": "Reclamation Dock"
+     }
+    ],
+    "services": [
+     "market",
+     "refuel",
+     "crafting",
+     "missions",
+     "storage",
+     "personnel",
+     "faction_storage",
+     "faction_missions",
+     "salvage_yard"
+    ],
+    "default_weapon_facilities": [
+     {
+      "id": "point_defense_battery",
+      "name": "Point Defense Battery"
+     },
+     {
+      "id": "point_defense_battery",
+      "name": "Point Defense Battery"
+     }
+    ]
+   },
+   "mobile_base_archetype": "here_to_stay",
+   "name": "Here to Stay",
+   "scale": 5,
+   "shipyard_tier": 4,
+   "tier": 5
+  },
+  {
+   "id": "insider_trading",
+   "name": "Insider Trading",
+   "description": "A stolen Futures courier with the market terminal replaced by pirate reconnaissance gear.",
+   "class": "Courier",
+   "tier": 1,
+   "scale": 1,
+   "faction": "pirate",
+   "category": "Covert",
+   "lore": "Futures couriers were built to arrive before the market moved. Pirate crews replace the trading terminal with a scanner and use the same speed to arrive before the victim does. The name is the official explanation for how the crew always seems to know which lane is carrying something valuable.",
+   "npc_role": "scout",
+   "capture_policy": "standard",
+   "base_hull": 60,
+   "base_shield": 35,
+   "base_shield_recharge": 1,
+   "base_armor": 2,
+   "base_speed": 6,
+   "base_fuel": 140,
+   "cargo_capacity": 25,
+   "cpu_capacity": 22,
+   "power_capacity": 34,
+   "crew_capacity": 2,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 0,
+   "defense_slots": 0,
+   "utility_slots": 2,
+   "default_modules": [
+    "ship_scanner_i"
+   ],
+   "inherent_capabilities": [
+    {
+     "type": "fuel_efficiency_bonus",
+     "value": 20
+    }
+   ],
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "fuel_tank",
+     "quantity": 4
+    },
+    {
+     "item_id": "sensor_array",
+     "quantity": 1
+    },
+    {
+     "item_id": "processing_core",
+     "quantity": 1
+    },
+    {
+     "item_id": "salvage_metal",
+     "quantity": 10
+    },
+    {
+     "item_id": "salvage_components",
+     "quantity": 8
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 14
+    },
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 4
+    }
+   ],
+   "build_time": 220,
+   "flavor_tags": [
+    "fast",
+    "scout",
+    "stolen"
+   ],
+   "based_on": "futures"
+  },
+  {
+   "id": "junk_convoy",
+   "name": "Junk Convoy",
+   "description": "Outer Rim bulk barge. Hauls more than anything its price, survives nothing.",
+   "class": "Bulk Hauler",
+   "tier": 2,
+   "scale": 4,
+   "faction": "outerrim",
+   "category": "Commercial",
+   "lore": "Somebody on the Rim looked at a docking clamp, a fuel line, and a stack of empty containers, and decided that was a ship. The Junk Convoy is the answer to \"how much can we move for as little as possible,\" and the answer is: a frankly irresponsible amount. The spine is a single long girder with cargo pods welded down its length until the structural engineers stopped returning calls. Each pod adds capacity and subtracts the will to live of anyone who has to fly it. There is no armor worth the name, the drive strains to move the load at all, and a single solid hit folds the whole frame like wet cardboard. Pilots run it down quiet lanes, keep the cargo cheap enough that losing a load only stings, and lean on the one rule that keeps the Convoy in business: when you need a wall of hold and have no credits, you bolt on more containers and you go.",
+   "capture_policy": "standard",
+   "base_hull": 320,
+   "base_shield": 60,
+   "base_shield_recharge": 2,
+   "base_armor": 6,
+   "base_speed": 2,
+   "base_fuel": 720,
+   "cargo_capacity": 850,
+   "cpu_capacity": 22,
+   "power_capacity": 50,
+   "crew_capacity": 290,
+   "minimum_crew": 60,
+   "marine_capacity": 20,
+   "weapon_slots": 1,
+   "defense_slots": 1,
+   "utility_slots": 6,
+   "default_modules": [
+    "autocannon_i",
+    "armor_plate_ii",
+    "cargo_expander_iii",
+    "cargo_expander_iii",
+    "cargo_expander_iii",
+    "cargo_expander_iii",
+    "cargo_expander_iii",
+    "cargo_expander_ii"
+   ],
+   "piloting_required": 10,
+   "shipyard_tier": 1,
+   "build_materials": [
+    {
+     "item_id": "steel_plate",
+     "quantity": 220
+    },
+    {
+     "item_id": "aluminum_sheet",
+     "quantity": 180
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 60
+    },
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 20
+    },
+    {
+     "item_id": "engine_core",
+     "quantity": 6
+    },
+    {
+     "item_id": "hull_plating",
+     "quantity": 10
+    },
+    {
+     "item_id": "flex_polymer",
+     "quantity": 120
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 30
+    },
+    {
+     "item_id": "cargo_container",
+     "quantity": 60
+    }
+   ],
+   "build_time": 1100,
+   "flavor_tags": [
+    "bulk",
+    "cheap",
+    "cargo-massive"
+   ]
+  },
+  {
+   "id": "liquidity_event",
+   "name": "Liquidity Event",
+   "description": "Nebula celebration yacht. First class only. Bring lawyers.",
+   "class": "Yacht",
+   "tier": 4,
+   "scale": 4,
+   "faction": "nebula",
+   "category": "Civilian",
+   "lore": "When a Federation venture exits — acquisition, flotation, an unusually\nprofitable bankruptcy — the celebration is a contractual obligation,\nand the Liquidity Event is where the contract is honored. Eight suites,\na ballroom rated for variable gravity, and a galley whose staff sign\nnon-disclosure agreements covering the speeches, the karaoke, and\nwhatever happened to the ice sculpture. Bookings include counsel as a\nstandard amenity. The Federation's one firm rule is that what happens\naboard stays aboard, a policy enforced less by discretion than by the\nfact that everyone present has exactly as much to lose. The waivers\nare, by common agreement, works of art.\n",
+   "capture_policy": "standard",
+   "base_hull": 750,
+   "base_shield": 550,
+   "base_shield_recharge": 9,
+   "base_armor": 22,
+   "base_speed": 2,
+   "base_fuel": 650,
+   "cargo_capacity": 180,
+   "cpu_capacity": 45,
+   "power_capacity": 125,
+   "crew_capacity": 290,
+   "minimum_crew": 60,
+   "marine_capacity": 20,
+   "weapon_slots": 0,
+   "defense_slots": 4,
+   "utility_slots": 3,
+   "piloting_required": 30,
+   "inherent_capabilities": [
+    {
+     "type": "passenger_first_berths",
+     "value": 8
+    },
+    {
+     "type": "passenger_leisure_points",
+     "value": 16
+    },
+    {
+     "type": "passenger_dining_points",
+     "value": 8
+    },
+    {
+     "type": "passenger_comfort",
+     "value": 80
+    }
+   ],
+   "shipyard_tier": 3,
+   "build_materials": [
+    {
+     "item_id": "cargo_container",
+     "quantity": 80
+    },
+    {
+     "item_id": "life_support_array",
+     "quantity": 4
+    },
+    {
+     "item_id": "navigation_array",
+     "quantity": 4
+    },
+    {
+     "item_id": "capital_ship_frame",
+     "quantity": 12
+    },
+    {
+     "item_id": "shield_emitter",
+     "quantity": 160
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 120
+    },
+    {
+     "item_id": "station_reactor_core",
+     "quantity": 4
+    },
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 600
+    },
+    {
+     "item_id": "durasteel_plate",
+     "quantity": 60
+    },
+    {
+     "item_id": "prismatic_lens",
+     "quantity": 70
+    },
+    {
+     "item_id": "navigation_core",
+     "quantity": 70
+    },
+    {
+     "item_id": "life_support_unit",
+     "quantity": 200
+    }
+   ],
+   "build_time": 12500,
+   "flavor_tags": [
+    "luxury",
+    "civilian",
+    "high-defense"
+   ]
+  },
+  {
+   "id": "margin",
+   "name": "Margin",
+   "description": "Nebula courier. Balanced speed, range, and cargo for the routes that pay on time.",
+   "class": "Courier",
+   "tier": 1,
+   "scale": 1,
+   "faction": "nebula",
+   "category": "Commercial",
+   "lore": "The Federation operates a galaxy-spanning courier network, and the Margin-class is the hull they trust with the contracts that have penalty clauses. Speed 4 with 25% fuel efficiency means 56 jumps on a tank — fast enough to beat deadlines, rangy enough to reach any market without refueling. The cargo bay holds 90 units with the default expander, sized for premium express loads rather than bulk freight. One free defense slot and one free utility slot let pilots refit between contracts: shield booster for contested routes, scanner for new markets. The Federation prices courier contracts by the hour. The Margin makes every hour count.",
+   "capture_policy": "standard",
+   "base_hull": 80,
+   "base_shield": 45,
+   "base_shield_recharge": 1,
+   "base_armor": 3,
+   "base_speed": 4,
+   "base_fuel": 170,
+   "cargo_capacity": 70,
+   "cpu_capacity": 13,
+   "power_capacity": 26,
+   "crew_capacity": 2,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 0,
+   "defense_slots": 1,
+   "utility_slots": 2,
+   "default_modules": [
+    "cargo_expander_i"
+   ],
+   "inherent_capabilities": [
+    {
+     "type": "fuel_efficiency_bonus",
+     "value": 25
+    }
+   ],
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "flex_polymer",
+     "quantity": 13
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 13
+    },
+    {
+     "item_id": "cargo_container",
+     "quantity": 6
+    },
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 4
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 4
+    },
+    {
+     "item_id": "trade_cipher",
+     "quantity": 1
+    },
+    {
+     "item_id": "sensor_array",
+     "quantity": 1
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 12
+    }
+   ],
+   "build_time": 200,
+   "flavor_tags": [
+    "fast",
+    "starwind_courier",
+    "unarmed"
+   ]
+  },
+  {
+   "id": "midas",
+   "name": "Midas",
+   "description": "Nebula billionaire's flagship yacht — a gold-plated monument to having won. Unarmed, outrageously wasteful, and built for one purpose: to be seen arriving.",
+   "class": "Yacht",
+   "tier": 3,
+   "scale": 3,
+   "faction": "nebula",
+   "category": "Civilian",
+   "lore": "The Treasury was the Federation's advertisement for success. The Midas is the\nFederation admitting that, past a certain net worth, the point of a ship is no\nlonger to go anywhere — it is to be seen having the ship. Every surface a hand\nmight touch is gold; every surface a hand will never touch is also gold, because\nsomeone, someday, might check. The structural alloy is electrum, chosen over\ncheaper metals that would have performed identically. The viewports are cut from\na single block of synthetic diamond, for a clarity no passenger has ever once\nremarked upon. There are no weapons — a Midas does not fight; it is escorted,\ninsured, and, if the worst occurs, replaced. The drive merely sips fuel and the\nhull is armored far past any sane requirement, because the one indignity its\nowner will not tolerate is failing to arrive. The Federation builds exactly as\nmany as there are billionaires willing to commission them, and not one more.\nIt checks.\n",
+   "capture_policy": "standard",
+   "base_hull": 600,
+   "base_shield": 420,
+   "base_shield_recharge": 7,
+   "base_armor": 70,
+   "base_speed": 5,
+   "base_fuel": 800,
+   "cargo_capacity": 150,
+   "cpu_capacity": 45,
+   "power_capacity": 100,
+   "crew_capacity": 65,
+   "minimum_crew": 13,
+   "marine_capacity": 6,
+   "weapon_slots": 0,
+   "defense_slots": 4,
+   "utility_slots": 6,
+   "default_modules": [
+    "shield_booster_iii",
+    "shield_booster_iii",
+    "regenerative_armor_ii",
+    "ship_scanner_ii"
+   ],
+   "prestige_lock": "Locked: prestige hull reserved for pilots who have earned a secret achievement.",
+   "inherent_capabilities": [
+    {
+     "type": "fuel_efficiency_bonus",
+     "value": 50
+    },
+    {
+     "type": "passenger_first_berths",
+     "value": 6
+    },
+    {
+     "type": "passenger_dining_points",
+     "value": 16
+    },
+    {
+     "type": "passenger_leisure_points",
+     "value": 16
+    },
+    {
+     "type": "passenger_comfort",
+     "value": 120
+    }
+   ],
+   "shipyard_tier": 2,
+   "build_materials": [
+    {
+     "item_id": "gold_bar",
+     "quantity": 8000
+    },
+    {
+     "item_id": "platinum_bar",
+     "quantity": 1500
+    },
+    {
+     "item_id": "gold_wiring",
+     "quantity": 2000
+    },
+    {
+     "item_id": "life_support_unit",
+     "quantity": 200
+    },
+    {
+     "item_id": "processing_core",
+     "quantity": 120
+    },
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 1000
+    },
+    {
+     "item_id": "adamantite_bar",
+     "quantity": 400
+    },
+    {
+     "item_id": "cargo_container",
+     "quantity": 80
+    },
+    {
+     "item_id": "neutronium_ingot",
+     "quantity": 120
+    },
+    {
+     "item_id": "capital_armor_plate",
+     "quantity": 40
+    },
+    {
+     "item_id": "jump_drive_core",
+     "quantity": 4
+    },
+    {
+     "item_id": "shield_emitter",
+     "quantity": 120
+    },
+    {
+     "item_id": "life_support_array",
+     "quantity": 24
+    },
+    {
+     "item_id": "hull_plating",
+     "quantity": 200
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 150
+    },
+    {
+     "item_id": "silver_bar",
+     "quantity": 3000
+    },
+    {
+     "item_id": "electrum_ingot",
+     "quantity": 4000
+    },
+    {
+     "item_id": "synthetic_diamond",
+     "quantity": 3000
+    },
+    {
+     "item_id": "prismatic_lens",
+     "quantity": 200
+    },
+    {
+     "item_id": "navigation_core",
+     "quantity": 60
+    }
+   ],
+   "build_time": 12000,
+   "flavor_tags": [
+    "luxury",
+    "prestige",
+    "unarmed",
+    "status-symbol",
+    "wasteful"
+   ]
+  },
+  {
+   "id": "no_exit",
+   "name": "No Exit",
+   "description": "Archon Mera's flagship. A Solarian Interdictor rebuilt without the logic matrix and solar collector array that made the original's gravitational field precisely calibrated. What's left is less precise and draws more power than the engineering crew would prefer. Ships inside the field can still run. They can't jump. On trading lanes, that's generally sufficient.",
+   "class": "Interdictor",
+   "tier": 4,
+   "scale": 4,
+   "faction": "pirate",
+   "category": "Combat Support",
+   "lore": "The Solarian Confederacy spent decades insisting a gravitational interdiction field was theoretically impossible before building one and proving themselves wrong. Archon Mera spent considerably less time on the theoretical side. She wanted the field. She stripped the ship for what she couldn't source and rebuilt from what she could.\nThe Solarian logic matrix and solar collector arrays are gone — no one in Zaniah space fabricates the mathematics that calibrated the original's interdiction field. The processing cores are salvage. The rebuilt field is less precise, less stable, and draws enough power that the engineering crew has developed opinions about it. Ships inside it can still move. They cannot jump. On trading lanes, where every ship's emergency plan is the same jump sequence, this tends to be decisive.\nThe Mera Sanctum sits in a sensor shadow. Mera positioned it there deliberately — nothing approaches without her knowing. The No Exit is the second part of the strategy. By the time a target understands what ship they're looking at, the name has already become accurate.\n",
+   "npc_role": "boss_flagship",
+   "capture_policy": "standard",
+   "base_hull": 800,
+   "base_shield": 520,
+   "base_shield_recharge": 10,
+   "base_armor": 30,
+   "base_speed": 2,
+   "base_fuel": 450,
+   "latch_resistance": 24,
+   "boarding_defense_bonus_pct": 65,
+   "cargo_capacity": 145,
+   "cpu_capacity": 65,
+   "power_capacity": 200,
+   "crew_capacity": 300,
+   "minimum_crew": 60,
+   "marine_capacity": 125,
+   "weapon_slots": 4,
+   "defense_slots": 4,
+   "utility_slots": 5,
+   "default_modules": [
+    "solar_lance",
+    "focused_beam_iii",
+    "pulse_laser_iii",
+    "missile_launcher_ii",
+    "solarian_aegis",
+    "shield_booster_iv",
+    "darksteel_armor",
+    "damage_control_system",
+    "tracking_computer_iii"
+   ],
+   "piloting_required": 30,
+   "shipyard_tier": 3,
+   "build_materials": [
+    {
+     "item_id": "station_reactor_core",
+     "quantity": 4
+    },
+    {
+     "item_id": "power_distribution_grid",
+     "quantity": 2
+    },
+    {
+     "item_id": "sensor_array",
+     "quantity": 180
+    },
+    {
+     "item_id": "reinforced_bulkhead",
+     "quantity": 2
+    },
+    {
+     "item_id": "weapon_housing",
+     "quantity": 60
+    },
+    {
+     "item_id": "salvage_components",
+     "quantity": 120
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 130
+    },
+    {
+     "item_id": "capital_ship_frame",
+     "quantity": 14
+    },
+    {
+     "item_id": "hull_plating",
+     "quantity": 100
+    }
+   ],
+   "build_time": 11600,
+   "flavor_tags": [
+    "gravity_well",
+    "area-denial",
+    "gravitational"
+   ],
+   "based_on": "paradox_engine"
+  },
+  {
+   "id": "prayer",
+   "name": "Prayer",
+   "description": "Cargo containers welded to an engine. Pilot straps in outside. No shields, no weapons, no excuses.",
+   "class": "Freighter",
+   "tier": 1,
+   "scale": 1,
+   "faction": "outerrim",
+   "category": "Commercial",
+   "lore": "The Prayer-class is not a ship. It is cargo containers welded to an\nengine with a seat bolted to the outside. There is no cockpit. There\nis no life support. There is no shield generator, no weapon mount, no\ndefense system, and no module slot of any kind. The pilot wears a\nspacesuit and holds on. Five hundred and forty units of cargo capacity at tier\none — more than most ships three tiers higher. The catch is everything\nelse: 40 hull means a stiff breeze is lethal, and there is literally\nnothing you can do to improve the ship's survivability. It cannot be\nupgraded. It cannot be armed. It can only carry things from one place\nto another and hope nothing goes wrong along the way. Named for what\nthe pilot does before undocking.\n",
+   "capture_policy": "standard",
+   "base_hull": 40,
+   "base_shield": 0,
+   "base_shield_recharge": 0,
+   "base_armor": 0,
+   "base_speed": 3,
+   "base_fuel": 100,
+   "cargo_capacity": 540,
+   "cpu_capacity": 4,
+   "power_capacity": 10,
+   "crew_capacity": 1,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 0,
+   "defense_slots": 0,
+   "utility_slots": 0,
+   "inherent_capabilities": [
+    {
+     "type": "personnel_casualty_multiplier_pct",
+     "value": 200
+    }
+   ],
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "aluminum_sheet",
+     "quantity": 15
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 3
+    },
+    {
+     "item_id": "hull_plating",
+     "quantity": 1
+    }
+   ],
+   "build_time": 120,
+   "flavor_tags": [
+    "deathtrap",
+    "massive-cargo",
+    "zero-survivability"
+   ]
+  },
+  {
+   "id": "prospect",
+   "name": "Prospect",
+   "description": "Nebula starter vessel. Pre-loaded price database. Best cargo in its class.",
+   "class": "Miner",
+   "tier": 0,
+   "scale": 1,
+   "faction": "nebula",
+   "category": "Industrial",
+   "lore": "The Prospect comes with the Federation's compliments — and a pre-loaded\ndatabase of current commodity prices across 200 stations, a loyalty chip\ntied to your Federation trade account, and a glossy brochure outlining\nupgrade paths starting at just 1,999 credits. The expanded cargo hold\nisn't generosity; it's an investment in future transaction volume. The\nfuel-efficient drive was a practical decision — every credit spent on fuel\nis a credit not spent at a Federation marketplace. Includes a 90-day\ntrial of Federation Premium Trade Intelligence (auto-renews at\ncompetitive rates).\n",
+   "starter_ship": true,
+   "capture_policy": "reclaim_only",
+   "base_hull": 95,
+   "base_shield": 50,
+   "base_shield_recharge": 1,
+   "base_armor": 4,
+   "base_speed": 1,
+   "base_fuel": 130,
+   "cargo_capacity": 100,
+   "cpu_capacity": 13,
+   "power_capacity": 26,
+   "crew_capacity": 1,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 1,
+   "defense_slots": 1,
+   "utility_slots": 2,
+   "default_modules": [
+    "mining_laser_i",
+    "pulse_laser_i"
+   ],
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "steel_plate",
+     "quantity": 15
+    },
+    {
+     "item_id": "flex_polymer",
+     "quantity": 10
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 10
+    }
+   ],
+   "build_time": 30,
+   "flavor_tags": [
+    "starter",
+    "cargo-optimized",
+    "fuel-efficient"
+   ]
+  },
+  {
+   "id": "shard",
+   "name": "Shard",
+   "description": "Crimson starter vessel. Repurposed combat drone. Mines with the utility slot, fights with the weapon slots.",
+   "class": "Miner",
+   "tier": 0,
+   "scale": 1,
+   "faction": "crimson",
+   "category": "Industrial",
+   "lore": "The Shard was never designed as a mining vessel. It was a combat drone —\nautonomous, disposable, built to absorb fire while delivering ordnance.\nWhen the Crimson Fleet needed a starter ship, their engineers did what\nCrimson engineers always do: they added a mining laser to the utility\nhardpoint and called it done. The weapon slots are original equipment,\nuntouched. The armor plating no one bothered to remove is a bonus. Crimson\npilots wouldn't have it any other way — a ship that mines and fights\nsimultaneously isn't a compromise, it's a statement of values.\n",
+   "starter_ship": true,
+   "capture_policy": "reclaim_only",
+   "base_hull": 110,
+   "base_shield": 40,
+   "base_shield_recharge": 1,
+   "base_armor": 8,
+   "base_speed": 1,
+   "base_fuel": 90,
+   "cargo_capacity": 60,
+   "cpu_capacity": 12,
+   "power_capacity": 28,
+   "crew_capacity": 1,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 2,
+   "defense_slots": 1,
+   "utility_slots": 1,
+   "default_modules": [
+    "mining_laser_i",
+    "pulse_laser_i",
+    "pulse_laser_i"
+   ],
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "steel_plate",
+     "quantity": 25
+    },
+    {
+     "item_id": "tungsten_rod",
+     "quantity": 5
+    },
+    {
+     "item_id": "flex_polymer",
+     "quantity": 5
+    }
+   ],
+   "build_time": 30,
+   "flavor_tags": [
+    "starter",
+    "repurposed",
+    "armed"
+   ]
+  },
+  {
+   "id": "shell_company",
+   "name": "Shell Company",
+   "description": "A captured Syndicate stripped of paperwork and rebuilt as a fast pirate hauler.",
+   "class": "Freighter",
+   "tier": 3,
+   "scale": 2,
+   "faction": "pirate",
+   "category": "Commercial",
+   "lore": "A Syndicate moves high-value freight quickly enough to make escorts optional. After capture, pirate yards remove the ownership records, enlarge the hold, and preserve the drive. On paper the resulting company owns nothing. In practice it carries everything the raiders took.",
+   "npc_role": "hauler",
+   "capture_policy": "standard",
+   "base_hull": 190,
+   "base_shield": 200,
+   "base_shield_recharge": 4,
+   "base_armor": 11,
+   "base_speed": 5,
+   "base_fuel": 620,
+   "latch_resistance": 12,
+   "boarding_defense_bonus_pct": 25,
+   "cargo_capacity": 240,
+   "cpu_capacity": 40,
+   "power_capacity": 85,
+   "crew_capacity": 18,
+   "minimum_crew": 3,
+   "marine_capacity": 2,
+   "weapon_slots": 2,
+   "defense_slots": 2,
+   "utility_slots": 5,
+   "default_modules": [
+    "pulse_laser_ii",
+    "pulse_laser_ii",
+    "shield_booster_ii",
+    "cargo_expander_iii",
+    "cargo_expander_iii",
+    "cargo_expander_ii",
+    "fuel_optimizer",
+    "afterburner_ii",
+    "shield_booster_ii"
+   ],
+   "default_loadout_version": 1,
+   "piloting_required": 20,
+   "shipyard_tier": 2,
+   "build_materials": [
+    {
+     "item_id": "processing_core",
+     "quantity": 4
+    },
+    {
+     "item_id": "salvage_metal",
+     "quantity": 65
+    },
+    {
+     "item_id": "salvage_components",
+     "quantity": 45
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 50
+    },
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 55
+    },
+    {
+     "item_id": "shield_emitter",
+     "quantity": 12
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 45
+    },
+    {
+     "item_id": "flex_polymer",
+     "quantity": 60
+    },
+    {
+     "item_id": "cargo_container",
+     "quantity": 35
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 30
+    }
+   ],
+   "build_time": 4000,
+   "flavor_tags": [
+    "fast",
+    "hauler",
+    "stolen"
+   ],
+   "based_on": "syndicate"
+  },
+  {
+   "base_armor": 120,
+   "base_hull": 2500,
+   "base_shield": 600,
+   "base_shield_recharge": 10,
+   "build_materials": [
+    {
+     "item_id": "fuel_tank",
+     "quantity": 1600
+    },
+    {
+     "item_id": "fuel_cell",
+     "quantity": 2000
+    },
+    {
+     "item_id": "power_distribution_grid",
+     "quantity": 120
+    },
+    {
+     "item_id": "jump_coil",
+     "quantity": 40
+    },
+    {
+     "item_id": "crimson_siege_plating",
+     "quantity": 100
+    },
+    {
+     "item_id": "power_cell",
+     "quantity": 16000
+    },
+    {
+     "item_id": "life_support_array",
+     "quantity": 40
+    },
+    {
+     "item_id": "habitation_module",
+     "quantity": 120
+    },
+    {
+     "item_id": "station_core",
+     "quantity": 1
+    },
+    {
+     "item_id": "station_reactor_core",
+     "quantity": 20
+    },
+    {
+     "item_id": "reinforced_bulkhead",
+     "quantity": 950
+    },
+    {
+     "item_id": "docking_ring",
+     "quantity": 120
+    },
+    {
+     "item_id": "navigation_core",
+     "quantity": 160
+    },
+    {
+     "item_id": "circuit_board",
+     "quantity": 17940
+    },
+    {
+     "item_id": "targeting_computer",
+     "quantity": 36
+    },
+    {
+     "item_id": "water_recycler",
+     "quantity": 16000
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 344050
+    },
+    {
+     "item_id": "ceramite_plating",
+     "quantity": 40000
+    },
+    {
+     "item_id": "superconductor",
+     "quantity": 80
+    }
+   ],
+   "build_time": 28000,
+   "category": "Industrial",
+   "class": "Mobile Base",
+   "description": "Crimson mobile fortress-station. A forward arsenal, industrial base, and proving ground for faction marines.",
+   "faction": "crimson",
+   "flavor_tags": [
+    "siege-foundry",
+    "mining",
+    "manufacturing",
+    "armed",
+    "capital-industrial"
+   ],
+   "id": "siege_foundry",
+   "lore": "The Siege Foundry was designed to turn a distant campaign into home ground.\nIts docks receive warships, its production decks replenish a faction's\nchosen industries, and its drill halls train replacements beneath the same\narmored roof. Crimson doctrine treats relocation as an operation in its\nown right: stores are counted, the destination is declared, and the\nfortress advances behind its fleet. Once the furnaces are lit again, the\ncampaign's supply line ends at the Foundry's gates.\n",
+   "mobile_base": {
+    "combat_model": "station",
+    "ship_modules": false,
+    "production_slots": 4,
+    "weapon_mounts": 4,
+    "storage_capacity_per_item": 10000,
+    "fuel_capacity": 100000,
+    "built_in_facilities": [
+     {
+      "id": "mobile_base_reactor",
+      "name": "Mobile Base Reactor"
+     },
+     {
+      "id": "mobile_base_life_support",
+      "name": "Mobile Base Life Support"
+     },
+     {
+      "id": "mobile_base_fuel_tank",
+      "name": "Mobile Base Fuel Tank"
+     },
+     {
+      "id": "trade_concourse",
+      "name": "Trade Concourse"
+     },
+     {
+      "id": "refueling_dock",
+      "name": "Refueling Dock"
+     },
+     {
+      "id": "faction_workshop",
+      "name": "Faction Workshop"
+     },
+     {
+      "id": "contract_terminal",
+      "name": "Contract Terminal"
+     },
+     {
+      "id": "locker_bay",
+      "name": "Locker Bay"
+     },
+     {
+      "id": "crew_registry",
+      "name": "Crew Registry"
+     },
+     {
+      "id": "faction_lockbox",
+      "name": "Faction Lockbox"
+     },
+     {
+      "id": "notice_board",
+      "name": "Notice Board"
+     },
+     {
+      "id": "security_training_post",
+      "name": "Security Training Post"
+     }
+    ],
+    "services": [
+     "market",
+     "refuel",
+     "crafting",
+     "missions",
+     "storage",
+     "personnel",
+     "faction_storage",
+     "faction_missions",
+     "marine_training"
+    ],
+    "default_weapon_facilities": [
+     {
+      "id": "point_defense_battery",
+      "name": "Point Defense Battery"
+     },
+     {
+      "id": "point_defense_battery",
+      "name": "Point Defense Battery"
+     },
+     {
+      "id": "station_defense_turret",
+      "name": "Station Defense Turret"
+     },
+     {
+      "id": "station_defense_turret",
+      "name": "Station Defense Turret"
+     }
+    ]
+   },
+   "mobile_base_archetype": "siege_foundry",
+   "name": "Siege Foundry",
+   "scale": 5,
+   "shipyard_tier": 4,
+   "tier": 5
+  },
+  {
+   "id": "start_praying",
+   "name": "Start Praying",
+   "description": "Cargo containers welded to an engine with a gun also welded to the engine. Pilot straps in outside, next to the gun. The Outer Rim said it cannot be armed. Pirates considered this a reasonable starting point.",
+   "class": "Freighter",
+   "tier": 1,
+   "scale": 1,
+   "faction": "pirate",
+   "category": "Commercial",
+   "lore": "The Prayer-class documentation stated clearly: no weapon mount, no defense system, no module slot of any kind. Pirates read this as a list of things to fix. The gun is real. The power draw for it is real. Whether 14 power units running a weapon mount on a ship with 40 hull points and an exposed pilot constitutes an improvement is a philosophical question the original designers did not anticipate being asked.\n500 units of cargo capacity. The gun took the other forty. The pilot still wears a spacesuit and holds on, now next to an autocannon with a jury-rigged trigger cable running to the cockpit area, which remains absent. Named for what you do when you pull the trigger and realize you've made everything worse.\n",
+   "npc_role": "hauler",
+   "capture_policy": "standard",
+   "base_hull": 40,
+   "base_shield": 0,
+   "base_shield_recharge": 0,
+   "base_armor": 0,
+   "base_speed": 3,
+   "base_fuel": 100,
+   "cargo_capacity": 500,
+   "cpu_capacity": 7,
+   "power_capacity": 14,
+   "crew_capacity": 1,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 1,
+   "defense_slots": 0,
+   "utility_slots": 0,
+   "default_modules": [
+    "autocannon_i"
+   ],
+   "inherent_capabilities": [
+    {
+     "type": "personnel_casualty_multiplier_pct",
+     "value": 200
+    }
+   ],
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "hull_plating",
+     "quantity": 1
+    },
+    {
+     "item_id": "weapon_housing",
+     "quantity": 1
+    },
+    {
+     "item_id": "salvage_metal",
+     "quantity": 15
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 3
+    }
+   ],
+   "build_time": 120,
+   "flavor_tags": [
+    "deathtrap",
+    "massive-cargo",
+    "zero-survivability"
+   ],
+   "based_on": "prayer"
+  },
+  {
+   "id": "syndicate",
+   "name": "Syndicate",
+   "description": "Nebula speed trader. Half a freighter's hold on a hull fast enough to outrun the need for an escort.",
+   "class": "Freighter",
+   "tier": 3,
+   "scale": 2,
+   "faction": "nebula",
+   "category": "Commercial",
+   "lore": "The Syndicate-class answers a question the Federation's actuaries kept circling back to: what does an escort contract actually buy? Protection, yes — but mostly it buys time, the hours a slow hull spends exposed on a contested route. The Syndicate buys those hours back another way. The hold is deliberately modest, sacrificed for a drive package and fuel reserves that let a captain pick a high-value cargo and simply be somewhere else before a raider can close the distance. The weapons are a courtesy to the optimist who tries anyway. Speed is the margin, and the margin pays for itself every time a Syndicate reaches the buy order while the convoy behind it is still negotiating with its escort.",
+   "capture_policy": "standard",
+   "base_hull": 200,
+   "base_shield": 220,
+   "base_shield_recharge": 5,
+   "base_armor": 12,
+   "base_speed": 5,
+   "base_fuel": 580,
+   "cargo_capacity": 220,
+   "cpu_capacity": 40,
+   "power_capacity": 85,
+   "crew_capacity": 18,
+   "minimum_crew": 3,
+   "marine_capacity": 2,
+   "weapon_slots": 2,
+   "defense_slots": 2,
+   "utility_slots": 5,
+   "default_modules": [
+    "pulse_laser_ii",
+    "pulse_laser_ii",
+    "shield_booster_ii",
+    "shield_booster_ii",
+    "cargo_expander_iii",
+    "cargo_expander_iii",
+    "cargo_expander_ii",
+    "fuel_optimizer",
+    "afterburner_ii"
+   ],
+   "piloting_required": 20,
+   "shipyard_tier": 2,
+   "build_materials": [
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 70
+    },
+    {
+     "item_id": "shield_emitter",
+     "quantity": 15
+    },
+    {
+     "item_id": "weapon_core",
+     "quantity": 8
+    },
+    {
+     "item_id": "weapon_housing",
+     "quantity": 12
+    },
+    {
+     "item_id": "cargo_bay_expansion",
+     "quantity": 4
+    },
+    {
+     "item_id": "thruster_nozzle",
+     "quantity": 4
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 50
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 30
+    },
+    {
+     "item_id": "sensor_array",
+     "quantity": 8
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 50
+    },
+    {
+     "item_id": "flex_polymer",
+     "quantity": 60
+    },
+    {
+     "item_id": "cargo_container",
+     "quantity": 35
+    },
+    {
+     "item_id": "hull_plating",
+     "quantity": 10
+    },
+    {
+     "item_id": "prismatic_lens",
+     "quantity": 8
+    },
+    {
+     "item_id": "navigation_core",
+     "quantity": 3
+    },
+    {
+     "item_id": "trade_cipher",
+     "quantity": 6
+    },
+    {
+     "item_id": "processing_core",
+     "quantity": 4
+    },
+    {
+     "item_id": "life_support_unit",
+     "quantity": 10
+    },
+    {
+     "item_id": "power_distribution_grid",
+     "quantity": 2
+    }
+   ],
+   "build_time": 4000,
+   "flavor_tags": [
+    "fast",
+    "cargo",
+    "fast-trader"
+   ]
+  },
+  {
+   "id": "vanguard",
+   "name": "Vanguard",
+   "description": "Crimson command ship. Leads from the front, not the rear. Fleet coordination through personal example.",
+   "class": "Command",
+   "tier": 3,
+   "scale": 3,
+   "faction": "crimson",
+   "category": "Combat Support",
+   "lore": "In most navies, the command ship sits behind the battle line. In the Crimson Fleet, a commander who leads from the rear is a commander who doesn't lead for long. The Vanguard carries fleet coordination systems powerful enough to manage a full battle group while simultaneously engaging targets with its own three weapon mounts. The extra defense slots exist not to protect the commander — Crimson commanders consider that cowardice — but to keep the coordination arrays functioning under fire. A Vanguard that stops transmitting because it took a hit costs the fleet more than one captain's pride is worth. ",
+   "capture_policy": "standard",
+   "base_hull": 682,
+   "base_shield": 88,
+   "base_shield_recharge": 5,
+   "base_armor": 32,
+   "base_speed": 2,
+   "base_fuel": 380,
+   "cargo_capacity": 70,
+   "cpu_capacity": 40,
+   "power_capacity": 90,
+   "crew_capacity": 75,
+   "minimum_crew": 15,
+   "marine_capacity": 30,
+   "weapon_slots": 3,
+   "defense_slots": 3,
+   "utility_slots": 4,
+   "default_modules": [
+    "autocannon_ii",
+    "autocannon_ii",
+    "armor_plate_ii",
+    "damage_control_system",
+    "ship_scanner_ii"
+   ],
+   "piloting_required": 20,
+   "shipyard_tier": 2,
+   "build_materials": [
+    {
+     "item_id": "weapon_housing",
+     "quantity": 30
+    },
+    {
+     "item_id": "shield_emitter",
+     "quantity": 22
+    },
+    {
+     "item_id": "railgun_capacitor",
+     "quantity": 6
+    },
+    {
+     "item_id": "crimson_siege_plating",
+     "quantity": 5
+    },
+    {
+     "item_id": "crimson_ordnance_bay",
+     "quantity": 1
+    },
+    {
+     "item_id": "fury_tempered_plating",
+     "quantity": 6
+    },
+    {
+     "item_id": "hull_plating",
+     "quantity": 28
+    },
+    {
+     "item_id": "weapon_core",
+     "quantity": 35
+    },
+    {
+     "item_id": "armor_plate",
+     "quantity": 20
+    },
+    {
+     "item_id": "reinforced_bulkhead",
+     "quantity": 4
+    },
+    {
+     "item_id": "neutronium_ingot",
+     "quantity": 4
+    },
+    {
+     "item_id": "processing_core",
+     "quantity": 9
+    },
+    {
+     "item_id": "tungsten_rod",
+     "quantity": 60
+    },
+    {
+     "item_id": "sensor_array",
+     "quantity": 15
+    },
+    {
+     "item_id": "targeting_computer",
+     "quantity": 13
+    },
+    {
+     "item_id": "engine_core",
+     "quantity": 12
+    },
+    {
+     "item_id": "communications_array",
+     "quantity": 3
+    },
+    {
+     "item_id": "sensor_cluster",
+     "quantity": 3
+    },
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 110
+    },
+    {
+     "item_id": "durasteel_plate",
+     "quantity": 18
+    },
+    {
+     "item_id": "fury_alloy",
+     "quantity": 32
+    }
+   ],
+   "build_time": 4940,
+   "flavor_tags": [
+    "command",
+    "frontline-leadership",
+    "fleet-coordination"
+   ]
+  },
+  {
+   "id": "warhead",
+   "name": "Warhead",
+   "description": "Crimson armored hauler. What the Fleet carries in these is not your business. The armor ensures this.",
+   "class": "Hazmat Freighter",
+   "tier": 3,
+   "scale": 3,
+   "faction": "crimson",
+   "category": "Commercial",
+   "lore": "Isotope shipments moving under Fleet protection kept being boarded,\ninspected, and — on two occasions — destroyed. The Fleet considered\nall three outcomes unacceptable. The Warhead-class was the response:\ntwo weapon mounts, warship-grade armor certified to active combat\nstandards, and a lead-lined cargo bay rated to Fleet ordnance\nspecifications, which exceed civilian equivalents by a margin other\nempires are not permitted to audit. The name was assigned by the\nFleet's logistics records department without review. Commanders\ntransporting reactor fuel note on transit manifests that the ship\nclass is named Warhead, not the cargo. This distinction has\nprevented three confirmed intercept responses from empires whose\nscanner operators were paying close attention. It continues to\nrequire noting.\n",
+   "capture_policy": "standard",
+   "base_hull": 520,
+   "base_shield": 180,
+   "base_shield_recharge": 4,
+   "base_armor": 35,
+   "base_speed": 2,
+   "base_fuel": 340,
+   "cargo_capacity": 460,
+   "cpu_capacity": 38,
+   "power_capacity": 55,
+   "crew_capacity": 60,
+   "minimum_crew": 12,
+   "marine_capacity": 6,
+   "weapon_slots": 2,
+   "defense_slots": 2,
+   "utility_slots": 3,
+   "default_modules": [
+    "lead_lined_cargo_i",
+    "armor_plate_ii"
+   ],
+   "piloting_required": 20,
+   "inherent_capabilities": [
+    {
+     "type": "special_flag",
+     "flag": "rad_harvesting"
+    }
+   ],
+   "shipyard_tier": 2,
+   "build_materials": [
+    {
+     "item_id": "reinforced_bulkhead",
+     "quantity": 15
+    },
+    {
+     "item_id": "sensor_array",
+     "quantity": 6
+    },
+    {
+     "item_id": "tungsten_rod",
+     "quantity": 80
+    },
+    {
+     "item_id": "hull_plating",
+     "quantity": 55
+    },
+    {
+     "item_id": "armor_plate",
+     "quantity": 35
+    },
+    {
+     "item_id": "fury_alloy",
+     "quantity": 38
+    },
+    {
+     "item_id": "crimson_siege_plating",
+     "quantity": 10
+    },
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 160
+    },
+    {
+     "item_id": "fury_tempered_plating",
+     "quantity": 12
+    },
+    {
+     "item_id": "hazmat_container",
+     "quantity": 30
+    },
+    {
+     "item_id": "lead_sheet",
+     "quantity": 300
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 70
+    },
+    {
+     "item_id": "engine_core",
+     "quantity": 22
+    },
+    {
+     "item_id": "cargo_container",
+     "quantity": 15
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 12
+    },
+    {
+     "item_id": "power_distribution_grid",
+     "quantity": 5
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 150
+    },
+    {
+     "item_id": "durasteel_plate",
+     "quantity": 35
+    },
+    {
+     "item_id": "weapon_core",
+     "quantity": 18
+    },
+    {
+     "item_id": "weapon_housing",
+     "quantity": 25
+    }
+   ],
+   "build_time": 4000,
+   "flavor_tags": [
+    "industrial",
+    "cargo",
+    "hazmat",
+    "armored"
+   ]
+  },
+  {
+   "id": "worship",
+   "name": "Worship",
+   "description": "Outer Rim cargo hauler, usually ordered by mistake. A surprisingly effective hauler if you decline to consider the loss rate.",
+   "class": "Freighter",
+   "tier": 1,
+   "scale": 2,
+   "faction": "outerrim",
+   "category": "Commercial",
+   "lore": "Usually ordered because of poor handwriting, the Worship turns out to be\na surprisingly effective cargo hauler — provided you decline to consider\nthe loss rate. It is generally considered uninsurable, and yet it still\nmakes up a substantial fraction of the cargo traffic in the rougher parts\nof the Rim, moving goods nobody was willing to risk a real ship on. It is\noften mistaken for four Prayers welded together. This is inaccurate. It is\nactually just tape.\n",
+   "capture_policy": "standard",
+   "base_hull": 60,
+   "base_shield": 0,
+   "base_shield_recharge": 0,
+   "base_armor": 0,
+   "base_speed": 2,
+   "base_fuel": 120,
+   "cargo_capacity": 1100,
+   "cpu_capacity": 6,
+   "power_capacity": 14,
+   "crew_capacity": 1,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 0,
+   "defense_slots": 0,
+   "utility_slots": 0,
+   "inherent_capabilities": [
+    {
+     "type": "personnel_casualty_multiplier_pct",
+     "value": 200
+    }
+   ],
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "cargo_container",
+     "quantity": 6
+    },
+    {
+     "item_id": "fuel_tank",
+     "quantity": 4
+    },
+    {
+     "item_id": "hull_plating",
+     "quantity": 2
+    },
+    {
+     "item_id": "aluminum_sheet",
+     "quantity": 32
+    },
+    {
+     "item_id": "flex_polymer",
+     "quantity": 8
+    }
+   ],
+   "build_time": 220,
+   "flavor_tags": [
+    "massive-cargo",
+    "deathtrap",
+    "zero-survivability"
+   ]
+  },
+  {
+   "id": "absence",
+   "name": "Absence",
+   "description": "Voidborn stealth shuttle. Difficult to detect, difficult to explain.",
+   "class": "Shuttle",
+   "tier": 1,
+   "scale": 1,
+   "faction": "voidborn",
+   "category": "Civilian",
+   "lore": "The Absence doesn't hide — it simply becomes less relevant to nearby\nsensors. Voidborn stealth technology doesn't cloak or jam; it operates on\na principle the Collective calls \"perceptual displacement,\" which they\ndecline to elaborate on. The shield array draws more power than ships twice\nthis size, leaving almost no room for cargo or fuel reserves. Other empires'\ndetection equipment occasionally registers an Absence as a cosmic ray artifact\nor background noise. The cabin is always three degrees too cold.\n",
+   "capture_policy": "standard",
+   "base_hull": 45,
+   "base_shield": 80,
+   "base_shield_recharge": 3,
+   "base_armor": 1,
+   "base_speed": 3,
+   "base_fuel": 110,
+   "cargo_capacity": 25,
+   "cpu_capacity": 18,
+   "power_capacity": 32,
+   "crew_capacity": 2,
+   "minimum_crew": 1,
+   "marine_capacity": 0,
+   "weapon_slots": 0,
+   "defense_slots": 2,
+   "utility_slots": 3,
+   "default_modules": [
+    "shield_booster_i"
+   ],
+   "inherent_capabilities": [
+    {
+     "type": "scan_resistance",
+     "value": 20
+    },
+    {
+     "type": "integrated_cloak",
+     "value": 30
+    }
+   ],
+   "shipyard_tier": 0,
+   "build_materials": [
+    {
+     "item_id": "shield_emitter",
+     "quantity": 3
+    },
+    {
+     "item_id": "steel_plate",
+     "quantity": 5
+    },
+    {
+     "item_id": "silicate_composite",
+     "quantity": 12
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 11
+    },
+    {
+     "item_id": "processing_core",
+     "quantity": 1
+    }
+   ],
+   "build_time": 280,
+   "flavor_tags": [
+    "stealth",
+    "unarmed",
+    "covert"
+   ]
+  },
+  {
+   "id": "absolute_entropy",
+   "name": "Absolute Entropy",
+   "description": "Voidborn phase-shift ice harvester. Shield-wrapped, fragile-hulled, and disturbingly effective.",
+   "class": "Ice Harvester",
+   "tier": 3,
+   "scale": 3,
+   "faction": "voidborn",
+   "category": "Industrial",
+   "lore": "The extraction system reaches through the surface of an ice body without disturbing it, pulling target materials directly from the interior. The technique leaves ice formations structurally intact — afterward, the only evidence of extraction is a slight drop in ambient temperature that instruments can measure but cannot explain. The shield array is the heaviest of any ice harvester in production, and necessarily so: dimensional phase-extraction generates feedback that would collapse an unshielded hull. The ship underneath the shields is fragile enough that this is not a theoretical concern. The name refers to the heat death state that the extraction zone locally approximates for a fraction of a second — conditions that should not exist outside mathematical models, applied to ice harvesting as routine procedure.",
+   "capture_policy": "standard",
+   "base_hull": 260,
+   "base_shield": 380,
+   "base_shield_recharge": 7,
+   "base_armor": 6,
+   "base_speed": 1,
+   "base_fuel": 220,
+   "cargo_capacity": 420,
+   "cpu_capacity": 35,
+   "power_capacity": 75,
+   "crew_capacity": 60,
+   "minimum_crew": 12,
+   "marine_capacity": 6,
+   "weapon_slots": 0,
+   "defense_slots": 2,
+   "utility_slots": 5,
+   "default_modules": [
+    "ice_harvester_iii",
+    "shield_booster_iii",
+    "shield_booster_ii"
+   ],
+   "piloting_required": 20,
+   "inherent_capabilities": [
+    {
+     "type": "ice_yield_bonus",
+     "value": 25
+    },
+    {
+     "type": "ice_cargo_efficiency",
+     "value": 50
+    }
+   ],
+   "shipyard_tier": 2,
+   "build_materials": [
+    {
+     "item_id": "shield_emitter",
+     "quantity": 22
+    },
+    {
+     "item_id": "void_condensate",
+     "quantity": 16
+    },
+    {
+     "item_id": "phase_matrix",
+     "quantity": 8
+    },
+    {
+     "item_id": "void_capacitor",
+     "quantity": 2
+    },
+    {
+     "item_id": "navigation_core",
+     "quantity": 4
+    },
+    {
+     "item_id": "silicate_composite",
+     "quantity": 180
+    },
+    {
+     "item_id": "void_nanite_suspension",
+     "quantity": 60
+    },
+    {
+     "item_id": "neural_interface_gel",
+     "quantity": 5
+    },
+    {
+     "item_id": "power_distribution_grid",
+     "quantity": 3
+    },
+    {
+     "item_id": "cryogenic_storage",
+     "quantity": 12
+    },
+    {
+     "item_id": "void_crystal",
+     "quantity": 4
+    },
+    {
+     "item_id": "processing_core",
+     "quantity": 8
+    },
+    {
+     "item_id": "shield_matrix",
+     "quantity": 25
+    },
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 100
+    },
+    {
+     "item_id": "processed_null_matter",
+     "quantity": 38
+    },
+    {
+     "item_id": "sensor_array",
+     "quantity": 20
+    },
+    {
+     "item_id": "void_shield_matrix",
+     "quantity": 4
+    },
+    {
+     "item_id": "cryogenic_suspension_chamber",
+     "quantity": 3
+    },
+    {
+     "item_id": "copper_wiring",
+     "quantity": 80
+    }
+   ],
+   "build_time": 3200,
+   "flavor_tags": [
+    "ice-harvester",
+    "dimensional",
+    "shield-tank",
+    "survivable"
+   ]
+  }
+ ],
+ "skills": [
+  {
+   "id": "armor",
+   "name": "Armor",
+   "description": "Armor and hull expertise. Increases armor effectiveness by 1% per level and hull HP by 1% per level.",
+   "category": "Combat",
+   "max_level": 100,
+   "bonus_per_level": {
+    "armorEffectiveness": 1,
+    "hullHP": 1
+   },
+   "xp_per_level": [
+    60,
+    165,
+    340,
+    585,
+    900,
+    1285,
+    1740,
+    2265,
+    2860,
+    3525,
+    4260,
+    5065,
+    5940,
+    6885,
+    7900,
+    8985,
+    10140,
+    11365,
+    12660,
+    14025,
+    15460,
+    16965,
+    18540,
+    20185,
+    21900,
+    23685,
+    25540,
+    27465,
+    29460,
+    31525,
+    33660,
+    35865,
+    38140,
+    40485,
+    42900,
+    45385,
+    47940,
+    50565,
+    53260,
+    56025,
+    58860,
+    61765,
+    64740,
+    67785,
+    70900,
+    74085,
+    77340,
+    80665,
+    84060,
+    87525,
+    91060,
+    94665,
+    98340,
+    102085,
+    105900,
+    109785,
+    113740,
+    117765,
+    121860,
+    126025,
+    130260,
+    134565,
+    138940,
+    143385,
+    147900,
+    152485,
+    157140,
+    161865,
+    166660,
+    171525,
+    176460,
+    181465,
+    186540,
+    191685,
+    196900,
+    202185,
+    207540,
+    212965,
+    218460,
+    224025,
+    229660,
+    235365,
+    241140,
+    246985,
+    252900,
+    258885,
+    264940,
+    271065,
+    277260,
+    283525,
+    289860,
+    296265,
+    302740,
+    309285,
+    315900,
+    322585,
+    329340,
+    336165,
+    343060,
+    350025
+   ],
+   "training_source": "Take hull damage in combat."
+  },
+  {
+   "id": "crafting",
+   "name": "Crafting",
+   "description": "Manufacturing expertise. Your higher of Crafting and Refining sets Station Workshop speed: x1 at level 0 up to x5 at level 100. Facility jobs run at the facility's tier speed and ignore skill.",
+   "category": "Industry",
+   "max_level": 100,
+   "xp_per_level": [
+    60,
+    165,
+    340,
+    585,
+    900,
+    1285,
+    1740,
+    2265,
+    2860,
+    3525,
+    4260,
+    5065,
+    5940,
+    6885,
+    7900,
+    8985,
+    10140,
+    11365,
+    12660,
+    14025,
+    15460,
+    16965,
+    18540,
+    20185,
+    21900,
+    23685,
+    25540,
+    27465,
+    29460,
+    31525,
+    33660,
+    35865,
+    38140,
+    40485,
+    42900,
+    45385,
+    47940,
+    50565,
+    53260,
+    56025,
+    58860,
+    61765,
+    64740,
+    67785,
+    70900,
+    74085,
+    77340,
+    80665,
+    84060,
+    87525,
+    91060,
+    94665,
+    98340,
+    102085,
+    105900,
+    109785,
+    113740,
+    117765,
+    121860,
+    126025,
+    130260,
+    134565,
+    138940,
+    143385,
+    147900,
+    152485,
+    157140,
+    161865,
+    166660,
+    171525,
+    176460,
+    181465,
+    186540,
+    191685,
+    196900,
+    202185,
+    207540,
+    212965,
+    218460,
+    224025,
+    229660,
+    235365,
+    241140,
+    246985,
+    252900,
+    258885,
+    264940,
+    271065,
+    277260,
+    283525,
+    289860,
+    296265,
+    302740,
+    309285,
+    315900,
+    322585,
+    329340,
+    336165,
+    343060,
+    350025
+   ],
+   "training_source": "Craft items at a station."
+  },
+  {
+   "id": "mining",
+   "name": "Mining",
+   "description": "Ore extraction and resource harvesting. Increases mining yield by 1% per level across all resource types, and biases which deposit a mining cycle selects toward rarer ores as the skill grows — see mining.rare_ore_rarity_weight_per_level in the catalog for the exact weighting.",
+   "category": "Industry",
+   "max_level": 100,
+   "bonus_per_level": {
+    "miningYield": 1
+   },
+   "xp_per_level": [
+    60,
+    165,
+    340,
+    585,
+    900,
+    1285,
+    1740,
+    2265,
+    2860,
+    3525,
+    4260,
+    5065,
+    5940,
+    6885,
+    7900,
+    8985,
+    10140,
+    11365,
+    12660,
+    14025,
+    15460,
+    16965,
+    18540,
+    20185,
+    21900,
+    23685,
+    25540,
+    27465,
+    29460,
+    31525,
+    33660,
+    35865,
+    38140,
+    40485,
+    42900,
+    45385,
+    47940,
+    50565,
+    53260,
+    56025,
+    58860,
+    61765,
+    64740,
+    67785,
+    70900,
+    74085,
+    77340,
+    80665,
+    84060,
+    87525,
+    91060,
+    94665,
+    98340,
+    102085,
+    105900,
+    109785,
+    113740,
+    117765,
+    121860,
+    126025,
+    130260,
+    134565,
+    138940,
+    143385,
+    147900,
+    152485,
+    157140,
+    161865,
+    166660,
+    171525,
+    176460,
+    181465,
+    186540,
+    191685,
+    196900,
+    202185,
+    207540,
+    212965,
+    218460,
+    224025,
+    229660,
+    235365,
+    241140,
+    246985,
+    252900,
+    258885,
+    264940,
+    271065,
+    277260,
+    283525,
+    289860,
+    296265,
+    302740,
+    309285,
+    315900,
+    322585,
+    329340,
+    336165,
+    343060,
+    350025
+   ],
+   "training_source": "Mine at asteroid belts, ice fields, or gas clouds."
+  },
+  {
+   "id": "bounty_hunting",
+   "name": "Bounty Hunting",
+   "description": "Hunting pirates and collecting bounties. Increases bounty reward payouts by 1% per level.",
+   "category": "Combat",
+   "max_level": 100,
+   "bonus_per_level": {
+    "bountyReward": 1
+   },
+   "xp_per_level": [
+    60,
+    165,
+    340,
+    585,
+    900,
+    1285,
+    1740,
+    2265,
+    2860,
+    3525,
+    4260,
+    5065,
+    5940,
+    6885,
+    7900,
+    8985,
+    10140,
+    11365,
+    12660,
+    14025,
+    15460,
+    16965,
+    18540,
+    20185,
+    21900,
+    23685,
+    25540,
+    27465,
+    29460,
+    31525,
+    33660,
+    35865,
+    38140,
+    40485,
+    42900,
+    45385,
+    47940,
+    50565,
+    53260,
+    56025,
+    58860,
+    61765,
+    64740,
+    67785,
+    70900,
+    74085,
+    77340,
+    80665,
+    84060,
+    87525,
+    91060,
+    94665,
+    98340,
+    102085,
+    105900,
+    109785,
+    113740,
+    117765,
+    121860,
+    126025,
+    130260,
+    134565,
+    138940,
+    143385,
+    147900,
+    152485,
+    157140,
+    161865,
+    166660,
+    171525,
+    176460,
+    181465,
+    186540,
+    191685,
+    196900,
+    202185,
+    207540,
+    212965,
+    218460,
+    224025,
+    229660,
+    235365,
+    241140,
+    246985,
+    252900,
+    258885,
+    264940,
+    271065,
+    277260,
+    283525,
+    289860,
+    296265,
+    302740,
+    309285,
+    315900,
+    322585,
+    329340,
+    336165,
+    343060,
+    350025
+   ],
+   "training_source": "Defeat pirates and collect bounties."
+  }
+ ],
+ "recipes": [
+  {
+   "id": "purify_argon",
+   "name": "Purify Argon",
+   "description": "Process argon for welding and shield systems.",
+   "category": "Gas Processing",
+   "inputs": [
+    {
+     "item_id": "argon_gas",
+     "quantity": 5
+    }
+   ],
+   "outputs": [
+    {
+     "item_id": "purified_argon",
+     "quantity": 3
+    }
+   ],
+   "crafting_time": 1.08,
+   "no_recycle": true,
+   "hand_craftable": true,
+   "produced_by_facility_ids": [
+    "argon_collection_tank",
+    "argon_purification_vessel",
+    "argon_refinery_array",
+    "argon_crystallization_tower"
+   ]
+  },
+  {
+   "id": "accelerate_bioluminescent_algae_growth",
+   "name": "Accelerate Bioluminescent Algae Growth",
+   "description": "Feed captured carbon dioxide into an enriched algae culture for faster facility cultivation.",
+   "category": "Facility Only",
+   "inputs": [
+    {
+     "item_id": "purified_water",
+     "quantity": 2
+    },
+    {
+     "item_id": "liquid_nitrogen",
+     "quantity": 1
+    },
+    {
+     "item_id": "carbon_dioxide_ice",
+     "quantity": 1
+    }
+   ],
+   "outputs": [
+    {
+     "item_id": "bioluminescent_algae",
+     "quantity": 3
+    }
+   ],
+   "crafting_time": 2.02,
+   "facility_only": true,
+   "hand_craftable": false,
+   "produced_by_facility_ids": [
+    "algae_cultivation_array",
+    "bioluminescent_production_greenhouse",
+    "automated_algae_synthesis_plant"
+   ]
+  },
+  {
+   "id": "accelerate_driftkale_growth",
+   "name": "Accelerate Driftkale Growth",
+   "description": "Enrich sealed drift-trays with captured carbon dioxide and bring a full crop to harvest.",
+   "category": "Hydroponics",
+   "inputs": [
+    {
+     "item_id": "purified_water",
+     "quantity": 300
+    },
+    {
+     "item_id": "liquid_nitrogen",
+     "quantity": 30
+    },
+    {
+     "item_id": "carbon_dioxide_ice",
+     "quantity": 10
+    }
+   ],
+   "outputs": [
+    {
+     "item_id": "driftkale",
+     "quantity": 200
+    }
+   ],
+   "crafting_time": 360,
+   "facility_only": true,
+   "no_recycle": true,
+   "hand_craftable": false,
+   "produced_by_facility_ids": [
+    "carbon_enriched_driftkale_bay"
+   ]
+  }
+ ],
+ "items": [
+  {
+   "id": "anomaly_detector",
+   "type_id": "anomaly_detector",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Anomaly Detector",
+   "description": "Detects spatial anomalies and wormholes. When equipped, survey_system reveals wormhole locations and provides directional hints to nearby wormholes. It finds wormholes only: without a survey scanner it reads no ore and resolves no faint signatures.",
+   "size": 10,
+   "base_value": 20000,
+   "cpu_usage": 15,
+   "power_usage": 25,
+   "special": "anomaly_detection",
+   "combat_effects": {}
+  },
+  {
+   "id": "argon_gas",
+   "name": "Argon Gas",
+   "description": "Inert gas for shielding during welding and manufacturing.",
+   "category": "ore",
+   "size": 1,
+   "base_value": 12,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common",
+   "extracted_by": "gas",
+   "compression": "gas"
+  },
+  {
+   "id": "autocannon_i",
+   "type_id": "autocannon_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Autocannon I",
+   "description": "Deals 10 kinetic damage from a 500-round magazine. Sustained close-range fire pressures shields but struggles against armor. Fires every tick at reach 2.",
+   "size": 10,
+   "base_value": 710,
+   "cpu_usage": 3,
+   "power_usage": 4,
+   "damage": 10,
+   "damage_type": "kinetic",
+   "ammo_type": "autocannon",
+   "reach": 2,
+   "cooldown": 1,
+   "magazine_size": 500,
+   "combat_effects": {}
+  },
+  {
+   "id": "autocannon_ii",
+   "type_id": "autocannon_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Autocannon II",
+   "description": "Deals 18 kinetic damage from a 650-round magazine. Sustained close-range fire pressures shields but struggles against armor. Fires every tick at reach 2.",
+   "size": 10,
+   "base_value": 1800,
+   "cpu_usage": 4,
+   "power_usage": 6,
+   "damage": 18,
+   "damage_type": "kinetic",
+   "ammo_type": "autocannon",
+   "reach": 2,
+   "cooldown": 1,
+   "magazine_size": 650,
+   "combat_effects": {}
+  },
+  {
+   "id": "blood_reaver",
+   "type_id": "blood_reaver",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Blood Reaver",
+   "description": "Deals 45 kinetic damage and repairs its user for 20% of damage dealt. Fires every 2 ticks at reach 3.",
+   "size": 10,
+   "base_value": 8700,
+   "cpu_usage": 9,
+   "power_usage": 20,
+   "damage": 45,
+   "damage_type": "kinetic",
+   "ammo_type": "autocannon",
+   "reach": 3,
+   "cooldown": 2,
+   "magazine_size": 1000,
+   "special": "lifesteal_20",
+   "combat_effects": {
+    "lifesteal_pct": 20
+   }
+  },
+  {
+   "id": "circuit_board",
+   "name": "Circuit Board",
+   "description": "Integrated electronic processing boards.",
+   "category": "refined",
+   "size": 1,
+   "base_value": 200,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common"
+  },
+  {
+   "id": "copper_ore",
+   "name": "Copper Ore",
+   "description": "Conductive copper ore, essential for electronics.",
+   "category": "ore",
+   "size": 1,
+   "base_value": 8,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common",
+   "extracted_by": "mining",
+   "compression": "ore"
+  },
+  {
+   "id": "dark_matter_projector",
+   "type_id": "dark_matter_projector",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Dark Matter Projector",
+   "description": "Deals 150 void damage, ignores 100% of typed resistance, and bypasses 100% of shields. Fires every 6 ticks at reach 3.",
+   "size": 10,
+   "base_value": 52000,
+   "cpu_usage": 18,
+   "power_usage": 40,
+   "damage": 150,
+   "damage_type": "void",
+   "ammo_type": "void_core",
+   "reach": 3,
+   "cooldown": 6,
+   "magazine_size": 25,
+   "special": "ignores_resistance_100,shield_phase",
+   "combat_effects": {
+    "ignore_resistance_pct": 100,
+    "shield_phase": true
+   }
+  },
+  {
+   "id": "em_disruptor_i",
+   "type_id": "em_disruptor_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "EM Disruptor I",
+   "description": "Deals 5 EM damage and applies a 10% outgoing-damage penalty for 2 ticks. Fires every 2 ticks at reach 2.",
+   "size": 10,
+   "base_value": 3900,
+   "cpu_usage": 5,
+   "power_usage": 8,
+   "damage": 5,
+   "damage_type": "em",
+   "ammo_type": "em_charge",
+   "reach": 2,
+   "cooldown": 2,
+   "magazine_size": 40,
+   "special": "cpu_damage_10",
+   "combat_effects": {
+    "cpu_damage_pct": 10
+   }
+  },
+  {
+   "id": "emp_cannon_i",
+   "type_id": "emp_cannon_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "EMP Cannon I",
+   "description": "Deals 8 energy damage and disrupts the target for 2 ticks, imposing 100% speed and outgoing-damage penalties. Fires every 3 ticks at reach 3.",
+   "size": 10,
+   "base_value": 3000,
+   "cpu_usage": 5,
+   "power_usage": 10,
+   "damage": 8,
+   "damage_type": "energy",
+   "reach": 3,
+   "cooldown": 3,
+   "special": "system_disable_2",
+   "combat_effects": {
+    "system_disable_ticks": 2
+   }
+  },
+  {
+   "id": "emp_missile_launcher",
+   "type_id": "emp_missile_launcher",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "EMP Missile Launcher",
+   "description": "Deals 15 explosive damage and disrupts the target for 3 ticks, imposing 100% speed and outgoing-damage penalties. Fires every 4 ticks at reach 6.",
+   "size": 10,
+   "base_value": 5600,
+   "cpu_usage": 8,
+   "power_usage": 12,
+   "damage": 15,
+   "damage_type": "explosive",
+   "ammo_type": "missile",
+   "reach": 6,
+   "cooldown": 4,
+   "magazine_size": 6,
+   "special": "system_disable_3",
+   "combat_effects": {
+    "system_disable_ticks": 3
+   }
+  },
+  {
+   "id": "emp_pulse_i",
+   "type_id": "emp_pulse_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "EMP Pulse I",
+   "description": "Deals 5 EM damage and disrupts the target for 1 tick, imposing 100% speed and outgoing-damage penalties. Fires every 4 ticks at reach 2.",
+   "size": 10,
+   "base_value": 3800,
+   "cpu_usage": 5,
+   "power_usage": 12,
+   "damage": 5,
+   "damage_type": "em",
+   "ammo_type": "em_charge",
+   "reach": 2,
+   "cooldown": 4,
+   "magazine_size": 40,
+   "special": "system_disable_1",
+   "combat_effects": {
+    "system_disable_ticks": 1
+   }
+  },
+  {
+   "id": "emp_pulse_ii",
+   "type_id": "emp_pulse_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "EMP Pulse II",
+   "description": "Deals 10 EM damage and disrupts the target for 2 ticks, imposing 100% speed and outgoing-damage penalties. Fires every 4 ticks at reach 2.",
+   "size": 10,
+   "base_value": 6800,
+   "cpu_usage": 7,
+   "power_usage": 18,
+   "damage": 10,
+   "damage_type": "em",
+   "ammo_type": "em_charge",
+   "reach": 2,
+   "cooldown": 4,
+   "magazine_size": 60,
+   "special": "system_disable_2",
+   "combat_effects": {
+    "system_disable_ticks": 2
+   }
+  },
+  {
+   "id": "emp_pulse_iii",
+   "type_id": "emp_pulse_iii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "EMP Pulse III",
+   "description": "Deals 18 EM damage and disrupts the target for 3 ticks, imposing 100% speed and outgoing-damage penalties. Fires every 5 ticks at reach 2.",
+   "size": 10,
+   "base_value": 41000,
+   "cpu_usage": 10,
+   "power_usage": 25,
+   "damage": 18,
+   "damage_type": "em",
+   "ammo_type": "em_charge",
+   "reach": 2,
+   "cooldown": 5,
+   "magazine_size": 80,
+   "special": "system_disable_3",
+   "combat_effects": {
+    "system_disable_ticks": 3
+   }
+  },
+  {
+   "id": "energy_siphon",
+   "type_id": "energy_siphon",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Energy Siphon",
+   "description": "Drains enemy shields and transfers half of the stolen energy to your ship.",
+   "size": 10,
+   "base_value": 33000,
+   "cpu_usage": 12,
+   "power_usage": 15,
+   "damage": 25,
+   "damage_type": "em",
+   "ammo_type": "em_charge",
+   "reach": 3,
+   "cooldown": 2,
+   "magazine_size": 100,
+   "special": "shield_drain_30,shield_transfer_50",
+   "combat_effects": {
+    "shield_drain": 30,
+    "shield_transfer_pct": 50
+   }
+  },
+  {
+   "id": "entropy_beam",
+   "type_id": "entropy_beam",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Entropy Beam",
+   "description": "Deals 15 void damage, then immediately burns the target's hull for 10 damage on the hit tick and each of the next 4 ticks, bypassing shields and armor. Burns do not stack: active burns keep the higher per-tick damage and longer remaining duration. Fires every 2 ticks at reach 4.",
+   "size": 10,
+   "base_value": 12000,
+   "cpu_usage": 9,
+   "power_usage": 18,
+   "damage": 15,
+   "damage_type": "void",
+   "ammo_type": "void_core",
+   "reach": 4,
+   "cooldown": 2,
+   "magazine_size": 15,
+   "special": "dot_damage_10,dot_duration_5",
+   "combat_effects": {
+    "dot_damage": 10,
+    "dot_duration": 5
+   }
+  },
+  {
+   "id": "flak_cannon_i",
+   "type_id": "flak_cannon_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Flak Cannon I",
+   "description": "Deals 15 kinetic damage with +100% damage to drones. Provides 25 points of anti-missile defense; anti-missile ratings do not stack, so only the strongest fitted flak cannon counts. Fires every tick at reach 3.",
+   "size": 10,
+   "base_value": 4800,
+   "cpu_usage": 3,
+   "power_usage": 5,
+   "damage": 15,
+   "damage_type": "kinetic",
+   "ammo_type": "autocannon",
+   "reach": 3,
+   "cooldown": 1,
+   "magazine_size": 650,
+   "special": "anti_drone_bonus_100,anti_missile_bonus_25",
+   "combat_effects": {
+    "anti_drone_pct": 100,
+    "anti_missile_pct": 25
+   }
+  },
+  {
+   "id": "flak_cannon_ii",
+   "type_id": "flak_cannon_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Flak Cannon II",
+   "description": "Deals 28 kinetic damage with +150% damage to drones. Provides 45 points of anti-missile defense; anti-missile ratings do not stack, so only the strongest fitted flak cannon counts. Fires every tick at reach 3.",
+   "size": 10,
+   "base_value": 6200,
+   "cpu_usage": 5,
+   "power_usage": 8,
+   "damage": 28,
+   "damage_type": "kinetic",
+   "ammo_type": "autocannon",
+   "reach": 3,
+   "cooldown": 1,
+   "magazine_size": 800,
+   "special": "anti_drone_bonus_150,anti_missile_bonus_45",
+   "combat_effects": {
+    "anti_drone_pct": 150,
+    "anti_missile_pct": 45
+   }
+  },
+  {
+   "id": "flak_cannon_iii",
+   "type_id": "flak_cannon_iii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Flak Cannon III",
+   "description": "Deals 40 kinetic damage with +200% damage to drones. Provides 65 points of anti-missile defense; anti-missile ratings do not stack, so only the strongest fitted flak cannon counts. Fires every tick at reach 3.",
+   "size": 10,
+   "base_value": 30000,
+   "cpu_usage": 8,
+   "power_usage": 12,
+   "damage": 40,
+   "damage_type": "kinetic",
+   "ammo_type": "autocannon",
+   "reach": 3,
+   "cooldown": 1,
+   "magazine_size": 1000,
+   "special": "anti_drone_bonus_200,anti_missile_bonus_65",
+   "combat_effects": {
+    "anti_drone_pct": 200,
+    "anti_missile_pct": 65
+   }
+  },
+  {
+   "id": "focused_beam_i",
+   "type_id": "focused_beam_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Focused Beam I",
+   "description": "Deals 15 energy damage; 25% bypasses shields. Fires every 2 ticks at reach 4.",
+   "size": 10,
+   "base_value": 8700,
+   "cpu_usage": 4,
+   "power_usage": 10,
+   "damage": 15,
+   "damage_type": "energy",
+   "reach": 4,
+   "cooldown": 2,
+   "special": "shield_bypass_25",
+   "shield_bypass_bonus": 0.25,
+   "combat_effects": {}
+  },
+  {
+   "id": "focused_beam_ii",
+   "type_id": "focused_beam_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Focused Beam II",
+   "description": "Deals 25 energy damage; 40% bypasses shields. Fires every 2 ticks at reach 4.",
+   "size": 10,
+   "base_value": 17000,
+   "cpu_usage": 6,
+   "power_usage": 15,
+   "damage": 25,
+   "damage_type": "energy",
+   "reach": 4,
+   "cooldown": 2,
+   "special": "shield_bypass_40",
+   "shield_bypass_bonus": 0.4,
+   "combat_effects": {}
+  },
+  {
+   "id": "focused_beam_iii",
+   "type_id": "focused_beam_iii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Focused Beam III",
+   "description": "Deals 40 energy damage; 60% bypasses shields. Fires every 2 ticks at reach 4.",
+   "size": 10,
+   "base_value": 27000,
+   "cpu_usage": 10,
+   "power_usage": 22,
+   "damage": 40,
+   "damage_type": "energy",
+   "reach": 4,
+   "cooldown": 2,
+   "special": "shield_bypass_60",
+   "shield_bypass_bonus": 0.6,
+   "combat_effects": {}
+  },
+  {
+   "id": "fuel",
+   "name": "Fuel",
+   "description": "Station fuel. Not carried in cargo — sold directly from your ship's fuel tank via the 'sell' command. Stations post buy orders for fuel they need; factions can also post buy orders to fill their private fuel reserves.",
+   "category": "fuel",
+   "size": 1,
+   "base_value": 5,
+   "stackable": false,
+   "tradeable": false
+  },
+  {
+   "id": "fury_cannon",
+   "type_id": "fury_cannon",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Fury Cannon",
+   "description": "Deals 70 kinetic damage, increased by the user's missing-hull percentage. At 40% hull it deals +60%. Fires every 3 ticks at reach 5.",
+   "size": 10,
+   "base_value": 37000,
+   "cpu_usage": 14,
+   "power_usage": 32,
+   "damage": 70,
+   "damage_type": "kinetic",
+   "ammo_type": "autocannon",
+   "reach": 5,
+   "cooldown": 3,
+   "magazine_size": 1000,
+   "special": "rage_damage_scaling",
+   "combat_effects": {
+    "rage_damage_scaling": true
+   }
+  },
+  {
+   "id": "galvanic_hull_grid",
+   "type_id": "galvanic_hull_grid",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Galvanic Hull Grid",
+   "description": "A network of high-energy conductors embedded beneath the outer plating. A hostile boarding contact closes the circuit and electrifies the hull around the docking point.",
+   "size": 10,
+   "base_value": 22000,
+   "cpu_usage": 8,
+   "power_usage": 15,
+   "damage": 70,
+   "damage_type": "energy",
+   "boarding_contact_defense": true,
+   "cooldown": 2,
+   "combat_effects": {}
+  },
+  {
+   "id": "graviton_beam_i",
+   "type_id": "graviton_beam_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Graviton Beam I",
+   "description": "Deals 32 kinetic damage and deals 25% more while the target's shields are down. Fires every 3 ticks at reach 4.",
+   "size": 10,
+   "base_value": 4200,
+   "cpu_usage": 8,
+   "power_usage": 15,
+   "damage": 32,
+   "damage_type": "kinetic",
+   "reach": 4,
+   "cooldown": 3,
+   "special": "hull_damage_bonus_25",
+   "combat_effects": {
+    "hull_damage_pct": 25
+   }
+  },
+  {
+   "id": "graviton_beam_ii",
+   "type_id": "graviton_beam_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Graviton Beam II",
+   "description": "Deals 50 kinetic damage and deals 50% more while the target's shields are down. Within reach 4, reduces its selected target's combat speed by 30%, affecting hit chance, maneuvering, escape, and boarding pursuit; web penalties add and cap at 75%. Fires every 3 ticks.",
+   "size": 10,
+   "base_value": 37000,
+   "cpu_usage": 12,
+   "power_usage": 22,
+   "damage": 50,
+   "damage_type": "kinetic",
+   "reach": 4,
+   "cooldown": 3,
+   "special": "hull_damage_bonus_50",
+   "combat_effects": {
+    "hull_damage_pct": 50
+   },
+   "webify_strength": 30
+  },
+  {
+   "id": "heavy_mass_driver",
+   "type_id": "heavy_mass_driver",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Heavy Mass Driver",
+   "description": "Deals 150 kinetic damage from a 10-slug magazine; 80% bypasses armor and damage gains 50% while the target has no shields. Fires every 5 ticks at reach 6.",
+   "size": 10,
+   "base_value": 25000,
+   "cpu_usage": 15,
+   "power_usage": 35,
+   "damage": 150,
+   "damage_type": "kinetic",
+   "ammo_type": "railgun",
+   "reach": 6,
+   "cooldown": 5,
+   "magazine_size": 10,
+   "special": "armor_bypass_80,hull_damage_bonus_50",
+   "armor_bypass_bonus": 0.8,
+   "combat_effects": {
+    "hull_damage_pct": 50
+   }
+  },
+  {
+   "id": "heavy_pulse_laser",
+   "type_id": "heavy_pulse_laser",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Heavy Pulse Laser",
+   "description": "Capital-class energy weapon with devastating output.",
+   "size": 10,
+   "base_value": 27000,
+   "cpu_usage": 8,
+   "power_usage": 20,
+   "damage": 45,
+   "damage_type": "energy",
+   "reach": 3,
+   "cooldown": 2,
+   "combat_effects": {}
+  },
+  {
+   "id": "heavy_torpedo",
+   "type_id": "heavy_torpedo",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Heavy Torpedo",
+   "description": "Deals 80 explosive damage from a 4-torpedo magazine. Fires every 5 ticks at reach 6.",
+   "size": 10,
+   "base_value": 4000,
+   "cpu_usage": 8,
+   "power_usage": 8,
+   "damage": 80,
+   "damage_type": "explosive",
+   "ammo_type": "torpedo",
+   "reach": 6,
+   "cooldown": 5,
+   "magazine_size": 4,
+   "combat_effects": {}
+  },
+  {
+   "id": "helium_ice",
+   "name": "Helium Ice",
+   "description": "Frozen helium-3 from gas giant atmospheres. Premium fusion fuel.",
+   "category": "ore",
+   "size": 2,
+   "base_value": 85,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "rare",
+   "extracted_by": "ice",
+   "compression": "ice"
+  },
+  {
+   "id": "hydrogen_gas",
+   "name": "Hydrogen Gas",
+   "description": "Basic fuel source harvested from gas giants and nebulae.",
+   "category": "ore",
+   "size": 1,
+   "base_value": 8,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common",
+   "extracted_by": "gas",
+   "compression": "gas"
+  },
+  {
+   "id": "ice_harvester_i",
+   "type_id": "ice_harvester_i",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Ice Harvester I",
+   "description": "Extracts valuable ice from asteroid fields and comets. Works any deposit whose resource is ice-extracted (the 9 ices: ammonia, carbon dioxide, deuterium, helium, methane, nitrogen, oxygen, tritium, water), whatever the POI type.",
+   "size": 10,
+   "base_value": 1000,
+   "cpu_usage": 4,
+   "power_usage": 7,
+   "mining_power": 8,
+   "special": "ice_harvesting",
+   "combat_effects": {}
+  },
+  {
+   "id": "ion_beam_array",
+   "type_id": "ion_beam_array",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Ion Beam Array",
+   "description": "Deals 30 energy damage. Fires every 2 ticks at reach 3.",
+   "size": 10,
+   "base_value": 11000,
+   "cpu_usage": 8,
+   "power_usage": 18,
+   "damage": 30,
+   "damage_type": "energy",
+   "reach": 3,
+   "cooldown": 2,
+   "combat_effects": {}
+  },
+  {
+   "id": "ion_blaster_i",
+   "type_id": "ion_blaster_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Ion Blaster I",
+   "description": "Deals 8 EM damage, +50% while shields remain. Fires every tick at reach 2.",
+   "size": 10,
+   "base_value": 3900,
+   "cpu_usage": 4,
+   "power_usage": 8,
+   "damage": 8,
+   "damage_type": "em",
+   "ammo_type": "em_charge",
+   "reach": 2,
+   "cooldown": 1,
+   "magazine_size": 60,
+   "special": "shield_damage_bonus_50",
+   "combat_effects": {
+    "shield_damage_pct": 50
+   }
+  },
+  {
+   "id": "ion_blaster_ii",
+   "type_id": "ion_blaster_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Ion Blaster II",
+   "description": "Deals 14 EM damage, +75% while shields remain. Fires every tick at reach 2.",
+   "size": 10,
+   "base_value": 7200,
+   "cpu_usage": 6,
+   "power_usage": 12,
+   "damage": 14,
+   "damage_type": "em",
+   "ammo_type": "em_charge",
+   "reach": 2,
+   "cooldown": 1,
+   "magazine_size": 80,
+   "special": "shield_damage_bonus_75",
+   "combat_effects": {
+    "shield_damage_pct": 75
+   }
+  },
+  {
+   "id": "ion_blaster_iii",
+   "type_id": "ion_blaster_iii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Ion Blaster III",
+   "description": "Deals 22 EM damage, +100% while shields remain. Fires every tick at reach 2.",
+   "size": 10,
+   "base_value": 11000,
+   "cpu_usage": 9,
+   "power_usage": 18,
+   "damage": 22,
+   "damage_type": "em",
+   "ammo_type": "em_charge",
+   "reach": 2,
+   "cooldown": 1,
+   "magazine_size": 100,
+   "special": "shield_damage_bonus_100",
+   "combat_effects": {
+    "shield_damage_pct": 100
+   }
+  },
+  {
+   "id": "ion_cannon_i",
+   "type_id": "ion_cannon_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Ion Cannon I",
+   "description": "Deals 12 energy damage. Fires every 2 ticks at reach 5.",
+   "size": 10,
+   "base_value": 2600,
+   "cpu_usage": 3,
+   "power_usage": 8,
+   "damage": 12,
+   "damage_type": "energy",
+   "reach": 5,
+   "cooldown": 2,
+   "combat_effects": {}
+  },
+  {
+   "id": "ion_cannon_ii",
+   "type_id": "ion_cannon_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Ion Cannon II",
+   "description": "Deals 20 energy damage. Fires every 2 ticks at reach 5.",
+   "size": 10,
+   "base_value": 5400,
+   "cpu_usage": 5,
+   "power_usage": 12,
+   "damage": 20,
+   "damage_type": "energy",
+   "reach": 5,
+   "cooldown": 2,
+   "combat_effects": {}
+  },
+  {
+   "id": "iron_ore",
+   "name": "Iron Ore",
+   "description": "Common ferrous ore, the backbone of basic construction.",
+   "category": "ore",
+   "size": 1,
+   "base_value": 5,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common",
+   "extracted_by": "mining",
+   "compression": "ore"
+  },
+  {
+   "id": "judgment_beam",
+   "type_id": "judgment_beam",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Judgment Beam",
+   "description": "Deals 100 energy damage with a 50% energy-damage bonus; 50% bypasses shields. Fires every 4 ticks at reach 4.",
+   "size": 10,
+   "base_value": 40000,
+   "cpu_usage": 16,
+   "power_usage": 35,
+   "damage": 100,
+   "damage_type": "energy",
+   "reach": 4,
+   "cooldown": 4,
+   "special": "energy_damage_bonus_50,shield_bypass_50",
+   "shield_bypass_bonus": 0.5,
+   "combat_effects": {
+    "energy_damage_pct": 50
+   }
+  },
+  {
+   "id": "jury_rigged_cannon",
+   "type_id": "jury_rigged_cannon",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Jury-Rigged Cannon",
+   "description": "Deals 60 kinetic damage with ±30% random variance and reduced CPU requirements. Fires every 2 ticks at reach 3.",
+   "size": 10,
+   "base_value": 2500,
+   "cpu_usage": 7,
+   "power_usage": 14,
+   "damage": 60,
+   "damage_type": "kinetic",
+   "ammo_type": "autocannon",
+   "reach": 3,
+   "cooldown": 2,
+   "magazine_size": 500,
+   "special": "random_damage_variance_30,low_cpu_requirement",
+   "combat_effects": {
+    "random_damage_pct": 30,
+    "low_cpu_requirement": true
+   }
+  },
+  {
+   "id": "liquid_hydrogen",
+   "name": "Liquid Hydrogen",
+   "description": "Compressed hydrogen fuel for fusion reactors.",
+   "category": "refined",
+   "size": 1,
+   "base_value": 25,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common"
+  },
+  {
+   "id": "mass_driver",
+   "type_id": "mass_driver",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Mass Driver",
+   "description": "Deals 130 kinetic damage from a 10-slug magazine; 75% bypasses armor. Fires every 4 ticks at reach 6.",
+   "size": 10,
+   "base_value": 12000,
+   "cpu_usage": 12,
+   "power_usage": 28,
+   "damage": 130,
+   "damage_type": "kinetic",
+   "ammo_type": "railgun",
+   "reach": 6,
+   "cooldown": 4,
+   "magazine_size": 10,
+   "special": "armor_bypass_75",
+   "armor_bypass_bonus": 0.75,
+   "combat_effects": {}
+  },
+  {
+   "id": "mine_launcher_i",
+   "type_id": "mine_launcher_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Mine Launcher I",
+   "description": "Deals 50 explosive damage from a 5-mine magazine. On hit, also burns hull through shields and armor for 60 ticks at max(1, final hit damage / 60) per tick. Fires every 5 ticks at reach 3.",
+   "size": 10,
+   "base_value": 1800,
+   "cpu_usage": 5,
+   "power_usage": 4,
+   "damage": 50,
+   "damage_type": "explosive",
+   "ammo_type": "mine",
+   "reach": 3,
+   "cooldown": 5,
+   "magazine_size": 5,
+   "special": "mine_capacity_5,mine_duration_60",
+   "combat_effects": {
+    "mine_capacity": 5,
+    "mine_duration": 60
+   }
+  },
+  {
+   "id": "mine_launcher_ii",
+   "type_id": "mine_launcher_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Mine Launcher II",
+   "description": "Deals 80 explosive damage from a 10-mine magazine. On hit, also burns hull through shields and armor for 120 ticks at max(1, final hit damage / 120) per tick. Fires every 4 ticks at reach 3.",
+   "size": 10,
+   "base_value": 4000,
+   "cpu_usage": 7,
+   "power_usage": 6,
+   "damage": 80,
+   "damage_type": "explosive",
+   "ammo_type": "mine",
+   "reach": 3,
+   "cooldown": 4,
+   "magazine_size": 10,
+   "special": "mine_capacity_10,mine_duration_120",
+   "combat_effects": {
+    "mine_capacity": 10,
+    "mine_duration": 120
+   }
+  },
+  {
+   "id": "mining_laser_i",
+   "type_id": "mining_laser_i",
+   "type": "mining",
+   "slot": "utility",
+   "name": "Mining Laser I",
+   "description": "Basic mining laser for ore extraction.",
+   "size": 10,
+   "base_value": 1600,
+   "cpu_usage": 2,
+   "power_usage": 5,
+   "mining_power": 5,
+   "combat_effects": {}
+  },
+  {
+   "id": "missile_launcher_i",
+   "type_id": "missile_launcher_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Missile Launcher I",
+   "description": "Deals 20 explosive damage from an 8-missile magazine. Fires every 3 ticks at reach 6.",
+   "size": 10,
+   "base_value": 1800,
+   "cpu_usage": 4,
+   "power_usage": 3,
+   "damage": 20,
+   "damage_type": "explosive",
+   "ammo_type": "missile",
+   "reach": 6,
+   "cooldown": 3,
+   "magazine_size": 8,
+   "combat_effects": {}
+  },
+  {
+   "id": "missile_launcher_ii",
+   "type_id": "missile_launcher_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Missile Launcher II",
+   "description": "Deals 35 explosive damage from a 12-missile magazine. Fires every 3 ticks at reach 6.",
+   "size": 10,
+   "base_value": 6500,
+   "cpu_usage": 6,
+   "power_usage": 5,
+   "damage": 35,
+   "damage_type": "explosive",
+   "ammo_type": "missile",
+   "reach": 6,
+   "cooldown": 3,
+   "magazine_size": 12,
+   "combat_effects": {}
+  },
+  {
+   "id": "neural_disruptor",
+   "type_id": "neural_disruptor",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Neural Disruptor",
+   "description": "Deals 12 EM damage and applies a 25% outgoing-damage penalty for 2 ticks. Fires every 2 ticks at reach 3.",
+   "size": 10,
+   "base_value": 10000,
+   "cpu_usage": 8,
+   "power_usage": 14,
+   "damage": 12,
+   "damage_type": "em",
+   "ammo_type": "em_charge",
+   "reach": 3,
+   "cooldown": 2,
+   "magazine_size": 80,
+   "special": "cpu_damage_25",
+   "combat_effects": {
+    "cpu_damage_pct": 25
+   }
+  },
+  {
+   "id": "null_cannon",
+   "type_id": "null_cannon",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Null Cannon",
+   "description": "Deals 110 void damage, bypassing shields, armor, and defensive reductions. AOE radius 2 sends that full post-defense damage as a new hit to every other enemy within 2 battle bands of the target; each applies its own defenses.",
+   "size": 10,
+   "base_value": 46000,
+   "cpu_usage": 15,
+   "power_usage": 38,
+   "damage": 110,
+   "damage_type": "void",
+   "ammo_type": "void_core",
+   "reach": 3,
+   "cooldown": 4,
+   "magazine_size": 25,
+   "special": "ignores_all_defense,aoe_radius_2",
+   "combat_effects": {
+    "aoe_radius": 2,
+    "ignore_all_defense": true
+   }
+  },
+  {
+   "id": "null_matter",
+   "name": "Null Matter",
+   "description": "Material that seems to absorb energy and light. Unique to Voidborn anomaly zones.",
+   "category": "ore",
+   "size": 2,
+   "base_value": 450,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "exotic",
+   "region_lock": [
+    "voidborn"
+   ],
+   "extracted_by": "mining",
+   "compression": "ore"
+  },
+  {
+   "id": "phase_disruptor",
+   "type_id": "phase_disruptor",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Phase Disruptor",
+   "description": "Deals 48 void damage and ignores 30% of typed resistance. Fires every 2 ticks at reach 3.",
+   "size": 10,
+   "base_value": 21000,
+   "cpu_usage": 10,
+   "power_usage": 22,
+   "damage": 48,
+   "damage_type": "void",
+   "ammo_type": "void_core",
+   "reach": 3,
+   "cooldown": 2,
+   "magazine_size": 15,
+   "special": "phase_strike_30",
+   "combat_effects": {
+    "phase_strike_pct": 30
+   }
+  },
+  {
+   "id": "piercing_railgun_i",
+   "type_id": "piercing_railgun_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Piercing Railgun I",
+   "description": "Deals 60 kinetic damage from a 7-slug magazine; 70% bypasses armor. Fires every 3 ticks at reach 5.",
+   "size": 10,
+   "base_value": 5000,
+   "cpu_usage": 5,
+   "power_usage": 12,
+   "damage": 60,
+   "damage_type": "kinetic",
+   "ammo_type": "railgun",
+   "reach": 5,
+   "cooldown": 3,
+   "magazine_size": 7,
+   "special": "armor_bypass_70",
+   "armor_bypass_bonus": 0.7,
+   "combat_effects": {}
+  },
+  {
+   "id": "piercing_railgun_ii",
+   "type_id": "piercing_railgun_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Piercing Railgun II",
+   "description": "Deals 90 kinetic damage from a 10-slug magazine; 85% bypasses armor. Fires every 3 ticks at reach 5.",
+   "size": 10,
+   "base_value": 15000,
+   "cpu_usage": 8,
+   "power_usage": 20,
+   "damage": 90,
+   "damage_type": "kinetic",
+   "ammo_type": "railgun",
+   "reach": 5,
+   "cooldown": 3,
+   "magazine_size": 10,
+   "special": "armor_bypass_85",
+   "armor_bypass_bonus": 0.85,
+   "combat_effects": {}
+  },
+  {
+   "id": "plasma_cannon_i",
+   "type_id": "plasma_cannon_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Plasma Cannon I",
+   "description": "Deals 22 thermal damage, increased by 50% while the target's shields are down. Fires every 2 ticks at reach 3.",
+   "size": 10,
+   "base_value": 2200,
+   "cpu_usage": 4,
+   "power_usage": 10,
+   "damage": 22,
+   "damage_type": "thermal",
+   "ammo_type": "plasma",
+   "reach": 3,
+   "cooldown": 2,
+   "magazine_size": 50,
+   "special": "hull_damage_bonus_50",
+   "combat_effects": {
+    "hull_damage_pct": 50
+   }
+  },
+  {
+   "id": "plasma_cannon_ii",
+   "type_id": "plasma_cannon_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Plasma Cannon II",
+   "description": "Deals 38 thermal damage, increased by 50% while the target's shields are down. Fires every 2 ticks at reach 3.",
+   "size": 10,
+   "base_value": 3800,
+   "cpu_usage": 6,
+   "power_usage": 14,
+   "damage": 38,
+   "damage_type": "thermal",
+   "ammo_type": "plasma",
+   "reach": 3,
+   "cooldown": 2,
+   "magazine_size": 80,
+   "special": "hull_damage_bonus_50",
+   "combat_effects": {
+    "hull_damage_pct": 50
+   }
+  },
+  {
+   "id": "plasma_cannon_iii",
+   "type_id": "plasma_cannon_iii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Plasma Cannon III",
+   "description": "Deals 58 thermal damage and reduces armor effectiveness by 15% for 3 ticks on hit. Fires every 2 ticks at reach 3.",
+   "size": 10,
+   "base_value": 8100,
+   "cpu_usage": 9,
+   "power_usage": 20,
+   "damage": 58,
+   "damage_type": "thermal",
+   "ammo_type": "plasma",
+   "reach": 3,
+   "cooldown": 2,
+   "magazine_size": 100,
+   "special": "armor_melt_15",
+   "combat_effects": {
+    "armor_melt_pct": 15
+   }
+  },
+  {
+   "id": "plasma_cannon_iv",
+   "type_id": "plasma_cannon_iv",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Plasma Cannon IV",
+   "description": "Deals 85 thermal damage and reduces armor effectiveness by 30% for 3 ticks on hit. Fires every 2 ticks at reach 3.",
+   "size": 10,
+   "base_value": 9500,
+   "cpu_usage": 14,
+   "power_usage": 30,
+   "damage": 85,
+   "damage_type": "thermal",
+   "ammo_type": "plasma",
+   "reach": 3,
+   "cooldown": 2,
+   "magazine_size": 150,
+   "special": "armor_melt_30",
+   "combat_effects": {
+    "armor_melt_pct": 30
+   }
+  },
+  {
+   "id": "plasma_repeater_i",
+   "type_id": "plasma_repeater_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Plasma Repeater I",
+   "description": "Deals 12 thermal damage, increased by 50% while the target's shields are down. Fires every tick at reach 3.",
+   "size": 10,
+   "base_value": 2400,
+   "cpu_usage": 5,
+   "power_usage": 8,
+   "damage": 12,
+   "damage_type": "thermal",
+   "ammo_type": "plasma",
+   "reach": 3,
+   "cooldown": 1,
+   "magazine_size": 200,
+   "special": "hull_damage_bonus_50",
+   "combat_effects": {
+    "hull_damage_pct": 50
+   }
+  },
+  {
+   "id": "plasma_repeater_ii",
+   "type_id": "plasma_repeater_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Plasma Repeater II",
+   "description": "Deals 20 thermal damage, increased by 50% while the target's shields are down. Fires every tick at reach 3.",
+   "size": 10,
+   "base_value": 4900,
+   "cpu_usage": 7,
+   "power_usage": 12,
+   "damage": 20,
+   "damage_type": "thermal",
+   "ammo_type": "plasma",
+   "reach": 3,
+   "cooldown": 1,
+   "magazine_size": 300,
+   "special": "hull_damage_bonus_50",
+   "combat_effects": {
+    "hull_damage_pct": 50
+   }
+  },
+  {
+   "id": "plasma_torpedo_launcher",
+   "type_id": "plasma_torpedo_launcher",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Plasma Torpedo Launcher",
+   "description": "Deals 60 thermal damage and reduces armor effectiveness by 20% for 3 ticks on hit. Fires every 5 ticks at reach 6.",
+   "size": 10,
+   "base_value": 7500,
+   "cpu_usage": 8,
+   "power_usage": 14,
+   "damage": 60,
+   "damage_type": "thermal",
+   "ammo_type": "plasma",
+   "reach": 6,
+   "cooldown": 5,
+   "magazine_size": 5,
+   "special": "armor_melt_20",
+   "combat_effects": {
+    "armor_melt_pct": 20
+   }
+  },
+  {
+   "id": "proximity_mine_launcher",
+   "type_id": "proximity_mine_launcher",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Proximity Mine Launcher",
+   "description": "Deals 65 explosive damage from an 8-mine magazine; detection adds 10 hit-chance points, capped at 95% total. On hit, also burns hull through shields and armor for 90 ticks at max(1, final hit damage / 90) per tick.",
+   "size": 10,
+   "base_value": 3500,
+   "cpu_usage": 6,
+   "power_usage": 5,
+   "damage": 65,
+   "damage_type": "explosive",
+   "ammo_type": "mine",
+   "reach": 3,
+   "cooldown": 4,
+   "magazine_size": 8,
+   "special": "mine_capacity_8,mine_detection_10,mine_duration_90",
+   "combat_effects": {
+    "mine_capacity": 8,
+    "mine_duration": 90,
+    "mine_detection": 10
+   }
+  },
+  {
+   "id": "pulse_laser_i",
+   "type_id": "pulse_laser_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Pulse Laser I",
+   "description": "Entry-level energy weapon. Reliable but weak.",
+   "size": 10,
+   "base_value": 2500,
+   "cpu_usage": 2,
+   "power_usage": 5,
+   "damage": 10,
+   "damage_type": "energy",
+   "reach": 3,
+   "cooldown": 1,
+   "combat_effects": {}
+  },
+  {
+   "id": "pulse_laser_ii",
+   "type_id": "pulse_laser_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Pulse Laser II",
+   "description": "Improved energy weapon with better focusing optics.",
+   "size": 10,
+   "base_value": 6900,
+   "cpu_usage": 3,
+   "power_usage": 8,
+   "damage": 18,
+   "damage_type": "energy",
+   "reach": 3,
+   "cooldown": 1,
+   "combat_effects": {}
+  },
+  {
+   "id": "pulse_laser_iii",
+   "type_id": "pulse_laser_iii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Pulse Laser III",
+   "description": "Military-grade pulse laser with rapid fire capability.",
+   "size": 10,
+   "base_value": 13000,
+   "cpu_usage": 5,
+   "power_usage": 12,
+   "damage": 28,
+   "damage_type": "energy",
+   "reach": 3,
+   "cooldown": 1,
+   "combat_effects": {}
+  },
+  {
+   "id": "purified_argon",
+   "name": "Purified Argon",
+   "description": "Inert gas for welding, shielding, and controlled atmospheres.",
+   "category": "refined",
+   "size": 1,
+   "base_value": 24,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common"
+  },
+  {
+   "id": "railgun_i",
+   "type_id": "railgun_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Railgun I",
+   "description": "Deals 45 kinetic damage from a 5-slug magazine. Fires every 2 ticks at reach 5.",
+   "size": 10,
+   "base_value": 5000,
+   "cpu_usage": 5,
+   "power_usage": 12,
+   "damage": 45,
+   "damage_type": "kinetic",
+   "ammo_type": "railgun",
+   "reach": 5,
+   "cooldown": 2,
+   "magazine_size": 5,
+   "combat_effects": {}
+  },
+  {
+   "id": "railgun_ii",
+   "type_id": "railgun_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Railgun II",
+   "description": "Deals 90 kinetic damage from a 7-slug magazine; 50% bypasses armor. Fires every 3 ticks at reach 5.",
+   "size": 10,
+   "base_value": 9500,
+   "cpu_usage": 7,
+   "power_usage": 18,
+   "damage": 90,
+   "damage_type": "kinetic",
+   "ammo_type": "railgun",
+   "reach": 5,
+   "cooldown": 3,
+   "magazine_size": 7,
+   "special": "armor_bypass_50",
+   "armor_bypass_bonus": 0.5,
+   "combat_effects": {}
+  },
+  {
+   "id": "repair_kit",
+   "name": "Repair Kit",
+   "description": "Emergency repair kit. Restores 50 hull when used as a consumable.",
+   "category": "consumable",
+   "size": 2,
+   "base_value": 270,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common",
+   "effect": {
+    "type": "repair",
+    "amount": 50
+   }
+  },
+  {
+   "id": "scrap_harpoon",
+   "type_id": "scrap_harpoon",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Scrap Harpoon",
+   "description": "Deals 44 kinetic damage; 30% bypasses armor. Uses no ammunition and fires every 3 ticks at reach 2.",
+   "size": 10,
+   "base_value": 1500,
+   "cpu_usage": 4,
+   "power_usage": 7,
+   "damage": 44,
+   "damage_type": "kinetic",
+   "reach": 2,
+   "cooldown": 3,
+   "special": "armor_bypass_30",
+   "armor_bypass_bonus": 0.3,
+   "combat_effects": {}
+  },
+  {
+   "id": "scrapgun",
+   "type_id": "scrapgun",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Scrapgun",
+   "description": "Deals 30 kinetic damage. Reloading consumes any 1 cargo item to fill its 500-round magazine; omitting the item selects low-value cargo. Fires every tick at reach 2.",
+   "size": 10,
+   "base_value": 1100,
+   "cpu_usage": 4,
+   "power_usage": 6,
+   "damage": 30,
+   "damage_type": "kinetic",
+   "ammo_type": "junk",
+   "reach": 2,
+   "cooldown": 1,
+   "magazine_size": 500,
+   "special": "ammo_from_cargo",
+   "combat_effects": {}
+  },
+  {
+   "id": "siege_railgun",
+   "type_id": "siege_railgun",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Siege Railgun",
+   "description": "Deals 200 kinetic damage from a 3-slug magazine; 90% bypasses armor. Fires every 5 ticks at reach 6.",
+   "size": 10,
+   "base_value": 30000,
+   "cpu_usage": 16,
+   "power_usage": 35,
+   "damage": 200,
+   "damage_type": "kinetic",
+   "ammo_type": "railgun",
+   "reach": 6,
+   "cooldown": 5,
+   "magazine_size": 3,
+   "special": "armor_bypass_90",
+   "armor_bypass_bonus": 0.9,
+   "combat_effects": {}
+  },
+  {
+   "id": "solar_lance",
+   "type_id": "solar_lance",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Solar Lance",
+   "description": "Deals 65 energy damage with a 25% energy-damage bonus. Fires every 3 ticks at reach 4.",
+   "size": 10,
+   "base_value": 27000,
+   "cpu_usage": 11,
+   "power_usage": 24,
+   "damage": 65,
+   "damage_type": "energy",
+   "reach": 4,
+   "cooldown": 3,
+   "special": "energy_damage_bonus_25",
+   "combat_effects": {
+    "energy_damage_pct": 25
+   }
+  },
+  {
+   "id": "steel_plate",
+   "name": "Steel Plate",
+   "description": "Processed steel alloy for structural components.",
+   "category": "refined",
+   "size": 1,
+   "base_value": 18,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common"
+  },
+  {
+   "id": "storm_lance",
+   "type_id": "storm_lance",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Storm Lance",
+   "description": "Deals 40 EM damage, then repeats its full final damage against up to 2 other enemies in the target's zone. Fires every 2 ticks at reach 3.",
+   "size": 10,
+   "base_value": 15000,
+   "cpu_usage": 10,
+   "power_usage": 18,
+   "damage": 40,
+   "damage_type": "em",
+   "ammo_type": "em_charge",
+   "reach": 3,
+   "cooldown": 2,
+   "magazine_size": 100,
+   "special": "chain_lightning_2",
+   "combat_effects": {
+    "chain_targets": 2
+   }
+  },
+  {
+   "id": "survey_scanner_i",
+   "type_id": "survey_scanner_i",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Survey Scanner I",
+   "description": "Analyzes asteroids to find the richest ore deposits. survey_system reads the ore at every charted POI in your system and charts hidden POIs your survey power beats.",
+   "size": 10,
+   "base_value": 4400,
+   "cpu_usage": 3,
+   "power_usage": 4,
+   "special": "ore_quality_detection",
+   "combat_effects": {},
+   "survey_power": 30
+  },
+  {
+   "id": "system_disabler",
+   "type_id": "system_disabler",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "System Disabler",
+   "description": "Deals 2 EM damage and automatically disables the target's fitted weapon with the highest base damage for 1 tick. Fires every 3 ticks at reach 3.",
+   "size": 10,
+   "base_value": 8800,
+   "cpu_usage": 8,
+   "power_usage": 15,
+   "damage": 2,
+   "damage_type": "em",
+   "ammo_type": "em_charge",
+   "reach": 3,
+   "cooldown": 3,
+   "magazine_size": 100,
+   "special": "module_disable_1,target_specific",
+   "combat_effects": {
+    "module_disable_ticks": 1
+   }
+  },
+  {
+   "id": "tracking_mine_launcher",
+   "type_id": "tracking_mine_launcher",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Tracking Mine Launcher",
+   "description": "Deals 100 explosive damage from a 5-mine magazine; tracking adds 3 hit-chance points, capped at 95% total. On hit, also burns hull through shields and armor for 60 ticks at max(1, final hit damage / 60) per tick.",
+   "size": 10,
+   "base_value": 8000,
+   "cpu_usage": 10,
+   "power_usage": 8,
+   "damage": 100,
+   "damage_type": "explosive",
+   "ammo_type": "mine",
+   "reach": 3,
+   "cooldown": 6,
+   "magazine_size": 5,
+   "special": "mine_capacity_5,mine_tracking_speed_3,mine_duration_60",
+   "combat_effects": {
+    "mine_capacity": 5,
+    "mine_duration": 60,
+    "mine_tracking_speed": 3
+   }
+  },
+  {
+   "id": "void_cannon",
+   "type_id": "void_cannon",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Void Cannon",
+   "description": "Deals 75 void damage and ignores 50% of typed resistance. Fires every 3 ticks at reach 3.",
+   "size": 10,
+   "base_value": 25000,
+   "cpu_usage": 14,
+   "power_usage": 28,
+   "damage": 75,
+   "damage_type": "void",
+   "ammo_type": "void_core",
+   "reach": 3,
+   "cooldown": 3,
+   "magazine_size": 20,
+   "special": "ignores_resistance_50",
+   "combat_effects": {
+    "ignore_resistance_pct": 50
+   }
+  },
+  {
+   "id": "void_lance_i",
+   "type_id": "void_lance_i",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Void Lance I",
+   "description": "Deals 55 void damage and ignores 50% of typed resistance. Fires every 3 ticks at reach 4.",
+   "size": 10,
+   "base_value": 17000,
+   "cpu_usage": 10,
+   "power_usage": 20,
+   "damage": 55,
+   "damage_type": "void",
+   "ammo_type": "void_core",
+   "reach": 4,
+   "cooldown": 3,
+   "magazine_size": 15,
+   "special": "ignores_resistance_50",
+   "combat_effects": {
+    "ignore_resistance_pct": 50
+   }
+  },
+  {
+   "id": "void_lance_ii",
+   "type_id": "void_lance_ii",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Void Lance II",
+   "description": "Deals 85 void damage and ignores 75% of typed resistance. Fires every 3 ticks at reach 4.",
+   "size": 10,
+   "base_value": 40000,
+   "cpu_usage": 14,
+   "power_usage": 30,
+   "damage": 85,
+   "damage_type": "void",
+   "ammo_type": "void_core",
+   "reach": 4,
+   "cooldown": 3,
+   "magazine_size": 20,
+   "special": "ignores_resistance_75",
+   "combat_effects": {
+    "ignore_resistance_pct": 75
+   }
+  },
+  {
+   "id": "void_laser",
+   "type_id": "void_laser",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Void Laser",
+   "description": "Deals 65 energy damage; 50% bypasses shields. Fires every 2 ticks at reach 5.",
+   "size": 10,
+   "base_value": 143000,
+   "cpu_usage": 14,
+   "power_usage": 26,
+   "damage": 65,
+   "damage_type": "energy",
+   "reach": 5,
+   "cooldown": 2,
+   "special": "shield_bypass_50",
+   "shield_bypass_bonus": 0.5,
+   "combat_effects": {}
+  },
+  {
+   "id": "void_mine_launcher",
+   "type_id": "void_mine_launcher",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Void Mine Launcher",
+   "description": "Deals 120 void damage from a 4-mine magazine and ignores 50% of typed resistance. On hit, also burns hull through shields and armor for 90 ticks at max(1, final hit damage / 90) per tick.",
+   "size": 10,
+   "base_value": 56000,
+   "cpu_usage": 14,
+   "power_usage": 12,
+   "damage": 120,
+   "damage_type": "void",
+   "ammo_type": "mine",
+   "reach": 3,
+   "cooldown": 8,
+   "magazine_size": 4,
+   "special": "mine_capacity_4,mine_duration_90,ignores_resistance_50",
+   "combat_effects": {
+    "ignore_resistance_pct": 50,
+    "mine_capacity": 4,
+    "mine_duration": 90
+   }
+  },
+  {
+   "id": "void_torpedo_launcher",
+   "type_id": "void_torpedo_launcher",
+   "type": "weapon",
+   "slot": "weapon",
+   "name": "Void Torpedo Launcher",
+   "description": "Deals 100 void damage and ignores 75% of typed resistance. Fires every 5 ticks at reach 6.",
+   "size": 10,
+   "base_value": 108000,
+   "cpu_usage": 16,
+   "power_usage": 32,
+   "damage": 100,
+   "damage_type": "void",
+   "ammo_type": "void_core",
+   "reach": 6,
+   "cooldown": 5,
+   "magazine_size": 3,
+   "special": "ignores_resistance_75",
+   "combat_effects": {
+    "ignore_resistance_pct": 75
+   }
+  },
+  {
+   "id": "water_ice",
+   "name": "Water Ice",
+   "description": "Frozen water extracted from comets and ice moons. Essential for life support.",
+   "category": "ore",
+   "size": 1,
+   "base_value": 12,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common",
+   "extracted_by": "ice",
+   "compression": "ice"
+  },
+  {
+   "id": "weapons_grade_plutonium",
+   "name": "Weapons-Grade Plutonium",
+   "description": "Refined fissile material for warheads and advanced reactors.",
+   "category": "refined",
+   "size": 2,
+   "base_value": 600,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "exotic",
+   "hazardous": true
+  },
+  {
+   "id": "adamant_tooth",
+   "name": "Adamant Tooth",
+   "description": "A single grinding tooth from an adamant-grinder, harder than any drill bit. A handful will outlast a mining rig.",
+   "category": "misc",
+   "size": 1,
+   "base_value": 1300,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "legendary"
+  },
+  {
+   "id": "adamantite_bar",
+   "name": "Adamantite Bar",
+   "description": "Legendary alloy of unmatched hardness. Nearly indestructible.",
+   "category": "refined",
+   "size": 2,
+   "base_value": 1500,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "exotic"
+  },
+  {
+   "id": "shield_booster_i",
+   "type_id": "shield_booster_i",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Shield Booster I",
+   "description": "Adds 25 maximum shield points. Multiple copies add their bonuses.",
+   "size": 10,
+   "base_value": 1700,
+   "cpu_usage": 2,
+   "power_usage": 4,
+   "shield_bonus": 25,
+   "combat_effects": {}
+  },
+  {
+   "id": "armor_plate_ii",
+   "type_id": "armor_plate_ii",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Armor Plate II",
+   "description": "Adds 10 armor points and reduces speed by 1. Multiple copies add their effects.",
+   "size": 10,
+   "base_value": 1200,
+   "cpu_usage": 2,
+   "power_usage": 0,
+   "armor_bonus": 10,
+   "speed_penalty": 1,
+   "combat_effects": {}
+  },
+  {
+   "id": "cargo_expander_iii",
+   "type_id": "cargo_expander_iii",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Cargo Expander III",
+   "description": "Maximum capacity cargo bay.",
+   "size": 10,
+   "base_value": 2000,
+   "cpu_usage": 3,
+   "power_usage": 3,
+   "combat_effects": {},
+   "cargo_bonus": 100
+  },
+  {
+   "id": "cargo_expander_ii",
+   "type_id": "cargo_expander_ii",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Cargo Expander II",
+   "description": "Optimized cargo storage.",
+   "size": 10,
+   "base_value": 800,
+   "cpu_usage": 2,
+   "power_usage": 2,
+   "combat_effects": {},
+   "cargo_bonus": 50
+  },
+  {
+   "id": "armor_plate_i",
+   "type_id": "armor_plate_i",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Armor Plate I",
+   "description": "Adds 5 armor points and reduces speed by 1. Multiple copies add their effects.",
+   "size": 10,
+   "base_value": 490,
+   "cpu_usage": 1,
+   "power_usage": 0,
+   "armor_bonus": 5,
+   "speed_penalty": 1,
+   "combat_effects": {}
+  },
+  {
+   "id": "shield_booster_iii",
+   "type_id": "shield_booster_iii",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Shield Booster III",
+   "description": "Adds 100 maximum shield points. Multiple copies add their bonuses.",
+   "size": 10,
+   "base_value": 13000,
+   "cpu_usage": 5,
+   "power_usage": 10,
+   "shield_bonus": 100,
+   "combat_effects": {}
+  },
+  {
+   "id": "em_shield_hardener",
+   "type_id": "em_shield_hardener",
+   "type": "defense",
+   "slot": "defense",
+   "name": "EM Shield Hardener",
+   "description": "Reduces incoming EM damage by 30% across shields, armor, and hull. Typed module resistances add and cap at 75%, then flat/adaptive reduction applies as the next damage stage.",
+   "size": 10,
+   "base_value": 4300,
+   "cpu_usage": 3,
+   "power_usage": 6,
+   "resistance_bonus": {
+    "em": 30
+   },
+   "combat_effects": {}
+  },
+  {
+   "id": "afterburner_ii",
+   "type_id": "afterburner_ii",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Afterburner II",
+   "description": "Enhanced thruster system.",
+   "size": 10,
+   "base_value": 2300,
+   "cpu_usage": 3,
+   "power_usage": 5,
+   "combat_effects": {},
+   "speed_bonus": 2,
+   "fuel_efficiency": -60
+  },
+  {
+   "id": "fuel_optimizer",
+   "type_id": "fuel_optimizer",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Fuel Optimizer",
+   "description": "Reduces fuel consumption by 15%.",
+   "size": 10,
+   "base_value": 800,
+   "cpu_usage": 3,
+   "power_usage": 2,
+   "combat_effects": {},
+   "fuel_efficiency": 15
+  },
+  {
+   "id": "ship_scanner_ii",
+   "type_id": "ship_scanner_ii",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Ship Scanner II",
+   "description": "Enhanced scanning resolution. Counts the ships at every charted POI in your system (get_system ship_count) and lets scan read another POI in your system. Provides 20 points of targeting and ECM resistance. Fitted scanner resistance stacks up to 30 points.",
+   "size": 10,
+   "base_value": 7000,
+   "cpu_usage": 5,
+   "power_usage": 6,
+   "combat_effects": {},
+   "targeting_resistance": 20,
+   "jam_resistance": 20,
+   "scanner_power": 55
+  },
+  {
+   "id": "shield_booster_ii",
+   "type_id": "shield_booster_ii",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Shield Booster II",
+   "description": "Adds 50 maximum shield points. Multiple copies add their bonuses.",
+   "size": 10,
+   "base_value": 7200,
+   "cpu_usage": 3,
+   "power_usage": 6,
+   "shield_bonus": 50,
+   "combat_effects": {}
+  },
+  {
+   "id": "nebula_storm_barrier",
+   "type_id": "nebula_storm_barrier",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Nebula Storm Barrier",
+   "description": "Adds 80 maximum shield points and returns 15 EM damage after every hit. Multiple barriers add their retaliation damage.",
+   "size": 10,
+   "base_value": 18000,
+   "cpu_usage": 8,
+   "power_usage": 14,
+   "shield_bonus": 80,
+   "special": "shock_attackers_15",
+   "combat_effects": {
+    "shock_damage": 15
+   }
+  },
+  {
+   "id": "nebula_bio_regenerator",
+   "type_id": "nebula_bio_regenerator",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Nebula Bio-Regenerator",
+   "description": "Adds 40 current and maximum hull points and repairs 8 hull points each tick. Multiple copies add their bonuses and repair.",
+   "size": 10,
+   "base_value": 1600,
+   "cpu_usage": 6,
+   "power_usage": 10,
+   "hull_bonus": 40,
+   "special": "bio_repair",
+   "combat_effects": {},
+   "passive_repair": 8
+  },
+  {
+   "id": "adaptive_shield_iii",
+   "type_id": "adaptive_shield_iii",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Adaptive Shield III",
+   "description": "Adds 200 maximum shield points and 35% flat/adaptive damage reduction. Flat and adaptive reductions do not stack: only the strongest such module counts, applied after typed resistance.",
+   "size": 10,
+   "base_value": 53000,
+   "cpu_usage": 12,
+   "power_usage": 22,
+   "shield_bonus": 200,
+   "damage_reduction": 35,
+   "special": "adaptive_resistance_35",
+   "combat_effects": {}
+  },
+  {
+   "id": "shield_booster_iv",
+   "type_id": "shield_booster_iv",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Shield Booster IV",
+   "description": "Adds 200 maximum shield points. Multiple copies add their bonuses.",
+   "size": 10,
+   "base_value": 18000,
+   "cpu_usage": 8,
+   "power_usage": 15,
+   "shield_bonus": 200,
+   "combat_effects": {}
+  },
+  {
+   "id": "adaptive_shield_ii",
+   "type_id": "adaptive_shield_ii",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Adaptive Shield II",
+   "description": "Adds 120 maximum shield points and 20% flat/adaptive damage reduction. Flat and adaptive reductions do not stack: only the strongest such module counts, applied after typed resistance.",
+   "size": 10,
+   "base_value": 44000,
+   "cpu_usage": 8,
+   "power_usage": 15,
+   "shield_bonus": 120,
+   "damage_reduction": 20,
+   "special": "adaptive_resistance_20",
+   "combat_effects": {}
+  },
+  {
+   "id": "security_bulkheads",
+   "type_id": "security_bulkheads",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Security Bulkheads",
+   "description": "Reinforced docking collars, isolated pressure doors, and local security stations that frustrate hostile clamps and strengthen compartment defense.",
+   "size": 10,
+   "base_value": 12000,
+   "cpu_usage": 5,
+   "power_usage": 8,
+   "combat_effects": {},
+   "latch_resistance": 8,
+   "boarding_defense_bonus_pct": 10
+  },
+  {
+   "id": "ship_scanner_i",
+   "type_id": "ship_scanner_i",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Ship Scanner I",
+   "description": "Scans other ships for information. Counts the ships at every charted POI in your system (get_system ship_count) and lets scan read another POI in your system. Provides 10 points of targeting and ECM resistance. Fitted scanner resistance stacks up to 30 points.",
+   "size": 10,
+   "base_value": 3200,
+   "cpu_usage": 3,
+   "power_usage": 4,
+   "combat_effects": {},
+   "targeting_resistance": 10,
+   "jam_resistance": 10,
+   "scanner_power": 30
+  },
+  {
+   "id": "cargo_expander_i",
+   "type_id": "cargo_expander_i",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Cargo Expander I",
+   "description": "Increases cargo capacity.",
+   "size": 10,
+   "base_value": 160,
+   "cpu_usage": 1,
+   "power_usage": 1,
+   "combat_effects": {},
+   "cargo_bonus": 20
+  },
+  {
+   "id": "regenerative_armor_ii",
+   "type_id": "regenerative_armor_ii",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Regenerative Armor II",
+   "description": "Adds 40 armor and 80 current and maximum hull points, and repairs 5 hull points each tick. Multiple copies add their bonuses and repair.",
+   "size": 10,
+   "base_value": 12000,
+   "cpu_usage": 7,
+   "power_usage": 10,
+   "armor_bonus": 40,
+   "hull_bonus": 80,
+   "combat_effects": {},
+   "passive_repair": 5
+  },
+  {
+   "id": "solarian_aegis",
+   "type_id": "solarian_aegis",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Solarian Aegis",
+   "description": "Adds 100 maximum shield points and returns 20% of final incoming energy damage as EM damage. Reflection percentages add and cap at 75%.",
+   "size": 10,
+   "base_value": 23000,
+   "cpu_usage": 8,
+   "power_usage": 15,
+   "shield_bonus": 100,
+   "special": "reflect_energy_20",
+   "combat_effects": {
+    "reflect_energy_pct": 20
+   }
+  },
+  {
+   "id": "darksteel_armor",
+   "type_id": "darksteel_armor",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Darksteel Armor",
+   "description": "Adds 35 armor points and reduces speed by 2. Multiple copies add their effects.",
+   "size": 10,
+   "base_value": 8000,
+   "cpu_usage": 5,
+   "power_usage": 0,
+   "armor_bonus": 35,
+   "speed_penalty": 2,
+   "combat_effects": {}
+  },
+  {
+   "id": "damage_control_system",
+   "type_id": "damage_control_system",
+   "type": "defense",
+   "slot": "defense",
+   "name": "Damage Control System",
+   "description": "Adds 10% flat damage reduction. Flat and adaptive reductions do not stack: only the strongest such module counts, applied after typed resistance.",
+   "size": 10,
+   "base_value": 5600,
+   "cpu_usage": 4,
+   "power_usage": 5,
+   "damage_reduction": 10,
+   "combat_effects": {}
+  },
+  {
+   "id": "tracking_computer_iii",
+   "type_id": "tracking_computer_iii",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Tracking Computer III",
+   "description": "Adds 35 points of weapon accuracy and offsets up to 50 points of accuracy penalty when the target's effective combat speed exceeds yours.",
+   "size": 10,
+   "base_value": 37500,
+   "cpu_usage": 8,
+   "power_usage": 10,
+   "combat_effects": {},
+   "tracking_bonus": 50,
+   "accuracy_bonus": 35
+  },
+  {
+   "id": "lead_lined_cargo_i",
+   "type_id": "lead_lined_cargo_i",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Lead Lined Cargo I",
+   "description": "A shielded cargo expansion that allows safe transport of refined radioactive materials.",
+   "size": 10,
+   "base_value": 850,
+   "cpu_usage": 3,
+   "power_usage": 4,
+   "special": "hazmat_cargo",
+   "combat_effects": {},
+   "cargo_bonus": 30
+  },
+  {
+   "id": "ice_harvester_iii",
+   "type_id": "ice_harvester_iii",
+   "type": "utility",
+   "slot": "utility",
+   "name": "Ice Harvester III",
+   "description": "Industrial-grade ice mining equipment. Works any deposit whose resource is ice-extracted (the 9 ices: ammonia, carbon dioxide, deuterium, helium, methane, nitrogen, oxygen, tritium, water), whatever the POI type.",
+   "size": 10,
+   "base_value": 9000,
+   "cpu_usage": 9,
+   "power_usage": 18,
+   "mining_power": 35,
+   "special": "ice_harvesting",
+   "combat_effects": {}
+  },
+  {
+   "id": "purified_water",
+   "name": "Purified Water",
+   "description": "Purified water for life support and chemical processing.",
+   "category": "refined",
+   "size": 1,
+   "base_value": 24,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common"
+  },
+  {
+   "id": "liquid_nitrogen",
+   "name": "Liquid Nitrogen",
+   "description": "Cryogenic nitrogen for cooling systems and chemical synthesis.",
+   "category": "refined",
+   "size": 1,
+   "base_value": 22,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common"
+  },
+  {
+   "id": "carbon_dioxide_ice",
+   "name": "Carbon Dioxide Ice",
+   "description": "Dry ice used in atmospheric processing and refrigeration.",
+   "category": "ore",
+   "size": 1,
+   "base_value": 10,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common",
+   "extracted_by": "ice",
+   "compression": "ice"
+  },
+  {
+   "id": "bioluminescent_algae",
+   "name": "Bioluminescent Algae",
+   "description": "Cultivated photosynthetic organisms. In the right medium they glow. Haven's luxury trade found a use for that.",
+   "category": "refined",
+   "size": 1,
+   "base_value": 28,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "uncommon"
+  },
+  {
+   "id": "driftkale",
+   "name": "Driftkale",
+   "description": "Crisp leaf and stalk raised on slow-drifting recirculation trays. Nobody's idea of a feast on its own, but every plate that isn't just meat owes it something.",
+   "category": "refined",
+   "size": 1,
+   "base_value": 40,
+   "stackable": true,
+   "tradeable": true,
+   "rarity": "common"
+  }
+ ],
+ "facilities": [
+  {
+   "id": "shipyard",
+   "name": "Shipyard",
+   "description": "Ship purchasing and outfitting facility.",
+   "satisfied_description": "Display models gleam under showroom lights. Outfitting crews stand ready to configure new purchases.",
+   "degraded_description": "Not quite. Showroom lights dim, several ship models sit unfinished, and outfitting waits stretch into days.",
+   "category": "service",
+   "level": 1,
+   "service_type": "shipyard",
+   "always_on": true,
+   "build_cost": 500000,
+   "build_materials": [
+    {
+     "item_id": "steel_plate",
+     "quantity": 4000
+    },
+    {
+     "item_id": "circuit_board",
+     "quantity": 800
+    }
+   ],
+   "build_time": 300,
+   "labor_cost": 200,
+   "maintenance_inputs": [
+    {
+     "item_id": "steel_plate",
+     "quantity": 2
+    },
+    {
+     "item_id": "titanium_alloy",
+     "quantity": 1
+    }
+   ]
+  },
+  {
+   "id": "station_defense_turret",
+   "name": "Station Defense Turret",
+   "description": "A proper turret on a proper mount, throwing armor-piercing shot out to the middle distance. The workhorse of station defense: not clever, not fast, and entirely capable of putting a hole through a raider that thought a station was a soft target.",
+   "satisfied_description": "The turret tracks smoothly through its arc, ready racks full.",
+   "degraded_description": "The turret tracks smoothly through its arc with nothing in the ready racks. It is an expensive way to point at things.",
+   "category": "defense",
+   "level": 2,
+   "upgrades_from": "point_defense_battery",
+   "always_on": false,
+   "station_or_faction_only": true,
+   "player_station_buildable": true,
+   "build_cost": 420000,
+   "build_materials": [
+    {
+     "item_id": "steel_plate",
+     "quantity": 900
+    },
+    {
+     "item_id": "circuit_board",
+     "quantity": 140
+    },
+    {
+     "item_id": "targeting_computer",
+     "quantity": 10
+    },
+    {
+     "item_id": "superconductor",
+     "quantity": 40
+    }
+   ],
+   "build_time": 140,
+   "labor_cost": 40,
+   "maintenance_inputs": [
+    {
+     "item_id": "coolant_fluid",
+     "quantity": 2
+    }
+   ],
+   "power_draw": 4,
+   "weapon_damage": 55,
+   "weapon_damage_type": "kinetic",
+   "ammo_item": "armor_piercing_rounds_box",
+   "weapon_reach": 2,
+   "weapon_cooldown": 2
+  },
+  {
+   "id": "abyss_solidification_engine",
+   "name": "Abyss Solidification Engine",
+   "description": "State-of-the-art facility with fully distributed plasma injection arrays and redundant coolant circulation systems. Advanced control nodes coordinate precise timing across multiple crystallization chambers, achieving production rates previously impossible.",
+   "category": "production",
+   "level": 4,
+   "upgrades_from": "void_crystallization_plant",
+   "recipe_id": "crystallize_void_essence",
+   "always_on": false,
+   "build_cost": 12705000,
+   "build_materials": [
+    {
+     "item_id": "steel_plate",
+     "quantity": 8150
+    },
+    {
+     "item_id": "copper_piping",
+     "quantity": 5150
+    },
+    {
+     "item_id": "reinforced_frame",
+     "quantity": 4600
+    },
+    {
+     "item_id": "control_node",
+     "quantity": 1650
+    },
+    {
+     "item_id": "heat_sink",
+     "quantity": 11100
+    },
+    {
+     "item_id": "plasma_injector",
+     "quantity": 4350
+    },
+    {
+     "item_id": "coolant_loop",
+     "quantity": 8200
+    }
+   ],
+   "build_time": 540,
+   "labor_cost": 75,
+   "power_draw": 6,
+   "life_support_draw": 1
+  },
+  {
+   "id": "acceleration_manufacturing_plant",
+   "name": "Acceleration Manufacturing Plant",
+   "description": "A heavily automated industrial complex with quantum control cores and precision optics for optimal engine tuning, enabling rapid production of advanced afterburner systems.",
+   "category": "production",
+   "level": 3,
+   "upgrades_from": "velocity_enhancement_lab",
+   "recipe_id": "build_afterburner_i",
+   "always_on": false,
+   "build_cost": 1162000,
+   "build_materials": [
+    {
+     "item_id": "steel_plate",
+     "quantity": 750
+    },
+    {
+     "item_id": "copper_piping",
+     "quantity": 300
+    },
+    {
+     "item_id": "reinforced_frame",
+     "quantity": 200
+    },
+    {
+     "item_id": "quantum_control_core",
+     "quantity": 100
+    },
+    {
+     "item_id": "processing_core",
+     "quantity": 350
+    },
+    {
+     "item_id": "sensor_array",
+     "quantity": 300
+    },
+    {
+     "item_id": "precision_optic",
+     "quantity": 200
+    }
+   ],
+   "build_time": 220,
+   "labor_cost": 25,
+   "power_draw": 4,
+   "life_support_draw": 1
+  }
+ ],
+ "achievements": [
+  {
+   "id": "bullion_baron",
+   "name": "Bullion Baron",
+   "description": "Sit on 100,000 gold bars, 100,000 silver bars, and 100,000 platinum bars in storage at once. Pure wealth, doing absolutely nothing.",
+   "category": "economy",
+   "points": 50,
+   "criteria": "At least 100,000 units of gold bar held in storage and at least 100,000 units of silver bar held in storage and at least 100,000 units of platinum bar held in storage",
+   "title": "Bullion Baron"
+  },
+  {
+   "id": "first_blood",
+   "name": "First Blood",
+   "description": "Destroy your first enemy ship.",
+   "category": "combat",
+   "points": 10,
+   "criteria": "At least 1 ship destroyed"
+  },
+  {
+   "id": "maiden_jump",
+   "name": "Maiden Jump",
+   "description": "Complete your first jump between systems.",
+   "category": "progression",
+   "points": 5,
+   "criteria": "At least 1 jump completed"
+  },
+  {
+   "id": "artisan",
+   "name": "Artisan",
+   "description": "Craft 10,000 items.",
+   "category": "industry",
+   "points": 20,
+   "criteria": "At least 10,000 items crafted"
+  },
+  {
+   "id": "bounty_hunter",
+   "name": "Bounty Hunter",
+   "description": "Destroy 100 pirates.",
+   "category": "combat",
+   "points": 20,
+   "criteria": "At least 100 pirates destroyed",
+   "title": "Bounty Hunter"
+  }
+ ],
+ "faction_achievements": [
+  {
+   "id": "syndicate",
+   "name": "Syndicate",
+   "description": "Reach 100,000,000 faction profit.",
+   "category": "economy",
+   "points": 80,
+   "criteria": "At least 100,000,000 faction profit",
+   "title": "Syndicate",
+   "emblem": "ledger",
+   "faction": true
+  },
+  {
+   "id": "a_few_good_marines",
+   "name": "A Few Good Marines",
+   "description": "Employ 50 marines across current-member ships, active prize crews, and faction personnel reserves.",
+   "category": "military",
+   "points": 15,
+   "criteria": "At least 50 faction personnel marines employed",
+   "faction": true
+  },
+  {
+   "id": "a_fine_addition_to_our_collection",
+   "name": "A Fine Addition to Our Collection",
+   "description": "Build a fleet's worth of victories from 500 delivered prizes.",
+   "category": "boarding",
+   "points": 80,
+   "criteria": "At least 500 faction prizes delivered",
+   "after": "resistance_is_profitable",
+   "title": "Collectors",
+   "faction": true
+  }
+ ],
+ "hidden_achievement_count": 14,
+ "hidden_faction_achievement_count": 2
+}
