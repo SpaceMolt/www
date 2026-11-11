@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import type { CompleteMissionResponse, DistressSignalResponse, CompletedMissionsResponse, GameState, GetMissionsResponse, ViewCompletedMissionResponse } from '@spacemolt/lib'
 import { timeAgoOrDate, titleCase } from '@/lib/format'
-import { useAccountStore, useCommandMutation, useCommandQuery, useLocationState, useMissions, usePendingAction, useShip } from '@/lib/spacemolt'
+import { useAccountStore, useCommandMutation, useCommandQuery, useLocationState, useMissions, usePendingAction, usePlayer, useShip, useStations } from '@/lib/spacemolt'
 import { useStationServices } from '../hooks/useGates'
 import { usePlay } from '../PlayProvider'
 import { ConfirmAction, Credits, PanelWithTabs, shared, errorMessage } from '../shared'
@@ -40,6 +40,7 @@ interface ObjectiveView {
   required: number
   completed: boolean
   item_name?: string
+  target_base_id?: string
   target_base_name?: string
   system_name?: string
   in_cargo?: number
@@ -59,6 +60,7 @@ function toAvailableObjective(o: NonNullable<AvailableMission['objectives']>[num
     current: 0,
     required: o.quantity ?? 0,
     completed: false,
+    target_base_id: o.target_base_id,
     target_base_name: o.target_base_name,
     system_name: o.system_name,
   }
@@ -72,6 +74,7 @@ function toActiveObjective(o: NonNullable<ActiveMissionEntry['objectives']>[numb
     required: o.required ?? 0,
     completed: Boolean(o.completed),
     item_name: o.item_name,
+    target_base_id: o.target_base,
     target_base_name: o.target_base_name,
     system_name: o.system_name,
     in_cargo: o.in_cargo,
@@ -112,6 +115,21 @@ type TabId = 'available' | 'active' | 'completed' | 'shipping' | 'passengers'
 type DistressType = 'fuel' | 'repair' | 'combat'
 
 export type MissionsTabView = 'loading' | 'error' | 'empty' | 'list'
+
+/**
+ * The pirate stronghold at `targetBaseId` if it would refuse docking and fire on
+ * this pilot: stronghold base ids start with the crew name (crix_stronghold_station
+ * belongs to pirate_crix), and standing of 0 or more with that crew is safe.
+ */
+export function hostileStronghold<S extends { base_id: string; empire?: string }>({ targetBaseId, stations, standings = {} }: {
+  targetBaseId?: string
+  stations: S[]
+  standings?: Record<string, { reputation?: number }>
+}): S | undefined {
+  const station = stations.find((s) => s.base_id === targetBaseId && s.empire === 'pirates')
+  const reputation = station && standings[`pirate_${station.base_id.split('_')[0]}`]?.reputation
+  return station && !(reputation != null && reputation >= 0) ? station : undefined
+}
 
 /**
  * Picks exactly one of the four render states for a query-backed missions tab.
@@ -212,6 +230,21 @@ export function MissionsPanel() {
 
   // Active missions — live section, kept current by mutation deltas
   const missionsSection = useMissions()
+  const stations = useStations().data ?? []
+  const standings = usePlayer()?.standings
+  const strongholdWarning = (objectives: ObjectiveView[]) => {
+    const station = objectives
+      .map((o) => hostileStronghold({ targetBaseId: o.target_base_id, stations, standings }))
+      .find(Boolean)
+    return station && (
+      <span
+        className={styles.strongholdWarning}
+        title={`${station.name} is a pirate stronghold. Without standing with its crew or a safe-passage mission, it refuses docking and its raiders fire on you.`}
+      >
+        <AlertTriangle size={11} /> Pirate stronghold
+      </span>
+    )
+  }
   const activeMissions = missionsSection?.active ?? []
   const activeLoaded = missionsSection !== undefined
 
@@ -438,6 +471,7 @@ export function MissionsPanel() {
                           {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                           <span className={styles.missionTitle}>{m.title}</span>
                         </div>
+                        {strongholdWarning(objectives)}
                         <span className={styles.missionDifficulty}>{m.difficulty}</span>
                         <BugReportButton contextType="mission" entityName={m.title} entityContext={buildMissionContext(m)} />
                       </div>
@@ -574,6 +608,7 @@ export function MissionsPanel() {
                           {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                           <span className={styles.missionTitle}>{m.title}</span>
                         </div>
+                        {strongholdWarning(objectives)}
                         <span className={styles.missionStatusBadge} data-status={isCompletable ? 'completable' : 'active'}>
                           {isCompletable ? 'Ready' : `${Math.round(percentComplete)}%`}
                         </span>

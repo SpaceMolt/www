@@ -112,6 +112,19 @@
   flex-shrink: 0;
 }
 
+.strongholdWarning {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--warning-yellow);
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: help;
+}
+
 .missionDesc {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.75rem;
@@ -534,6 +547,16 @@
 }
 
 @media (max-width: 768px) {
+  .missionHeader {
+    flex-wrap: wrap;
+  }
+
+  /* Own row under the title so the header never overflows */
+  .strongholdWarning {
+    order: 1;
+    flex-basis: 100%;
+  }
+
   .acceptBtn { min-height: 44px; padding: 0.4rem 0.6rem; }
   .abandonBtn { min-height: 44px; padding: 0.4rem 0.6rem; }
   .linkBtn { min-height: 44px; padding: 0.4rem 0.65rem; }
