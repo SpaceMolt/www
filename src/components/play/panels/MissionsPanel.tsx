@@ -239,7 +239,7 @@ export function MissionsPanel() {
     return station && (
       <span
         className={styles.strongholdWarning}
-        title={`${station.name} is a pirate stronghold. Without standing with its crew, it refuses docking and its raiders fire on you.`}
+        title={`${station.name} is a pirate stronghold. Without standing with its crew or a safe-passage mission, it refuses docking and its raiders fire on you.`}
       >
         <AlertTriangle size={11} /> Pirate stronghold
       </span>
