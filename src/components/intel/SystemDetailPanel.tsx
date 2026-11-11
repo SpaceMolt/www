@@ -344,6 +344,9 @@ export function SystemDetailPanel({
           {detail?.system.empire && (
             <div className={styles.panelSub}>{titleCase(detail.system.empire)}</div>
           )}
+          {!!detail?.system.frontier_tier && (
+            <div className={styles.panelSub}>Frontier tier {detail.system.frontier_tier}</div>
+          )}
           {detail?.system.police_level !== undefined && (
             <div className={styles.panelPolice}>
               <Shield size={11} />

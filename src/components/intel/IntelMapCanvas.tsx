@@ -1030,6 +1030,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
           if (vis === 'explored' && layersRef.current.fog) tags.push('Explored')
           if (vis === 'intel') tags.push('Faction intel')
           if (vis === 'unknown') tags.push('No intel')
+          if (system.frontier_tier) tags.push(`Frontier tier ${system.frontier_tier}`)
           if (agentsHere && agentsHere.length > 0) {
             tags.push(`${agentsHere.length} agent${agentsHere.length === 1 ? '' : 's'}`)
           }

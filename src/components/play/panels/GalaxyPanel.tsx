@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useState } from 'react'
 import { Home, Crosshair } from 'lucide-react'
-import { fetchStations, type MapSystem, type RouteStep } from '@spacemolt/lib'
+import { fetchStations, type MapSystem, type MapSystemInfo, type RouteStep } from '@spacemolt/lib'
 import { fixedStations, splitStationRegistry } from '@/lib/stationPresentation'
+import { FRONTIER_COLOR } from '@/lib/frontier'
 import { useAccountStore, useCurrentTick, useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
 import { fractionalTick } from '../tickEstimate'
 import styles from './GalaxyPanel.module.css'
@@ -43,6 +44,17 @@ function toMapSystemData(raw: MapSystem): MapSystemData | null {
   }
 }
 
+const NO_SYSTEMS: MapSystemData[] = []
+
+/** Keeps the get_map entries that /api/map leaves out. */
+export function toFrontierSystems(systems: (MapSystemInfo & { frontier_tier?: number })[]): MapSystemData[] {
+  return systems.flatMap(({ system_id, name, position, connections, frontier_tier }) =>
+    frontier_tier
+      ? [{ id: system_id, name, x: position.x, y: position.y, empire_color: FRONTIER_COLOR, frontier_tier, connections }]
+      : [],
+  )
+}
+
 // ── Types ──────────────────────────────────────────────────────────────
 
 export interface MapSystemData {
@@ -57,6 +69,7 @@ export interface MapSystemData {
   has_station?: boolean
   /** An outpost of the player's own faction. Other factions' outposts are members-only, so the map leaves them out. */
   has_outpost?: boolean
+  frontier_tier?: number
   connections: string[]
 }
 
@@ -293,6 +306,28 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   // destination, so no dot is shown for them.
   const currentTick = useCurrentTick()
   const store = useAccountStore()
+
+  // Refetched on each arrival, so a newly charted system joins the map.
+  // Keyed by pilot, so a character switch never shows the last pilot's charts.
+  const [frontier, setFrontier] = useState<{ playerId?: string; systems: MapSystemData[] }>({ systems: NO_SYSTEMS })
+  const playerId = player?.id
+  const frontierSystems = frontier.playerId === playerId ? frontier.systems : NO_SYSTEMS
+  const systemId = location?.system_id
+  useEffect(() => {
+    if (!playerId) return
+    let cancelled = false
+    store.account.commands.spacemolt.get_map().then(
+      ({ structuredContent }) => {
+        if (!cancelled && structuredContent && 'systems' in structuredContent) {
+          setFrontier({ playerId, systems: toFrontierSystems(structuredContent.systems) })
+        }
+      },
+      () => {},
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [store.account, playerId, systemId])
   const transitAnimRef = useRef<{
     fromId: string
     toId: string
@@ -1011,6 +1046,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         if (system.has_station) tags.push('Station')
         if (system.has_outpost) tags.push('Faction outpost')
         if (system.is_stronghold) tags.push('Pirate Stronghold')
+        if (system.frontier_tier) tags.push(`Frontier tier ${system.frontier_tier}`)
         if (tags.length > 0) {
           tooltipTagsRef.current.textContent = tags.join(' \u00B7 ')
           tooltipTagsRef.current.style.display = 'block'
@@ -1186,6 +1222,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     const systems = map.data.systems
       .map(toMapSystemData)
       .filter((sys): sys is MapSystemData => sys !== null)
+      .concat(frontierSystems)
     s.mapData = { systems }
     applyStationFlags()
 
@@ -1200,7 +1237,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
 
     if (loadingRef.current) loadingRef.current.style.display = 'none'
     render()
-  }, [map.data, applyStationFlags, snapToSystem, render])
+  }, [map.data, frontierSystems, applyStationFlags, snapToSystem, render])
 
   useEffect(() => {
     if (map.error && loadingRef.current) {

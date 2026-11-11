@@ -21,6 +21,8 @@ export interface IntelMapSystem {
   is_stronghold?: boolean
   /** Non-cloaked players in the system right now — the public map counts these too. */
   online?: number
+  /** Set on frontier systems only. */
+  frontier_tier?: number
   connections: string[]
 }
 
@@ -184,6 +186,8 @@ export interface IntelMapResponse {
   faction_intel: FactionIntel
   /** Public list of faction mobile bases and the Frontier mobile capital; absent on older servers. */
   mobile_bases?: PublicMobileBase[]
+  /** Frontier systems the fleet has charted; /api/map leaves them out. */
+  frontier_systems?: IntelMapSystem[]
 }
 
 // ── System detail (GET /api/intel-map/system/{id}) ─────────────────────
@@ -196,6 +200,7 @@ export interface IntelSystemInfo {
   police_level?: number
   security_status?: string
   is_stronghold?: boolean
+  frontier_tier?: number
   connections: string[]
 }
 
