@@ -285,7 +285,7 @@ async function main() {
   let dump
   let source
 
-  if (process.env.CATALOG_FIXTURE) {
+  if (process.env.CATALOG_FIXTURE === '1') {
     console.log(`Reading catalog fixture ${FIXTURE} (CATALOG_FIXTURE is set; not for production)...`)
     dump = JSON.parse(readFileSync(FIXTURE, 'utf8'))
     source = 'fixture'
