@@ -262,10 +262,7 @@ export function ShipCatalog() {
   )
 
   const { data: stationList } = useStations()
-  const stations = useMemo(
-    () => (stationList ?? []).filter((s) => !s.wrecked).sort((a, b) => a.name.localeCompare(b.name)),
-    [stationList]
-  )
+  const stations = useMemo(() => (stationList ?? []).filter((s) => !s.wrecked), [stationList])
 
   // Other pilots' listings at every station, cheapest first per class. Your own are on the Sell tab.
   const { data: browseData, loading: browseLoading, refetch: refetchBrowse } = useCommandQuery(
