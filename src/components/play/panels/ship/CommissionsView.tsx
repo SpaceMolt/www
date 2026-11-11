@@ -107,7 +107,7 @@ export function CommissionsView() {
           const isReady = c.status === 'ready'
           const isBuilding = c.status === 'building'
           const isSourcing = c.status === 'sourcing'
-          // Paid with credits: the yard buys the materials, so the player has nothing to supply.
+          // Paid with credits: the yard buys the materials, but the player can still supply them.
           const yardSources = Boolean(c.source_missing_materials) || (!c.materials_provided && (c.credits_paid ?? 0) > 0)
           const ticksRemaining = c.ticks_remaining ?? 0
           // Taking the helm and supplying both happen at the commission's station.
@@ -198,7 +198,7 @@ export function CommissionsView() {
                   materials directly to unstick a commission that's short on supply. */}
               {isSourcing && c.required_materials && Object.keys(c.required_materials).length > 0 && (
                 <div className={styles.materialsProgress}>
-                  {yardSources && <span className={styles.materialProgressName}>The yard is buying these materials with your payment.</span>}
+                  {yardSources && <span className={styles.materialProgressName}>The yard is buying these materials with your payment. You can supply them yourself to finish sooner.</span>}
                   {Object.entries(c.required_materials).map(([itemId, need]) => {
                     const have = c.materials_gathered?.[itemId] ?? 0
                     const remaining = Math.max(0, need - have)
@@ -212,7 +212,7 @@ export function CommissionsView() {
                         <span className={have >= need ? styles.materialProgressComplete : styles.materialProgressValue}>
                           {have}/{need}
                         </span>
-                        {remaining > 0 && !yardSources && isHere && (
+                        {remaining > 0 && isHere && (
                           <span className={styles.commissionActions}>
                             <input
                               className={shared.textInput}
