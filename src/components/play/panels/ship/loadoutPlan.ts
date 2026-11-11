@@ -14,6 +14,11 @@ export interface FitPreviewStats {
   armor: number
   speed: number
   max_fuel: number
+  /** Net module fuel efficiency in percent: positive cuts fuel use. Absent on an older game server, as are the next two. */
+  fuel_efficiency?: number
+  fuel_per_jump?: number
+  /** Jumps a full tank covers. */
+  jump_range?: number
   cargo_capacity: number
   cargo_used: number
   cpu_capacity: number
@@ -120,6 +125,61 @@ export function withoutMissing(plan: string[], fitted: string[], sourced: Source
     drop[id]--
     return false
   })
+}
+
+/**
+ * Module fields that are not ship totals: identity and cost, what fit_preview already reports,
+ * and per-weapon numbers that mean nothing summed.
+ */
+const NOT_TOTALS = new Set([
+  'size', 'base_value', 'quest_item', 'combat_effects', 'required_skills', 'effect', 'stackable', 'tradeable', 'hazardous',
+  'cpu_usage', 'power_usage', 'cpu_bonus', 'power_bonus', 'cargo_bonus', 'hull_bonus', 'hull_penalty', 'shield_bonus',
+  'shield_recharge_bonus', 'armor_bonus', 'speed_bonus', 'speed_penalty', 'max_fuel_bonus', 'fuel_efficiency',
+  'crew_capacity_bonus', 'marine_capacity_bonus',
+  'reach', 'cooldown', 'magazine_size', 'precision_factor', 'remote_repair_range', 'armor_bypass_bonus', 'shield_bypass_bonus',
+])
+
+/** The combat_effects numbers that are ship totals. The rest describe one weapon's shots. Its flags all count. */
+const COMBAT_TOTALS = new Set(['mine_capacity', 'reflect_energy_pct', 'phase_dodge_pct', 'shock_damage'])
+
+/**
+ * Every other module stat in the catalog, summed over a fit. A flag such as boarding_capability
+ * counts the modules that have it; a map such as hazard_resistance is summed per entry.
+ */
+function moduleTotals(ids: string[], module: (id: string) => object | undefined): Record<string, number> {
+  const totals: Record<string, number> = {}
+  const add = (key: string, n: number) => { totals[key] = (totals[key] ?? 0) + n }
+  for (const id of ids) {
+    for (const [key, value] of Object.entries(module(id) ?? {})) {
+      if (key === 'combat_effects') {
+        for (const [effect, v] of Object.entries(value ?? {})) {
+          if (v === true) add(effect, 1)
+          else if (typeof v === 'number' && COMBAT_TOTALS.has(effect)) add(effect, v)
+        }
+        continue
+      }
+      if (NOT_TOTALS.has(key)) continue
+      if (typeof value === 'number') add(key, value)
+      else if (value === true) add(key, 1)
+      else if (value && typeof value === 'object' && !Array.isArray(value)) {
+        for (const [sub, n] of Object.entries(value)) if (typeof n === 'number') add(`${key}: ${sub}`, n)
+      }
+    }
+  }
+  return totals
+}
+
+/** The module totals that differ between the fitted modules and the plan, beyond what fit_preview reports. */
+export function moduleTotalChanges(fitted: string[], plan: string[], module: (id: string) => object | undefined) {
+  const before = moduleTotals(fitted, module)
+  const after = moduleTotals(plan, module)
+  return [...new Set([...Object.keys(before), ...Object.keys(after)])]
+    .filter((key) => (before[key] ?? 0) !== (after[key] ?? 0))
+    .sort()
+    .map((key) => {
+      const label = key.replace(/_pct\b/g, ' %').replace(/_/g, ' ')
+      return { label: label[0].toUpperCase() + label.slice(1), before: before[key] ?? 0, after: after[key] ?? 0 }
+    })
 }
 
 export function countBy(ids: string[]): Record<string, number> {
