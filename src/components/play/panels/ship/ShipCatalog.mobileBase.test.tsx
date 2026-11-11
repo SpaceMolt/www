@@ -19,9 +19,9 @@ test('mobile bases the server lists as commissionable show the Commission chip, 
     spyOn(bindings, 'useLocationState').mockReturnValue({ docked_at: 'faction_yard' })
     spyOn(bindings, 'useCommandMutation').mockReturnValue(mock())
     spyOn(bindings, 'useCatalog').mockReturnValue({ data: { ships }, error: null })
-    // Every query sees the commissionable set; the other queries read no fields off a Set.
-    spyOn(bindings, 'useCommandQuery').mockImplementation(() => ({
-      data: commissionable, loading: false, error: null, errorCode: null, refetch: () => {},
+    // The commissionable query has no deps; the listings query (and the closed modal's queries) get no listings.
+    spyOn(bindings, 'useCommandQuery').mockImplementation((_run, deps) => ({
+      data: deps.length ? [] : commissionable, loading: false, error: null, errorCode: null, refetch: () => {},
     }))
     spyOn(play, 'usePlay').mockReturnValue({ uiStore: { dispatch: () => {} } })
 

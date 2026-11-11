@@ -22,9 +22,10 @@ import {
   ClipboardList,
   Lock,
   Check,
+  MapPin,
 } from 'lucide-react'
 import type { BrowseShipsResponse, StorageResponse } from '@spacemolt/lib'
-import { useCargo, useCatalog, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useShip, useSkills } from '@/lib/spacemolt'
+import { useCargo, useCatalog, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useShip, useSkills, useStations } from '@/lib/spacemolt'
 import { getShip, groupBy } from '@/data/catalog'
 import { usePlay } from '../../PlayProvider'
 import { ConfirmAction, Credits, Loading, Modal, errorMessage, shared } from '../../shared'
@@ -66,7 +67,34 @@ export interface CatalogShip extends MobileBaseIdentity, GatedShip {
   build_time?: number
 }
 
-type ShipListing = BrowseShipsResponse['listings'][number]
+/** A listing tagged with the station that holds it. */
+type ShipListing = BrowseShipsResponse['listings'][number] & { base_id: string; base_name: string }
+
+/** Tags each listing in a browse_ships response with its station. */
+function tagListings(resp: BrowseShipsResponse | undefined): ShipListing[] {
+  if (!resp) return []
+  return resp.listings.map((l) => ({ ...l, base_id: resp.base_id, base_name: resp.base_name }))
+}
+
+/** Concurrent browse_ships calls while searching all stations; keeps the sweep well under the per-session query limit. */
+export const BROWSE_BATCH = 5
+
+/**
+ * Listings at every station, by one browse_ships call per station. A station
+ * that refuses (uncharted frontier, gone) is skipped, so one failure does not
+ * hide the rest.
+ */
+export async function browseAllStations(
+  baseIds: string[],
+  browse: (baseId: string) => Promise<BrowseShipsResponse | undefined>,
+): Promise<ShipListing[]> {
+  const out: ShipListing[] = []
+  for (let i = 0; i < baseIds.length; i += BROWSE_BATCH) {
+    const results = await Promise.allSettled(baseIds.slice(i, i + BROWSE_BATCH).map(browse))
+    for (const r of results) if (r.status === 'fulfilled') out.push(...tagListings(r.value))
+  }
+  return out
+}
 
 /**
  * Whether a catalog ship passes the tier dropdown filter.
@@ -217,17 +245,32 @@ export function ShipCatalog() {
     [isDocked, commissionableFromServer]
   )
 
-  // Other pilots' listings at this station, cheapest first per class. Your own are on the Sell tab.
-  const { data: browseData, refetch: refetchBrowse } = useCommandQuery(
-    async (account) => (await account.commands.spacemolt_ship.browse_ships({})).structuredContent,
-    [],
-    { enabled: isDocked }
+  // Where to browse listings: '' = the docked station, 'all' = every station, else one base_id.
+  const [market, setMarket] = useState('')
+  const { data: stationList } = useStations()
+  const stations = useMemo(
+    () => (stationList ?? []).filter((s) => !s.wrecked).sort((a, b) => a.name.localeCompare(b.name)),
+    [stationList]
+  )
+
+  // Other pilots' listings at the chosen station(s), cheapest first per class. Your own are on the Sell tab.
+  const { data: browseData, loading: browseLoading, refetch: refetchBrowse } = useCommandQuery(
+    async (account) => {
+      const browse = async (baseId?: string) =>
+        (await account.commands.spacemolt_ship.browse_ships(baseId ? { base_id: baseId } : {})).structuredContent
+      if (market === 'all') return browseAllStations(stations.map((s) => s.base_id), browse)
+      return tagListings(await browse(market || undefined))
+    },
+    [market, stations],
+    { enabled: market !== '' || isDocked }
   )
   const listingsByClass = useMemo(() => {
-    if (!isDocked) return {}
-    const others = (browseData?.listings ?? []).filter((l) => l.seller !== player?.username)
+    if (market === '' && !isDocked) return {}
+    const others = (browseData ?? []).filter((l) => l.seller !== player?.username)
     return groupBy([...others].sort((a, b) => a.price - b.price), (l) => l.class_id)
-  }, [browseData, isDocked, player?.username])
+  }, [browseData, market, isDocked, player?.username])
+  // buy_listed_ship only works at the listing's own station.
+  const buyableHere = (l: ShipListing) => l.base_id === location?.docked_at
 
   const [buyTarget, setBuyTarget] = useState<{ ship: Pick<CatalogShip, 'name'>; listing: ShipListing } | null>(null)
   const [buying, setBuying] = useState(false)
@@ -355,7 +398,7 @@ export function ShipCatalog() {
   )
 
   const toggles = [
-    { label: 'Buy now here', title: 'Show only ships listed for sale at this station', on: buyHereOnly, set: setBuyHereOnly, icon: <ShoppingCart size={11} /> },
+    { label: 'For sale', title: 'Show only ships listed for sale at the selected station', on: buyHereOnly, set: setBuyHereOnly, icon: <ShoppingCart size={11} /> },
     { label: 'Commission here', title: 'Show only ships you can commission at this shipyard', on: commissionHereOnly, set: setCommissionHereOnly, icon: <Hammer size={11} /> },
     { label: 'Can fly', title: 'Hide ships your piloting, reputation, or a prestige lock blocks', on: canFlyOnly, set: setCanFlyOnly, icon: <Check size={11} /> },
   ]
@@ -375,6 +418,21 @@ export function ShipCatalog() {
               onChange={(e) => { setSearch(e.target.value); resetPage() }}
             />
           </div>
+        </div>
+        <div className={styles.filterRow}>
+          <select
+            className={styles.filterSelect}
+            value={market}
+            onChange={(e) => { setMarket(e.target.value); resetPage() }}
+            aria-label="Station to browse listings at"
+          >
+            <option value="">{isDocked ? 'Listings: this station' : 'Listings: pick a station'}</option>
+            <option value="all">Listings: all stations</option>
+            {stations.map((s) => (
+              <option key={s.base_id} value={s.base_id}>{s.name} ({s.system_name})</option>
+            ))}
+          </select>
+          {browseLoading && market === 'all' && <span className={styles.countLabel}>Searching {stations.length} stations...</span>}
         </div>
         <div className={styles.filterRow}>
           {toggles.map((t) => (
@@ -551,7 +609,7 @@ export function ShipCatalog() {
                       {/* Get one: listings here, commission, buy order. A blocked class shows none of these. */}
                       {listings.length > 0 && (
                         <div className={listingStyles.listingsList}>
-                          <span className={shared.sectionTitle}>For Sale Here</span>
+                          <span className={shared.sectionTitle}>For Sale</span>
                           {listings.map((listing) => {
                             const canAfford = credits >= listing.price
                             return (
@@ -563,8 +621,9 @@ export function ShipCatalog() {
                                   <span className={listingStyles.listingStat}><Heart size={10} /> {listing.hull}/{listing.max_hull}</span>
                                   <span className={listingStyles.listingStat}><CircuitBoard size={10} /> {listing.modules_count ?? 0} modules</span>
                                   <span className={listingStyles.listingStat}><User size={10} /> {listing.seller}</span>
+                                  {market !== '' && <span className={listingStyles.listingStat}><MapPin size={10} /> {listing.base_name}</span>}
                                 </div>
-                                {!blocked && (
+                                {!blocked && buyableHere(listing) && (
                                   <button
                                     className={shared.accentBtn}
                                     onClick={() => setBuyTarget({ ship: catShip, listing })}
@@ -644,7 +703,7 @@ export function ShipCatalog() {
       )}
       {otherListings.length > 0 && (
         <div className={listingStyles.listingsList}>
-          <span className={shared.sectionTitle}>Other listings here</span>
+          <span className={shared.sectionTitle}>Other listings</span>
           {otherListings.map((listing) => (
             <div key={listing.listing_id} className={listingStyles.sellCard}>
               <div className={listingStyles.listingStatsRow}>
@@ -654,15 +713,16 @@ export function ShipCatalog() {
                 </span>
                 <span className={listingStyles.listingStat}><Heart size={10} /> {listing.hull}/{listing.max_hull}</span>
                 <span className={listingStyles.listingStat}><User size={10} /> {listing.seller}</span>
+                {market !== '' && <span className={listingStyles.listingStat}><MapPin size={10} /> {listing.base_name}</span>}
               </div>
-              <button
+              {buyableHere(listing) && <button
                 className={shared.accentBtn}
                 onClick={() => setBuyTarget({ ship: { name: listing.ship_name ?? listing.class_id }, listing })}
                 disabled={(player?.credits ?? 0) < listing.price}
                 type="button"
               >
                 <ShoppingCart size={12} /> Buy
-              </button>
+              </button>}
             </div>
           ))}
         </div>

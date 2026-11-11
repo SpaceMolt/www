@@ -8,6 +8,8 @@
 import { test, expect } from 'bun:test'
 import {
   matchesTierFilter,
+  browseAllStations,
+  BROWSE_BATCH,
   EMPIRES,
   fetchCommissionableShipIds,
   commissionableCatalogRequest,
@@ -144,4 +146,15 @@ test('a failed later page keeps the ids already collected', async () => {
 
 test('a failed first page propagates so the panel can show the error', async () => {
   await expect(fetchCommissionableShipIds(async () => { throw new Error('network') })).rejects.toThrow('network')
+})
+
+test('browseAllStations tags each listing with its station and skips stations that refuse', async () => {
+  const ids = Array.from({ length: BROWSE_BATCH + 2 }, (_, i) => `base_${i}`)
+  const listing = { listing_id: 'l', ship_id: 's', class_id: 'hauler', price: 100, listed_at: '' }
+  const got = await browseAllStations(ids, async (baseId) => {
+    if (baseId === 'base_1') throw new Error('base_not_found')
+    return { base_id: baseId, base_name: `Name ${baseId}`, listings: [{ ...listing, listing_id: baseId }], count: 1 } as never
+  })
+  expect(got.map((l) => l.listing_id)).toEqual(ids.filter((id) => id !== 'base_1'))
+  expect(got[0]).toMatchObject({ base_id: 'base_0', base_name: 'Name base_0' })
 })
