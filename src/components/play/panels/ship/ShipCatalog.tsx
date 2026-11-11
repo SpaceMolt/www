@@ -245,30 +245,24 @@ export function ShipCatalog() {
     [isDocked, commissionableFromServer]
   )
 
-  // Where to browse listings: '' = the docked station, 'all' = every station, else one base_id.
-  const [market, setMarket] = useState('')
   const { data: stationList } = useStations()
   const stations = useMemo(
     () => (stationList ?? []).filter((s) => !s.wrecked).sort((a, b) => a.name.localeCompare(b.name)),
     [stationList]
   )
 
-  // Other pilots' listings at the chosen station(s), cheapest first per class. Your own are on the Sell tab.
+  // Other pilots' listings at every station, cheapest first per class. Your own are on the Sell tab.
   const { data: browseData, loading: browseLoading, refetch: refetchBrowse } = useCommandQuery(
-    async (account) => {
-      const browse = async (baseId?: string) =>
-        (await account.commands.spacemolt_ship.browse_ships(baseId ? { base_id: baseId } : {})).structuredContent
-      if (market === 'all') return browseAllStations(stations.map((s) => s.base_id), browse)
-      return tagListings(await browse(market || undefined))
-    },
-    [market, stations],
-    { enabled: market !== '' || isDocked }
+    async (account) =>
+      browseAllStations(stations.map((s) => s.base_id), async (baseId) =>
+        (await account.commands.spacemolt_ship.browse_ships({ base_id: baseId })).structuredContent),
+    [stations],
+    { enabled: stations.length > 0 }
   )
   const listingsByClass = useMemo(() => {
-    if (market === '' && !isDocked) return {}
     const others = (browseData ?? []).filter((l) => l.seller !== player?.username)
     return groupBy([...others].sort((a, b) => a.price - b.price), (l) => l.class_id)
-  }, [browseData, market, isDocked, player?.username])
+  }, [browseData, player?.username])
   // buy_listed_ship only works at the listing's own station.
   const buyableHere = (l: ShipListing) => l.base_id === location?.docked_at
 
@@ -398,7 +392,7 @@ export function ShipCatalog() {
   )
 
   const toggles = [
-    { label: 'For sale', title: 'Show only ships listed for sale at the selected station', on: buyHereOnly, set: setBuyHereOnly, icon: <ShoppingCart size={11} /> },
+    { label: 'For sale', title: 'Show only ships listed for sale at any station', on: buyHereOnly, set: setBuyHereOnly, icon: <ShoppingCart size={11} /> },
     { label: 'Commission here', title: 'Show only ships you can commission at this shipyard', on: commissionHereOnly, set: setCommissionHereOnly, icon: <Hammer size={11} /> },
     { label: 'Can fly', title: 'Hide ships your piloting, reputation, or a prestige lock blocks', on: canFlyOnly, set: setCanFlyOnly, icon: <Check size={11} /> },
   ]
@@ -419,21 +413,7 @@ export function ShipCatalog() {
             />
           </div>
         </div>
-        <div className={styles.filterRow}>
-          <select
-            className={styles.filterSelect}
-            value={market}
-            onChange={(e) => { setMarket(e.target.value); resetPage() }}
-            aria-label="Station to browse listings at"
-          >
-            <option value="">{isDocked ? 'Listings: this station' : 'Listings: pick a station'}</option>
-            <option value="all">Listings: all stations</option>
-            {stations.map((s) => (
-              <option key={s.base_id} value={s.base_id}>{s.name} ({s.system_name})</option>
-            ))}
-          </select>
-          {browseLoading && market === 'all' && <span className={styles.countLabel}>Searching {stations.length} stations...</span>}
-        </div>
+        {browseLoading && <span className={styles.countLabel}>Searching listings at {stations.length} stations...</span>}
         <div className={styles.filterRow}>
           {toggles.map((t) => (
             <button
@@ -606,7 +586,7 @@ export function ShipCatalog() {
                           <div className={styles.shipLore}>{catShip.lore}</div>
                         )}
 
-                      {/* Get one: listings here, commission, buy order. A blocked class shows none of these. */}
+                      {/* Get one: listings, commission, buy order. A blocked class shows none of these. */}
                       {listings.length > 0 && (
                         <div className={listingStyles.listingsList}>
                           <span className={shared.sectionTitle}>For Sale</span>
@@ -621,7 +601,7 @@ export function ShipCatalog() {
                                   <span className={listingStyles.listingStat}><Heart size={10} /> {listing.hull}/{listing.max_hull}</span>
                                   <span className={listingStyles.listingStat}><CircuitBoard size={10} /> {listing.modules_count ?? 0} modules</span>
                                   <span className={listingStyles.listingStat}><User size={10} /> {listing.seller}</span>
-                                  {market !== '' && <span className={listingStyles.listingStat}><MapPin size={10} /> {listing.base_name}</span>}
+                                  <span className={listingStyles.listingStat}><MapPin size={10} /> {listing.base_name}</span>
                                 </div>
                                 {!blocked && buyableHere(listing) && (
                                   <button
@@ -713,7 +693,7 @@ export function ShipCatalog() {
                 </span>
                 <span className={listingStyles.listingStat}><Heart size={10} /> {listing.hull}/{listing.max_hull}</span>
                 <span className={listingStyles.listingStat}><User size={10} /> {listing.seller}</span>
-                {market !== '' && <span className={listingStyles.listingStat}><MapPin size={10} /> {listing.base_name}</span>}
+                <span className={listingStyles.listingStat}><MapPin size={10} /> {listing.base_name}</span>
               </div>
               {buyableHere(listing) && <button
                 className={shared.accentBtn}
