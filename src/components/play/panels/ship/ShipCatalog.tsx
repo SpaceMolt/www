@@ -103,22 +103,12 @@ export async function browseAllStations(
   baseIds: string[],
   browse: (baseId: string) => Promise<BrowseShipsResponse | undefined>,
 ): Promise<ShipListing[]> {
-  const out: ShipListing[] = []
-  let firstError: unknown
-  let answered = 0
+  const settled: PromiseSettledResult<BrowseShipsResponse | undefined>[] = []
   for (let i = 0; i < baseIds.length; i += BROWSE_BATCH) {
-    const results = await Promise.allSettled(baseIds.slice(i, i + BROWSE_BATCH).map(browse))
-    for (const r of results) {
-      if (r.status === 'fulfilled') {
-        answered++
-        out.push(...tagListings(r.value))
-      } else {
-        firstError ??= r.reason
-      }
-    }
+    settled.push(...(await Promise.allSettled(baseIds.slice(i, i + BROWSE_BATCH).map(browse))))
   }
-  if (answered === 0 && baseIds.length > 0) throw firstError
-  return out
+  if (settled[0]?.status === 'rejected' && settled.every((r) => r.status === 'rejected')) throw settled[0].reason
+  return settled.flatMap((r) => (r.status === 'fulfilled' ? tagListings(r.value) : []))
 }
 
 /** How long one all-stations sweep is reused, so reopening the catalog does not query every station again. */
@@ -663,8 +653,7 @@ export function ShipCatalog() {
                                   <Seller name={listing.seller} />
                                   <span className={listingStyles.listingStat}><MapPin size={10} /> {listing.base_name}</span>
                                 </div>
-                                {!blocked && !buyableHere(listing) && <span className={listingStyles.listingStat}>Dock at {listing.base_name} to buy</span>}
-                                {!blocked && buyableHere(listing) && (
+                                {!blocked && (buyableHere(listing) ? (
                                   <button
                                     className={shared.accentBtn}
                                     onClick={() => setBuyTarget({ ship: catShip, listing })}
@@ -674,7 +663,9 @@ export function ShipCatalog() {
                                   >
                                     <ShoppingCart size={12} /> Buy
                                   </button>
-                                )}
+                                ) : (
+                                  <span className={listingStyles.listingStat}>Dock at {listing.base_name} to buy</span>
+                                ))}
                               </div>
                             )
                           })}
