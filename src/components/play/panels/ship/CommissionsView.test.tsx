@@ -28,7 +28,7 @@ test('a credit-paid commission still sourcing offers the Supply action at its st
 
     const html = renderToStaticMarkup(<CommissionsView />)
     expect(html).toContain('The yard is buying these materials')
-    expect(html).toContain('Supply')
+    expect(html).toContain('title="Supply this material from your cargo/storage"')
   } finally {
     mock.restore()
   }

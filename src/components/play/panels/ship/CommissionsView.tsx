@@ -198,7 +198,7 @@ export function CommissionsView() {
                   materials directly to unstick a commission that's short on supply. */}
               {isSourcing && c.required_materials && Object.keys(c.required_materials).length > 0 && (
                 <div className={styles.materialsProgress}>
-                  {yardSources && <span className={styles.materialProgressName}>The yard is buying these materials with your payment. You can supply them yourself to finish sooner.</span>}
+                  {yardSources && <span className={styles.materialProgressName}>The yard is buying these materials with your payment. You can also supply them yourself; supplied materials are not refunded.</span>}
                   {Object.entries(c.required_materials).map(([itemId, need]) => {
                     const have = c.materials_gathered?.[itemId] ?? 0
                     const remaining = Math.max(0, need - have)
