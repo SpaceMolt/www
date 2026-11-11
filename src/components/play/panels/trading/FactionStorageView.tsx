@@ -27,7 +27,7 @@ import { normalizeCargo, selectedItems, type Selection } from '../../shared/item
 import { parseCreditAmount } from './giftValidation'
 import { selectStorageRevision, usePersonalStorage } from './StorageView'
 import { storageStationOptions } from './storageLocations'
-import { useFactionService } from '../faction/useFactionService'
+import { isOwnStation, useFactionService } from '../faction/useFactionService'
 import { useFactionPermissions } from '../../hooks/useGates'
 import { treasuryBalance } from './treasuryBalance'
 import styles from './StorageView.module.css'
@@ -82,6 +82,17 @@ export function FactionStorageView() {
   // A failed view keeps the last station's data; never offer actions on it.
   const treasuryData = factionError ? undefined : lastFactionData
   const factionData = noLockbox || (isDocked && hasLockbox === undefined) ? undefined : treasuryData
+
+  // On the faction's own station, faction fuel goes into the station tank, not a bunker.
+  const { data: baseData } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt.get_base()).structuredContent,
+    [dockedAt, hasFaction, revision],
+    { enabled: isDocked && hasFaction },
+  )
+  const ownBase = isOwnStation(baseData?.base, player?.faction_id, dockedAt) ? baseData?.base : undefined
+  const fuel = ownBase
+    ? { label: 'Station tank', reserve: ownBase.fuel ?? 0, capacity: ownBase.max_fuel ?? 0 }
+    : { label: 'Fuel bunker', reserve: treasuryData?.faction_fuel_reserve ?? 0, capacity: treasuryData?.faction_fuel_capacity ?? 0 }
 
   const { data: personalData } = usePersonalStorage({ enabled: hasFaction })
   // Taking anything out of faction storage needs manage_treasury.
@@ -198,12 +209,12 @@ export function FactionStorageView() {
               )}
             </div>
           </div>
-          {treasuryData && isDocked && (treasuryData.faction_fuel_capacity ?? 0) > 0 && (
+          {treasuryData && isDocked && fuel.capacity > 0 && (
             <div className={styles.itemRow}>
               <div className={styles.itemInfo}>
                 <Fuel size={11} />
                 <span className={styles.itemQty}>
-                  Fuel bunker: {treasuryData.faction_fuel_reserve ?? 0}/{treasuryData.faction_fuel_capacity} · Ship tank: {shipFuel}
+                  {fuel.label}: {fuel.reserve}/{fuel.capacity} · Ship tank: {shipFuel}
                 </span>
               </div>
               <div className={styles.itemAction}>
@@ -213,7 +224,7 @@ export function FactionStorageView() {
                   className={shared.confirmBtn}
                   onClick={() => handleTreasury('deposit', fuelQty, 'fuel')}
                   disabled={actionPending || fuelQty === null}
-                  title="Move fuel from your ship's tank to the faction bunker"
+                  title={`Move fuel from your ship's tank to the ${fuel.label.toLowerCase()}`}
                   type="button"
                 >
                   <ArrowDownToLine size={10} /> Deposit Fuel
