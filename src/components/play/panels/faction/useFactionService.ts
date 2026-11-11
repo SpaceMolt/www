@@ -49,7 +49,7 @@ export function useFactionServices(): Set<string> | undefined {
     [dockedAt, inFaction],
     { enabled },
   )
-  const baseKnown = Boolean(station.data || station.error)
+  const baseKnown = station.data?.base?.id === dockedAt || Boolean(station.error)
   return useMemo(() => {
     if (!inFaction) return new Set<string>()
     if (!data || !baseKnown) return undefined
