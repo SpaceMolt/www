@@ -139,6 +139,9 @@ const NOT_TOTALS = new Set([
   'reach', 'cooldown', 'magazine_size', 'precision_factor', 'remote_repair_range', 'armor_bypass_bonus', 'shield_bypass_bonus',
 ])
 
+/** The combat_effects numbers that are ship totals. The rest describe one weapon's shots. Its flags all count. */
+const COMBAT_TOTALS = new Set(['mine_capacity', 'reflect_energy_pct', 'phase_dodge_pct', 'shock_damage'])
+
 /**
  * Every other module stat in the catalog, summed over a fit. A flag such as boarding_capability
  * counts the modules that have it; a map such as hazard_resistance is summed per entry.
@@ -148,6 +151,13 @@ function moduleTotals(ids: string[], module: (id: string) => object | undefined)
   const add = (key: string, n: number) => { totals[key] = (totals[key] ?? 0) + n }
   for (const id of ids) {
     for (const [key, value] of Object.entries(module(id) ?? {})) {
+      if (key === 'combat_effects') {
+        for (const [effect, v] of Object.entries(value ?? {})) {
+          if (v === true) add(effect, 1)
+          else if (typeof v === 'number' && COMBAT_TOTALS.has(effect)) add(effect, v)
+        }
+        continue
+      }
       if (NOT_TOTALS.has(key)) continue
       if (typeof value === 'number') add(key, value)
       else if (value === true) add(key, 1)

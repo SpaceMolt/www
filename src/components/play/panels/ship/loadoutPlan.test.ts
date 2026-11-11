@@ -55,13 +55,20 @@ test('moduleTotalChanges lists every module total the plan changes, and nothing 
   const modules: Record<string, object> = {
     laser: { cpu_usage: 2, mining_power: 5 },
     scanner: { scanner_power: 3, shield_bonus: 9 },
-    suit: { hazard_resistance: { radiation: 20 }, boarding_capability: true, crew_combat_bonus_pct: 5 },
+    suit: {
+      hazard_resistance: { radiation: 20 },
+      boarding_capability: true,
+      crew_combat_bonus_pct: 5,
+      combat_effects: { phase_dodge_pct: 25, shield_phase: true, hull_damage_pct: 40 },
+    },
   }
   expect(moduleTotalChanges(['laser', 'scanner'], ['laser', 'laser', 'suit'], (id) => modules[id])).toEqual([
     { label: 'Boarding capability', before: 0, after: 1 },
     { label: 'Crew combat bonus %', before: 0, after: 5 },
     { label: 'Hazard resistance: radiation', before: 0, after: 20 },
     { label: 'Mining power', before: 5, after: 10 },
+    { label: 'Phase dodge %', before: 0, after: 25 },
     { label: 'Scanner power', before: 3, after: 0 },
+    { label: 'Shield phase', before: 0, after: 1 },
   ])
 })
