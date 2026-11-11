@@ -9,6 +9,9 @@ import { test, expect } from 'bun:test'
 import {
   matchesTierFilter,
   browseAllStations,
+  cachedListings,
+  clearListingsCache,
+  LISTINGS_TTL_MS,
   BROWSE_BATCH,
   EMPIRES,
   fetchCommissionableShipIds,
@@ -157,4 +160,20 @@ test('browseAllStations tags each listing with its station and skips stations th
   })
   expect(got.map((l) => l.listing_id)).toEqual(ids.filter((id) => id !== 'base_1'))
   expect(got[0]).toMatchObject({ base_id: 'base_0', base_name: 'Name base_0' })
+})
+
+test('cachedListings reuses one sweep per account until the TTL passes or the cache is cleared', async () => {
+  const account = {}
+  let sweeps = 0
+  const sweep = async () => { sweeps++; return [] }
+  await cachedListings(account, sweep, 0)
+  await cachedListings(account, sweep, LISTINGS_TTL_MS - 1)
+  expect(sweeps).toBe(1)
+  await cachedListings({}, sweep, 0)
+  expect(sweeps).toBe(2)
+  await cachedListings(account, sweep, LISTINGS_TTL_MS)
+  expect(sweeps).toBe(3)
+  clearListingsCache(account)
+  await cachedListings(account, sweep, LISTINGS_TTL_MS)
+  expect(sweeps).toBe(4)
 })

@@ -96,6 +96,22 @@ export async function browseAllStations(
   return out
 }
 
+/** How long one all-stations sweep is reused, so reopening the catalog does not query every station again. */
+export const LISTINGS_TTL_MS = 60_000
+const listingsCache = new WeakMap<object, { at: number; listings: Promise<ShipListing[]> }>()
+
+/** The account's all-stations sweep, keyed by its stable `commands` object and reused until it is LISTINGS_TTL_MS old. */
+export function cachedListings(account: object, sweep: () => Promise<ShipListing[]>, now = Date.now()): Promise<ShipListing[]> {
+  const hit = listingsCache.get(account)
+  if (hit && now - hit.at < LISTINGS_TTL_MS) return hit.listings
+  const listings = sweep()
+  listingsCache.set(account, { at: now, listings })
+  return listings
+}
+
+/** Drops the cached sweep, so the next read sees a purchase at once. */
+export const clearListingsCache = (account: object) => listingsCache.delete(account)
+
 /**
  * Whether a catalog ship passes the tier dropdown filter.
  *
@@ -254,8 +270,9 @@ export function ShipCatalog() {
   // Other pilots' listings at every station, cheapest first per class. Your own are on the Sell tab.
   const { data: browseData, loading: browseLoading, refetch: refetchBrowse } = useCommandQuery(
     async (account) =>
-      browseAllStations(stations.map((s) => s.base_id), async (baseId) =>
-        (await account.commands.spacemolt_ship.browse_ships({ base_id: baseId })).structuredContent),
+      cachedListings(account.commands, () =>
+        browseAllStations(stations.map((s) => s.base_id), async (baseId) =>
+          (await account.commands.spacemolt_ship.browse_ships({ base_id: baseId })).structuredContent)),
     [stations],
     { enabled: stations.length > 0 }
   )
@@ -350,7 +367,7 @@ export function ShipCatalog() {
   const handleBuyListing = useCallback(() => {
     if (!buyTarget) return
     setBuying(true)
-    mutate((c) => c.spacemolt_ship.buy_listed_ship({ id: buyTarget.listing.listing_id }), { label: 'buy_listed_ship' })
+    mutate((c) => c.spacemolt_ship.buy_listed_ship({ id: buyTarget.listing.listing_id }).finally(() => clearListingsCache(c)), { label: 'buy_listed_ship' })
       .then(() => {
         setBuying(false)
         setBuyTarget(null)
