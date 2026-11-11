@@ -28,6 +28,7 @@ import { fixedStations, stationsVisibleInRecon } from '@/lib/stationPresentation
 import type { PublicMobileBase } from '@/lib/mobileBases'
 import { activeBattlesByAgent, type ActiveBattleLike } from '@/lib/battle/activeAgentBattles'
 import { TickClock } from '@/lib/transitMotion'
+import { FRONTIER_COLOR } from '@/lib/frontier'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
@@ -137,11 +138,19 @@ export function useIntelData({
   showHidden,
   trailsWindow,
 }: UseIntelDataOptions): UseIntelDataResult {
-  const [systems, setSystems] = useState<IntelMapSystem[]>([])
+  const [publicSystems, setPublicSystems] = useState<IntelMapSystem[]>([])
   const [stations, setStations] = useState<PublicStation[]>([])
   const [intel, setIntel] = useState<IntelMapResponse | null>(null)
   // Faction-scoped snapshot; null when no faction filter is active.
   const [narrowed, setNarrowed] = useState<IntelMapResponse | null>(null)
+  // The full snapshot, so a faction filter fogs these systems instead of removing them.
+  const systems = useMemo(
+    () => [
+      ...publicSystems,
+      ...(intel?.frontier_systems ?? []).map((system) => ({ ...system, empire_color: FRONTIER_COLOR })),
+    ],
+    [publicSystems, intel?.frontier_systems],
+  )
   // The server's clock, fed from every tick number we see: the 20s snapshot
   // and, far more often, the event feed. A snapshot can only say "current tick
   // = N" as of some unknown point inside that tick, and a cached response says
@@ -178,7 +187,7 @@ export function useIntelData({
     const res = await fetch(`${GAME_SERVER}/api/map`)
     if (!res.ok) throw new Error(`map fetch failed (${res.status})`)
     const data: PublicMapResponse = await res.json()
-    setSystems(data.systems || [])
+    setPublicSystems(data.systems || [])
   }, [])
 
   // Every base in the galaxy — empire capitals, pirate dens, and the stations
