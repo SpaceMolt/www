@@ -378,4 +378,6 @@
   .shortcutsBtn { display: none; } /* no keyboard on a phone */
   .infoRow { min-height: 44px; flex-wrap: wrap; }
   .shipSection { display: none; } /* ship name lives in the Ship tab; keeps the row inside 375px */
+  /* Buttons stay on the player row; the location gets its own row below. */
+  .locationSection { order: 1; flex-basis: 100%; }
 }

@@ -110,3 +110,8 @@
     opacity: 0;
   }
 }
+
+/* No room for the tick counter on a phone */
+@media (max-width: 600px) {
+  .container { display: none; }
+}
