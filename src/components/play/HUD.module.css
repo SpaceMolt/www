@@ -395,8 +395,10 @@
 
 /* === Responsive === */
 @media (max-width: 768px) {
+  /* The panel takes the height; the Events/Chat pane sizes to its own (collapsed) height. */
   .main {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
   }
 
   .navRow {

@@ -732,6 +732,18 @@
   .cargoHint { font-size: 0.68rem; }
   .categoryToggle { font-size: 0.65rem; padding: 0.25rem 0.5rem; }
   .showToggle { font-size: 0.65rem; padding: 0.3rem 0.5rem; }
+
+  /* Item name gets its own line; the numbers share the line below it. */
+  .tableHeader,
+  .itemRow { flex-wrap: wrap; row-gap: 0.2rem; }
+  .tableHeader .colItem,
+  .itemRow .colItem { flex-basis: 100%; }
+  .itemName { white-space: normal; }
+
+  /* Stack the order book sides and trade forms instead of squeezing them side by side. */
+  .orderBookRow,
+  .quickTradeForms { flex-direction: column; }
+  .orderEntry { flex-wrap: wrap; }
 }
 
 .tradeOptions {
