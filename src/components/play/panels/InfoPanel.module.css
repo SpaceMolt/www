@@ -361,6 +361,13 @@ button.noteItem {
   word-break: break-word;
 }
 
+/* Note read view */
+.noteBody {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--star-white);
+}
+
 .tabBody {
   display: flex;
   flex-direction: column;

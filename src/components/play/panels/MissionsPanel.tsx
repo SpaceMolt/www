@@ -13,6 +13,7 @@ import {
   Users,
   Radio,
   MessageSquare,
+  FileText,
 } from 'lucide-react'
 import type { CompleteMissionResponse, DistressSignalResponse, CompletedMissionsResponse, GameState, GetMissionsResponse, ViewCompletedMissionResponse } from '@spacemolt/lib'
 import { timeAgoOrDate, titleCase } from '@/lib/format'
@@ -211,6 +212,8 @@ export function MissionsPanel() {
 
   // Completion modal
   const [completionResult, setCompletionResult] = useState<CompleteMissionResponse | null>(null)
+  // ponytail: @spacemolt/lib 16 does not type notes_received; drop the cast when the lib is bumped.
+  const notesReceived = (completionResult as { notes_received?: { note_id: string; title: string }[] } | null)?.notes_received
 
   // Available missions — lazily loaded per-tab
   const availableQuery = useCommandQuery(
@@ -868,6 +871,12 @@ export function MissionsPanel() {
                 </div>
               )}
             </div>
+            {notesReceived && notesReceived.length > 0 && (
+              <div className={styles.completionRewardRow}>
+                <FileText size={12} />
+                <span>Added to your notes (Info &gt; Notes): {notesReceived.map((n) => n.title).join(', ')}</span>
+              </div>
+            )}
             {completionResult.chain_next && (
               <div className={styles.completionChain}>
                 A new mission is available...
