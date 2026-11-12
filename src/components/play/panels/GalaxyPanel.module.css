@@ -228,6 +228,12 @@
   border-color: var(--plasma-cyan);
 }
 
+.driveBtn[aria-pressed='true'] {
+  background: rgba(0, 212, 255, 0.25);
+  border-color: var(--plasma-cyan);
+  color: var(--star-white);
+}
+
 .zoomBtn:active {
   background: rgba(0, 212, 255, 0.25);
   transform: scale(0.95);

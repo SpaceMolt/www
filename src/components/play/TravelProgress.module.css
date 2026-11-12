@@ -162,3 +162,42 @@
     flex-wrap: wrap;
   }
 }
+
+/* === Pathfinder drift === */
+.driftActions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.driftActions button {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  border-radius: 3px;
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.driftActions button:hover:not(:disabled),
+.driftActions button[aria-pressed='true'] {
+  background: rgba(0, 212, 255, 0.25);
+  color: var(--star-white);
+}
+
+.driftActions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.voidMessage {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-style: italic;
+  color: var(--chrome-silver);
+}

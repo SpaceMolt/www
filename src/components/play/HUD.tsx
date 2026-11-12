@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { AlertTriangle, CircleHelp, Compass, Globe, Keyboard, LockOpen, Orbit, X } from 'lucide-react'
-import { useAccountStore, useLocationState, usePendingAction, usePlayer, useShip } from '@/lib/spacemolt'
+import { useAccountStore, useCommandMutation, useLocationState, useModules, usePendingAction, usePlayer, useShip } from '@/lib/spacemolt'
+import { bearingArg, PATHFINDER_DRIVE, type DriveControl } from './pathfinder'
 import { useStationServices } from './hooks/useGates'
 import { usePlayUi } from './PlayProvider'
 import { TopBar } from './TopBar'
@@ -183,7 +184,8 @@ export function HUD() {
   const navRef = useRef<NavActions | null>(null)
   // A jump that starts on the system map plays on the galaxy map, then the system map comes back.
   const returnToSystem = useRef(false)
-  const jumping = usePendingAction()?.command === 'jump' || (Boolean(location?.in_transit) && location?.transit_type === 'jump')
+  // A Pathfinder drift is between systems too, so it plays on the galaxy map the same way.
+  const jumping = usePendingAction()?.command === 'jump' || (Boolean(location?.in_transit) && location?.transit_type !== 'travel')
   useEffect(() => {
     if (jumping || !returnToSystem.current) return
     returnToSystem.current = false
@@ -200,6 +202,26 @@ export function HUD() {
   // Begin Travel over a running loop: confirm, stop the loop, then travel once it has wound down.
   const [travelGate, setTravelGate] = useState<'confirm' | 'stopping' | null>(null)
   const pilotBusy = autoTravel.isActive || loop.isActive
+
+  // Pathfinder Drive: the drive button on a map starts plot mode, a click on the map launches.
+  // The same launch replots a drift. ponytail: matches the one module that carries the drive.
+  const hasDrive = useModules()?.some((m) => m.type_id === PATHFINDER_DRIVE)
+  const [plotting, setPlotting] = useState(false)
+  const mutate = useCommandMutation()
+  const launchDrive = useCallback(async (bearing: number) => {
+    setPlotting(false)
+    if (mapView === 'system') followSidebar('galaxy') // the system map comes back on arrival
+    try {
+      await mutate((c) => c.spacemolt.jump({ id: bearingArg(bearing) }), { label: 'jump', target: `bearing ${bearingArg(bearing)}°` })
+    } catch (err) {
+      uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
+    }
+  }, [mutate, uiStore, mapView]) // followSidebar reads mapView
+  const drive: DriveControl | undefined = hasDrive && !pilotBusy
+    ? { plotting, onToggle: () => setPlotting((v) => !v), onLaunch: launchDrive }
+    : undefined
+  // Plot mode ends with the drive: it must not come back on its own after an autopilot run.
+  useEffect(() => { if (!hasDrive || pilotBusy) setPlotting(false) }, [hasDrive, pilotBusy])
 
   const handleBeginTravel = useCallback(() => {
     if (!plannedRoute || !ship) return
@@ -230,7 +252,7 @@ export function HUD() {
     const onKey = (e: KeyboardEvent) => {
       const key = shortcutKey(e)
       if (key === null) return
-      if (key === 'escape') { setNavOpen(false); return } // Modal closes help on Escape
+      if (key === 'escape') { setNavOpen(false); setPlotting(false); return } // Modal closes help on Escape
       if (key === '?') { setHelpOpen((v) => !v); return }
       if (document.querySelector('[role="dialog"]')) return // help or another dialog is open
       if (key === 'n') { setNavOpen((v) => !v); return }
@@ -272,7 +294,7 @@ export function HUD() {
   if (loop.isActive) badges.autopilot = 1
 
   const galaxy = (
-    <GalaxyPanel ref={galaxyRef} onSystemSelect={handleSystemSelect} plannedRoute={plannedRoute} onPlannedRouteChange={handleRouteEdit} autoTravelProgress={autoTravel.progress} highlightedSystems={highlightedSystems} />
+    <GalaxyPanel ref={galaxyRef} onSystemSelect={handleSystemSelect} plannedRoute={plannedRoute} onPlannedRouteChange={handleRouteEdit} autoTravelProgress={autoTravel.progress} highlightedSystems={highlightedSystems} drive={drive} />
   )
 
   // Picking a system or a route in the sidebar is galaxy-map work.
@@ -285,9 +307,10 @@ export function HUD() {
       <div className={`${mapStyles.layer} ${mapView === 'system' ? mapStyles.hidden : ''}`}>{galaxy}</div>
       {mapView === 'system' && (
         <div className={mapStyles.layer}>
-          <SystemMap busy={pilotBusy} onTravel={(id) => navRef.current?.travel(id)} onJump={(id, name) => navRef.current?.jump(id, name)} />
+          <SystemMap busy={pilotBusy} onTravel={(id) => navRef.current?.travel(id)} onJump={(id, name) => navRef.current?.jump(id, name)} drive={drive} getSystems={() => galaxyRef.current?.getSystems() ?? []} />
         </div>
       )}
+      {plotting && drive && <div className={mapStyles.plotHint} role="status">Pathfinder Drive · click the map to launch (touch: tap to aim, tap again to launch) · Esc cancels · costs 5x the fuel of a jump</div>}
       <div className={mapStyles.viewSwitch} role="group" aria-label="Map view">
         <button type="button" aria-pressed={mapView === 'galaxy'} onClick={() => pickMapView('galaxy')}><Globe size={12} /> Galaxy</button>
         <button type="button" aria-pressed={mapView === 'system'} onClick={() => pickMapView('system')}><Orbit size={12} /> System</button>
@@ -323,7 +346,7 @@ export function HUD() {
           <LeftSidebar galaxyRef={galaxyRef} exploreSystem={exploreSystem} onExploreSystemChange={exploreOnGalaxy} plannedRoute={plannedRoute} onPlannedRouteChange={planOnGalaxy} navRef={navRef} onMapViewChange={followSidebar} activeTab={sidebarTab} onTabChange={setSidebarTab} autoTravelActive={pilotBusy} onHighlightedSystemsChange={setHighlightedSystems} mobileOpen={navOpen} onMobileClose={() => setNavOpen(false)} />
           <div className={styles.panel}>
             <ActionBanner autoTravelActive={autoTravel.isActive} />
-            {!autoTravel.isActive && <TravelProgress />}
+            {!autoTravel.isActive && <TravelProgress drive={drive} />}
             {plannedRoute && !autoTravel.isActive && (
               <div className={styles.routeBanner}>
                 <div className={styles.routeBannerContent}>
