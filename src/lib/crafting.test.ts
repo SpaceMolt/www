@@ -19,7 +19,7 @@ describe('canCraftRecipe', () => {
   // must be judged against storage alone.
   it('treats station storage as the available inventory', () => {
     const storage = [{ item_id: 'argon_gas', quantity: 5 }]
-    const { craftable, reasons } = canCraftRecipe(purifyArgon, {}, storage)
+    const { craftable, reasons } = canCraftRecipe(purifyArgon, storage)
     expect(reasons).toEqual([])
     expect(craftable).toBe(true)
   })
@@ -27,7 +27,7 @@ describe('canCraftRecipe', () => {
   it('does NOT count ship cargo — only station storage is eligible', () => {
     // Materials present but not deposited into storage: the server would reject
     // the craft, so the client must mark it not craftable.
-    const { craftable, reasons } = canCraftRecipe(purifyArgon, {}, [])
+    const { craftable, reasons } = canCraftRecipe(purifyArgon, [])
     expect(craftable).toBe(false)
     expect(reasons[0]).toContain('Need 5')
     expect(reasons[0]).toContain('have 0')
@@ -35,7 +35,7 @@ describe('canCraftRecipe', () => {
 
   it('reports missing materials when storage is short', () => {
     const storage = [{ item_id: 'argon_gas', quantity: 2 }]
-    const { craftable, reasons } = canCraftRecipe(purifyArgon, {}, storage)
+    const { craftable, reasons } = canCraftRecipe(purifyArgon, storage)
     expect(craftable).toBe(false)
     expect(reasons.length).toBe(1)
     expect(reasons[0]).toContain('Need 5')
@@ -43,24 +43,10 @@ describe('canCraftRecipe', () => {
   })
 
   it('treats null/undefined storage as no materials (undocked / not yet fetched)', () => {
-    expect(canCraftRecipe(purifyArgon, {}, null).craftable).toBe(false)
-    expect(canCraftRecipe(purifyArgon, {}).craftable).toBe(false)
+    expect(canCraftRecipe(purifyArgon, null).craftable).toBe(false)
+    expect(canCraftRecipe(purifyArgon).craftable).toBe(false)
   })
 
-  it('blocks craft when required skills are unmet, even with materials in storage', () => {
-    const recipe: Recipe = {
-      ...purifyArgon,
-      required_skills: { refining: 10 },
-    }
-    const storage = [{ item_id: 'argon_gas', quantity: 5 }]
-    const { craftable, reasons } = canCraftRecipe(
-      recipe,
-      { refining: { level: 3, xp: 0, next_level_xp: 100 } },
-      storage,
-    )
-    expect(craftable).toBe(false)
-    expect(reasons.some(r => r.includes('Lv10'))).toBe(true)
-  })
 })
 
 describe('availableQuantity', () => {

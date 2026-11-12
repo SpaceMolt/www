@@ -42,6 +42,14 @@ describe('mergeLiveBook', () => {
     expect(merged[1].best_buy).toBe(50)
   })
 
+  test('adds two or more new book items without recursing', () => {
+    const merged = mergeLiveBook([], book([
+      { item_id: 'gold', sell_orders: [{ price_each: 15, quantity: 20 }], buy_orders: [] },
+      { item_id: 'silver', sell_orders: [{ price_each: 8, quantity: 12 }], buy_orders: [] },
+    ]))
+    expect(merged.map((m) => [m.item_id, m.best_sell])).toEqual([['gold', 15], ['silver', 8]])
+  })
+
   test('no book returns the snapshot', () => {
     const snapshot = [item({})]
     expect(mergeLiveBook(snapshot, null)).toBe(snapshot)
