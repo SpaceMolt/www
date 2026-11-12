@@ -151,7 +151,7 @@ export function NotesTab() {
             >
               <span className={styles.noteIcon}><FileText size={12} /></span>
               <span className={styles.noteTitle}>{note.title}</span>
-              <span className={styles.noteMeta}>{note.created_by} · {timeAgoOrDate(note.created_at)}</span>
+              <span className={styles.noteMeta}>{[note.created_by, timeAgoOrDate(note.created_at)].filter(Boolean).join(' · ')}</span>
             </button>
           ))}
         </div>

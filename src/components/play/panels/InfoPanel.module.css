@@ -353,6 +353,11 @@ button.noteItem {
   font-size: 0.72rem;
   color: var(--hull-grey);
   white-space: nowrap;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 /* Multi-line text body (note content, log entry, release notes) */
