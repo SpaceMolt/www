@@ -31,6 +31,17 @@ export interface EconomyCurrent {
   active_facilities: number
   inflation_7d: { composite_pct: number; basket_items: number; by_category: Record<string, number> }
   trade_authenticators: EconomyBondStock
+  /** Player wallets binned by time since last command. Absent on older servers. */
+  wallet_age?: EconomyWalletAgeBin[]
+}
+
+/** One wallet age bin, for example "7-30 days". NPC and hidden accounts are excluded. */
+export interface EconomyWalletAgeBin {
+  label: string
+  accounts: number
+  credits: number
+  /** 0–100 share of all binned wallet credits. */
+  share_pct: number
 }
 
 /** Trade authenticators: counts are items, prices credits. A 0 price means that window side is off. */

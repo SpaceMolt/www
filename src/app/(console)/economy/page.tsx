@@ -291,6 +291,20 @@ export default async function EconomyPage() {
                     figure: `${cr(h.value)} · ${ms.total ? ((h.value / ms.total) * 100).toFixed(1) : '0'}%`,
                   }))}
                 />
+                {current.wallet_age && (
+                  <>
+                    <h3 className={`${styles.subhead} ${styles.figureHead}`}>Player wallets by last activity</h3>
+                    <BarList
+                      rows={current.wallet_age.map((b) => ({
+                        label: b.label,
+                        note: `${formatNumber(b.accounts)} accounts`,
+                        value: b.credits,
+                        color: C.player,
+                        figure: `${cr(b.credits)} · ${b.share_pct.toFixed(1)}%`,
+                      }))}
+                    />
+                  </>
+                )}
               </div>
             </div>
           </Chapter>
