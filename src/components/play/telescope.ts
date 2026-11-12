@@ -64,7 +64,7 @@ export function matchSightings<S extends MapStar>({ x, y, sightings }: Observati
 }
 
 /** Line strength from 0 (faintest in the list) to 1 (brightest). */
-export function strengths(sightings: Sighting[]): number[] {
+function strengths(sightings: Sighting[]): number[] {
   const values = sightings.map((s) => s.brightness)
   const [low, high] = [Math.min(...values), Math.max(...values)]
   return values.map((v) => (high > low ? (v - low) / (high - low) : 1))

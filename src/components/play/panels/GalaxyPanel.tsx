@@ -736,10 +736,10 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   // can be. With several candidates, or none, it runs off the map.
   const drawTelescope = useCallback(
     (ctx: CanvasRenderingContext2D) => {
-      const telescope = telescopeRef.current
-      if (!telescope?.on) return
+      const scope = telescopeRef.current
+      if (!scope?.on) return
       ctx.save()
-      for (const ray of telescope.rays) {
+      for (const ray of scope.rays) {
         const at = worldToScreen(ray.from.x, ray.from.y)
         const end = ray.match ?? alongBearing(ray.from, ray.bearing, VOID_REACH_GU)
         const to = worldToScreen(end.x, end.y)

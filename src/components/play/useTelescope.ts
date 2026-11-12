@@ -43,15 +43,16 @@ export function useTelescope(): TelescopeControl | undefined {
   const factionId = player?.faction_id
   const active = on && fitted
 
-  useEffect(() => { setPins(load(PINS_KEY, playerId, [])) }, [playerId])
+  useEffect(() => { const stored = load<unknown>(PINS_KEY, playerId, []); setPins(Array.isArray(stored) ? stored : []) }, [playerId])
+  useEffect(() => setIntel(null), [factionId]) // another faction has other intel
   useEffect(() => { if (!fitted) setOn(false) }, [fitted])
 
   // Faction intel names the suns of systems the pilot never visited. Read it once, on first use.
   useEffect(() => {
     if (!active || !factionId || intel) return
     let cancelled = false
+    const found: StarClasses = {}
     const read = async () => {
-      const found: StarClasses = {}
       // ponytail: 100 systems a page, 20 pages at most. Raise the cap when intel outgrows 2,000 systems.
       for (let offset = 0, total = 1; offset < total && offset < 2000; offset += 100) {
         const page = (await store.account.commands.spacemolt_intel.query_intel({ limit: 100, offset })).structuredContent
@@ -61,19 +62,21 @@ export function useTelescope(): TelescopeControl | undefined {
         }
         total = page?.total ?? 0
       }
-      return found
     }
-    read().then((found) => { if (!cancelled) setIntel(found) }).catch(() => { if (!cancelled) setIntel({}) }) // no intel terminal: visited systems only
+    // No intel terminal, or a failed page: keep the pages that came, plus visited systems.
+    read().catch(() => {}).then(() => { if (!cancelled) setIntel(found) })
     return () => { cancelled = true }
   }, [active, factionId, intel, store])
 
   // Only get_location carries the sightings. A drift moves each tick, so it reads again each tick.
-  const { data: observation } = useCommandQuery(async (account): Promise<Observation | undefined> => {
+  const query = useCommandQuery(async (account): Promise<Observation | undefined> => {
     const here = (await account.commands.spacemolt.get_location()).structuredContent?.location
     if (!here) return undefined
     const at = here.transit_type === 'pathfinder' ? { x: here.transit_x ?? 0, y: here.transit_y ?? 0 } : here.in_transit ? undefined : map?.system(here.system_id)
     return at && { x: at.x, y: at.y, sightings: parseSightings(here) }
   }, [map, scopes, location?.system_id, location?.in_transit, location?.transit_x, location?.transit_y], { enabled: active && Boolean(map) })
+  // A failed read must not leave the lines from an earlier position on the map as the live view.
+  const observation = query.error ? undefined : query.data
 
   const rays = useMemo(() => {
     if (!active || !map) return []
@@ -92,7 +95,8 @@ export function useTelescope(): TelescopeControl | undefined {
     rays,
     canPin: active && Boolean(observation?.sightings.length) && !pins.some((pin) => isAt(pin, observation!)),
     pins: pins.length,
-    onPin: () => observation && setAndSavePins([...pins, observation]),
+    // ponytail: the newest 12 readings stay, each one is 30 more lines to draw.
+    onPin: () => observation && setAndSavePins([...pins, observation].slice(-12)),
     onClearPins: () => setAndSavePins([]),
   }
 }
