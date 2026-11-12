@@ -57,16 +57,23 @@ function rocks(p: Poi): Rock[] {
 
 const unit = (dx: number, dy: number): [number, number] => { const d = Math.hypot(dx, dy); return d < 1e-6 ? [0, 1] : [dx / d, dy / d] }
 
-/** A name beside a body, pushed along (ux, uy), with deposit-kind marks and the ship count after it. Kept inside `width`. */
-function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, ux: number, uy: number, gap: number, width: number, color: string, kinds: string[] = [], ships = 0) {
+interface LabelBox { left: number; right: number; y: number }
+/**
+ * A name beside a body, pushed along (ux, uy), with deposit-kind marks and the ship count after it. Kept inside `width`.
+ * A label that would cover one already in `placed` moves a line further from its body.
+ */
+function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, ux: number, uy: number, gap: number, width: number, color: string, kinds: string[] = [], ships = 0, placed: LabelBox[] = []) {
   ctx.font = `500 10.5px ${MONO}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'
   const textWidth = ctx.measureText(text).width
   const kindsWidth = kinds.length ? kinds.length * 7 + 5 : 0
   const shipsWidth = ships ? ctx.measureText(String(ships)).width + 13 : 0
   const total = textWidth + kindsWidth + shipsWidth
   const tx = x + ux * gap
-  const ty = y + uy * (gap + 4)
+  let ty = y + uy * (gap + 4)
   let left = Math.max(6, Math.min(width - 6 - total, ux > 0.35 ? tx : ux < -0.35 ? tx - total : tx - total / 2))
+  const isCovered = (q: LabelBox) => Math.abs(q.y - ty) < 11 && left < q.right + 6 && left + total > q.left - 6
+  while (placed.some(isCovered)) ty += uy < -0.35 ? -12 : 12
+  placed.push({ left, right: left + total, y: ty })
   ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(13,19,33,0.85)'; ctx.strokeText(text, left, ty)
   ctx.fillStyle = color; ctx.fillText(text, left, ty)
   left += textWidth
@@ -113,7 +120,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
   const [showRings, setShowRings] = useState(true)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
-  const viewRef = useRef({ radius: 0, target: 0, fit: true }) // AU from the center to the nearer edge
+  const viewRef = useRef({ radius: 0, target: 0, near: 0, fit: true, whole: false }) // AU from the center to the nearer edge
 
   // Faction intel for this system; factions without an intel terminal get nothing.
   const systemId = system?.id
@@ -231,8 +238,14 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
       const cy = H / 2
       const R = Math.max(40, Math.min(W, H) / 2 - 30)
       if (view.fit || !view.target) {
-        view.target = Math.max(MIN_VIEW_AU, ...d.pois.map((p) => Math.hypot((p.position?.x ?? 0) - s.x, (p.position?.y ?? 0) - s.y))) * 1.1
+        // Fit frames the neighbourhood: three times the median distance to the other POIs. A far belt
+        // becomes a marker on the edge. A second fit frames the whole system.
+        const reach = d.pois.map((p) => Math.hypot((p.position?.x ?? 0) - s.x, (p.position?.y ?? 0) - s.y)).filter(Boolean).sort((a, b) => a - b)
+        const whole = (reach.at(-1) ?? 1) * 1.1
+        view.near = Math.min(whole, (reach[reach.length >> 1] ?? 1) * 3.3)
+        view.target = view.whole ? whole : view.near
         view.fit = false
+        view.whole = false
         if (!view.radius) view.radius = view.target
       }
       view.target = Math.max(MIN_VIEW_AU, Math.min(MAX_VIEW_AU, view.target))
@@ -291,6 +304,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
       // --- POIs; one outside the view becomes a marker on the edge ---
       nodes.clear()
       const pad = 24
+      const placed: LabelBox[] = []
       for (const p of d.pois) {
         const world = point(p)!
         const screen = project(world)
@@ -300,7 +314,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
           const [ux, uy] = unit(screen.x - cx, screen.y - cy)
           nodes.set(p.id, edge)
           drawArrow(ctx, edge.x, edge.y, Math.atan2(uy, ux), poiColor(p))
-          drawLabel(ctx, `${(p.base_name || p.name).toUpperCase()} · ${formatSecs(secsTo(world))}`, edge.x, edge.y, -ux, -uy, 12, W, d.hoverId === p.id ? COLOR.white : COLOR.grey)
+          drawLabel(ctx, `${(p.base_name || p.name).toUpperCase()} · ${formatSecs(secsTo(world))}`, edge.x, edge.y, -ux, -uy, 12, W, d.hoverId === p.id ? COLOR.white : COLOR.grey, [], 0, placed)
           continue
         }
         nodes.set(p.id, screen)
@@ -310,7 +324,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
         if (p.type === 'sun' && classLabel(p)?.includes('·') && !world.x && !world.y) continue
         const here = Math.hypot(screen.x - cx, screen.y - cy) < 4
         const kinds = [...new Set((d.deposits.get(p.id) ?? []).map((dep) => depositKind(dep.id)))]
-        drawLabel(ctx, (p.base_name || p.name).toUpperCase(), screen.x, screen.y, here ? 0 : lit[0], here ? 1 : lit[1], here ? 22 : r + 7, W, color, kinds, p.ship_count)
+        drawLabel(ctx, (p.base_name || p.name).toUpperCase(), screen.x, screen.y, here ? 0 : lit[0], here ? 1 : lit[1], here ? 22 : r + 7, W, color, kinds, p.ship_count, placed)
       }
       const exitLabels: Point[] = []
       for (const exit of d.exits) {
@@ -457,7 +471,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
         <button className={`${galaxy.zoomBtn} ${showRings ? '' : styles.off}`} onClick={() => setShowRings((v) => !v)} aria-pressed={showRings} aria-label="Travel-time rings" title="Travel-time rings" type="button">
           <Radar size={16} />
         </button>
-        <button className={galaxy.zoomBtn} onClick={() => { viewRef.current.fit = true }} aria-label="Fit the system in view" title="Fit system" type="button">
+        <button className={galaxy.zoomBtn} onClick={() => { const view = viewRef.current; view.whole = Math.abs(view.target - view.near) < view.near * 0.05; view.fit = true }} aria-label="Fit the system in view" title="Fit nearby, then the whole system" type="button">
           <Maximize size={16} />
         </button>
         <button className={galaxy.zoomBtn} onClick={() => { viewRef.current.target *= 0.62 }} aria-label="Zoom in" type="button">+</button>

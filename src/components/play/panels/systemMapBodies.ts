@@ -22,6 +22,7 @@ export const KIND_COLOR = { mining: '#ff9f6b', ice: '#bfe6ff', gas: '#2dd4bf', r
 export const circle = (ctx: Ctx, x: number, y: number, r: number) => { ctx.beginPath(); ctx.arc(x, y, r, 0, TAU) }
 const rgba = ([r, g, b]: Rgb, a: number) => `rgba(${r},${g},${b},${a})`
 const hex = ([r, g, b]: Rgb) => `rgb(${r},${g},${b})`
+const mix = (from: Rgb, to: Rgb, k: number) => from.map((v, i) => Math.round(v + (to[i] - v) * k)) as Rgb
 
 /** Seeded random, so a body looks the same each time you enter the system. */
 export function seeded(text: string) {
@@ -135,8 +136,33 @@ function drawStar(ctx: Ctx, cls: string | undefined, x: number, y: number, t: nu
   const color = SPECTRAL[match?.[1] ?? 'G']
   const least = LUMINOSITY[match?.[2] ?? 'V']
   const r = Math.max(least, starRadiusAU(cls) * scale)
-  drawGlow(ctx, x, y, color, r + least * 4)
-  ctx.fillStyle = hex(color); circle(ctx, x, y, r); ctx.fill()
+  // The corona breathes. The disc is hot at the center and darker at the limb.
+  drawGlow(ctx, x, y, color, (r + least * 4) * (1 + 0.05 * Math.sin(t * 0.0011)))
+  const body = ctx.createRadialGradient(x, y, 0, x, y, r)
+  body.addColorStop(0, hex(mix(color, [255, 255, 255], 0.6))); body.addColorStop(0.55, hex(color)); body.addColorStop(1, hex(mix(color, [40, 8, 0], 0.45)))
+  ctx.fillStyle = body; circle(ctx, x, y, r); ctx.fill()
+  // A disc large enough to read gets a surface: convection cells that turn with the star, and loops at the limb.
+  const detail = Math.min(1, (r - 14) / 20)
+  if (detail > 0) {
+    const rand = seeded(cls ?? 'star')
+    const turn = t * 0.00002
+    ctx.save(); circle(ctx, x, y, r); ctx.clip()
+    for (let i = 0; i < 46; i++) {
+      const d = Math.sqrt(rand()) * r * 0.95, a = rand() * TAU + turn * (0.6 + rand()), size = r * (0.1 + rand() * 0.2)
+      const [cx, cy] = [x + Math.cos(a) * d, y + Math.sin(a) * d]
+      const cell = ctx.createRadialGradient(cx, cy, 0, cx, cy, size)
+      const tone: Rgb = i % 3 ? [255, 250, 235] : [50, 10, 0]
+      cell.addColorStop(0, rgba(tone, (i % 3 ? 0.16 : 0.1) * detail)); cell.addColorStop(1, rgba(tone, 0))
+      ctx.fillStyle = cell; circle(ctx, cx, cy, size); ctx.fill()
+    }
+    ctx.restore()
+    ctx.lineWidth = 1.2
+    for (let i = 0; i < 4; i++) {
+      const a = rand() * TAU + turn, size = r * (0.07 + rand() * 0.07)
+      ctx.strokeStyle = rgba(mix(color, [255, 255, 255], 0.35), detail * (0.35 + 0.3 * Math.sin(t * 0.0013 + i * 1.9)))
+      ctx.beginPath(); ctx.ellipse(x + Math.cos(a) * r, y + Math.sin(a) * r, size, size * 0.55, a, 0, TAU); ctx.stroke()
+    }
+  }
   return r + 2
 }
 
