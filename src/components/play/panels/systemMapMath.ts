@@ -21,5 +21,8 @@ export function stepToward(pos: Point, dest: Point, dtMs: number, remainingMs: n
   return { x: pos.x + (dest.x - pos.x) * k, y: pos.y + (dest.y - pos.y) * k }
 }
 
+/** "0.045", "0.83", "5.2", "83": two digits below 1 AU, one decimal below 10, whole AU above. */
+export const formatAU = (au: number) => (Math.abs(au) >= 10 ? au.toFixed(0) : Math.abs(au) >= 1 ? au.toFixed(1) : String(Number(au.toPrecision(2))))
+
 /** "50s", "2m 10s". */
 export const formatSecs = (secs: number) => (secs >= 60 ? `${Math.floor(secs / 60)}m ${secs % 60}s` : `${secs}s`)

@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
-import { edgePoint, formatSecs, stepToward } from './systemMapMath'
+import { edgePoint, formatAU, formatSecs, stepToward } from './systemMapMath'
+import { starRadiusAU } from './systemMapBodies'
 
 const center = { x: 100, y: 100 }
 
@@ -29,4 +30,14 @@ test('the ship moves at a steady rate and holds at the destination when late', (
 test('formatSecs', () => {
   expect(formatSecs(50)).toBe('50s')
   expect(formatSecs(130)).toBe('2m 10s')
+})
+
+test('distances keep two digits below 1 AU', () => {
+  expect([0.0154, 0.83, 5.23, 83.3].map(formatAU)).toEqual(['0.015', '0.83', '5.2', '83'])
+})
+
+test('a supergiant is AU wide, a dwarf is not, a compact star has no disc', () => {
+  expect(starRadiusAU('M2Ib')).toBeCloseTo(2.325)
+  expect(starRadiusAU('G2V')).toBeCloseTo(0.00465)
+  expect(starRadiusAU('BH')).toBe(0)
 })

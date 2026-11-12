@@ -48,6 +48,7 @@ import { shortcutKey } from './shortcuts'
 import { titleCase as formatLabel } from '@/lib/format'
 import styles from './LeftSidebar.module.css'
 import { depositTitle, rateRichness } from './richness'
+import { formatAU } from './panels/systemMapMath'
 import { getItem, getShip, type RawCatalogItem } from '@/data/catalog'
 import { errorMessage, Modal, shared } from './shared'
 import { useFittedModules, useStationServices } from './hooks/useGates'
@@ -881,7 +882,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                         {p.position && (
                           <div className={styles.poiDetailRow}>
                             <span className={styles.poiDetailLabel}>Position</span>
-                            <span>{p.position.x?.toFixed(1)}, {p.position.y?.toFixed(1)} AU</span>
+                            <span>{formatAU(p.position.x ?? 0)}, {formatAU(p.position.y ?? 0)} AU</span>
                           </div>
                         )}
                         {(p.ship_count ?? 0) > 0 && (

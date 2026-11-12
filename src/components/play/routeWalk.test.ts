@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import type { RouteStep } from '@spacemolt/lib'
 import type { AccountStore, RunMutation } from '@/lib/spacemolt'
-import { jumpEstimateMs, jumpTarget, travelSpeed, walkRoute } from './routeWalk'
+import { chargedAU, jumpEstimateMs, jumpTarget, reachAU, travelEstimateMs, travelSpeed, walkRoute } from './routeWalk'
 
 const route: RouteStep[] = [
   { system_id: 'a', name: 'A', jumps: 0 },
@@ -90,4 +90,11 @@ describe('travel estimates', () => {
     expect(travelSpeed({ speed: 4 })).toBe(4)
     expect(travelSpeed(null)).toBe(1)
   })
+})
+
+it('a long in-system trip is charged sqrt(4 x AU), as the server does', () => {
+  expect([2, 4, 16, 100].map(chargedAU)).toEqual([2, 4, 8, 20])
+  expect([2, 4, 8, 20].map(reachAU)).toEqual([2, 4, 16, 100])
+  expect(travelEstimateMs({ x: 0, y: 0 }, { x: 100, y: 0 }, 2)).toBe(100_000)
+  expect(travelEstimateMs({ x: 0, y: 0 }, { x: 0.01, y: 0 }, 2)).toBe(10_000)
 })

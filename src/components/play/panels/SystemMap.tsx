@@ -17,14 +17,14 @@ import { getItem } from '@/data/catalog'
 import { titleCase as formatLabel } from '@/lib/format'
 import { depositKind, DepositIcon, DepositRating } from '../LeftSidebar'
 import { depositTitle } from '../richness'
-import { travelEstimateMs, travelSpeed } from '../routeWalk'
+import { reachAU, travelEstimateMs, travelSpeed } from '../routeWalk'
 import { useTransitClock } from '../TravelProgress'
 import sidebar from '../LeftSidebar.module.css'
 import shared from '../shared.module.css'
 import galaxy from './GalaxyPanel.module.css'
 import styles from './SystemMap.module.css'
 import { circle, classLabel, COLOR, drawnBySpecial, drawPoi, drawSystemSpecial, KIND_COLOR, poiColor, seeded, TAU, type Poi } from './systemMapBodies'
-import { edgePoint, formatSecs, stepToward, type Point } from './systemMapMath'
+import { edgePoint, formatAU, formatSecs, stepToward, type Point } from './systemMapMath'
 
 type IntelPoi = NonNullable<FactionQueryIntelResponse['entries'][number]['pois']>[number]
 interface Deposit { id: string; name: string; richness: number; remaining?: number; capacity?: number }
@@ -38,6 +38,9 @@ interface SystemMapProps {
 }
 
 const MONO = '"JetBrains Mono", monospace'
+/** The least and most AU from the center of the view to its nearer edge. */
+const MIN_VIEW_AU = 0.01
+const MAX_VIEW_AU = 400
 const point = (p: Poi | undefined): Point | undefined => (p ? { x: p.position?.x ?? 0, y: p.position?.y ?? 0 } : undefined)
 const isRing = (p: Poi) => p.type === 'asteroid_belt' || p.type === 'ice_field'
 interface Rock { atSpot: boolean; angle: number; offset: number; size: number; alpha: number }
@@ -48,7 +51,7 @@ function rocks(p: Poi): Rock[] {
   const { x, y } = point(p)!
   return Array.from({ length: 520 }, (_, i) => {
     const atSpot = i % 5 < 2
-    return { atSpot, angle: atSpot ? Math.atan2(y, x) + gauss() * 0.3 : rand() * TAU, offset: gauss() * 0.17, size: 0.5 + rand() * 1.1, alpha: 0.25 + rand() * 0.6 }
+    return { atSpot, angle: atSpot ? Math.atan2(y, x) + gauss() * 0.3 : rand() * TAU, offset: gauss() * 0.05, size: 0.5 + rand() * 1.1, alpha: 0.25 + rand() * 0.6 }
   })
 }
 
@@ -228,11 +231,11 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
       const cy = H / 2
       const R = Math.max(40, Math.min(W, H) / 2 - 30)
       if (view.fit || !view.target) {
-        view.target = Math.max(1, ...d.pois.map((p) => Math.hypot((p.position?.x ?? 0) - s.x, (p.position?.y ?? 0) - s.y))) * 1.1
+        view.target = Math.max(MIN_VIEW_AU, ...d.pois.map((p) => Math.hypot((p.position?.x ?? 0) - s.x, (p.position?.y ?? 0) - s.y))) * 1.1
         view.fit = false
         if (!view.radius) view.radius = view.target
       }
-      view.target = Math.max(0.3, Math.min(80, view.target))
+      view.target = Math.max(MIN_VIEW_AU, Math.min(MAX_VIEW_AU, view.target))
       view.radius += (view.target - view.radius) * (reduced ? 1 : 0.12)
       const z = R / view.radius
       const project = (p: Point): Point => ({ x: cx + (p.x - s.x) * z, y: cy + (p.y - s.y) * z })
@@ -256,7 +259,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
         ctx.fillStyle = poiColor(p)
         for (const rock of belts.get(p.id)!) {
           const angle = rock.angle + (reduced || rock.atSpot ? 0 : now * 0.000012)
-          const r = Math.max(0.05, orbit + rock.offset)
+          const r = orbit * (1 + rock.offset)
           const q = project({ x: Math.cos(angle) * r, y: Math.sin(angle) * r })
           if (q.x < 0 || q.y < 0 || q.x > W || q.y > H) continue
           ctx.globalAlpha = rock.alpha * (rock.atSpot ? 0.95 : 0.55)
@@ -272,7 +275,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
       if (d.showRings && !dest) {
         const tickSecs = d.tickMs / 1000
         for (const ticks of [1, 2, 4, 8, 16, 32, 64]) {
-          const r = ticks * d.speed * z
+          const r = reachAU(ticks * d.speed) * z
           if (r < 28 || r > Math.hypot(W, H) / 2) continue
           ctx.strokeStyle = 'rgba(0,212,255,0.24)'; ctx.lineWidth = 1; ctx.setLineDash([3, 5]); circle(ctx, cx, cy, r); ctx.stroke(); ctx.setLineDash([])
           const ly = cy - r > 16 ? cy - r : cy + r < H - 16 ? cy + r : null
@@ -302,7 +305,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
         }
         nodes.set(p.id, screen)
         const lit = unit(screen.x - star.x, screen.y - star.y)
-        const r = drawPoi(ctx, drawnBySpecial(d.systemId, p) ? { ...p, type: 'marker' } : p, screen.x, screen.y, lit, t)
+        const r = drawPoi(ctx, drawnBySpecial(d.systemId, p) ? { ...p, type: 'marker' } : p, screen.x, screen.y, lit, t, z)
         // A plain star at the center needs no name. A black hole or a companion star does.
         if (p.type === 'sun' && classLabel(p)?.includes('·') && !world.x && !world.y) continue
         const here = Math.hypot(screen.x - cx, screen.y - cy) < 4
@@ -426,7 +429,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
             {hoverPoi?.base_name && <><dt>Station</dt><dd>{hoverPoi.base_name}</dd></>}
             {hoverPoi && !isHere && travelSecs !== undefined && from && (
               <>
-                <dt>Distance</dt><dd>{Math.hypot(point(hoverPoi)!.x - from.x, point(hoverPoi)!.y - from.y).toFixed(1)} AU</dd>
+                <dt>Distance</dt><dd>{formatAU(Math.hypot(point(hoverPoi)!.x - from.x, point(hoverPoi)!.y - from.y))} AU</dd>
                 <dt>Travel</dt><dd>{formatSecs(travelSecs)}</dd>
               </>
             )}
