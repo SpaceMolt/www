@@ -30,7 +30,11 @@ const best = (levels: Level[], pick: (a: number, b: number) => number) =>
  */
 export function mergeLiveBook(items: MarketItem[], book: MarketBook | null): MarketItem[] {
   if (!book) return items
-  const merged = items.map((item) => {
+  const known = new Set(items.map((i) => i.item_id))
+  const added = [...book.items.values()]
+    .filter((live) => !known.has(live.item_id) && (live.buy_orders.length > 0 || live.sell_orders.length > 0))
+    .map((live) => emptyMarketItem(live.item_id, live.item_name ?? live.item_id, live.category ?? 'other'))
+  return [...items, ...added].map((item) => {
     const live = book.items.get(item.item_id)
     if (!live) return item
     const buy_orders = withMine(live.buy_orders, item.buy_orders)
@@ -48,11 +52,6 @@ export function mergeLiveBook(items: MarketItem[], book: MarketBook | null): Mar
       spread: bid && ask ? ask.price_each - bid.price_each : undefined,
     }
   })
-  const known = new Set(items.map((i) => i.item_id))
-  const added = [...book.items.values()]
-    .filter((live) => !known.has(live.item_id) && (live.buy_orders.length > 0 || live.sell_orders.length > 0))
-    .map((live) => mergeLiveBook([emptyMarketItem(live.item_id, live.item_name ?? live.item_id, live.category ?? 'other')], book)[0])
-  return [...merged, ...added]
 }
 
 type BulkResult = { success: boolean; error?: string }

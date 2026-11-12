@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { Recipe } from '../types'
-import { combineItems, isRecyclable, maxCraftable, missingFromCargo, runsFor } from './craftPlan'
+import { buyPlan, combineItems, isRecyclable, maxCraftable, missingFromCargo, runsFor } from './craftPlan'
 
 const recipe: Recipe = {
   id: 'steel_plate',
@@ -28,6 +28,20 @@ describe('craftPlan', () => {
     const cargo = [{ item_id: 'iron_ore', quantity: 3 }]
     expect(missingFromCargo(recipe, 3, storage, cargo)).toEqual([{ item_id: 'iron_ore', quantity: 3 }])
     expect(missingFromCargo(recipe, 1, storage, cargo)).toEqual([])
+  })
+
+  test('buyPlan buys only the shortfall, cheapest asks first, skipping own orders', () => {
+    const held = [{ item_id: 'iron_ore', quantity: 2 }, { item_id: 'carbon', quantity: 5 }]
+    const asks = (id: string) => (id === 'iron_ore'
+      ? [{ price_each: 9, quantity: 10 }, { price_each: 5, quantity: 3, my_quantity: 1 }]
+      : [])
+    // 2 runs need 6 ore: buy 4 = 2 at 5 (one of the 3 is ours) + 2 at 9.
+    expect(buyPlan(recipe, 2, held, asks)).toEqual([{ item_id: 'iron_ore', quantity: 4, cost: 28, short: 0 }])
+    // 6 runs also need 1 carbon, which nobody sells here.
+    expect(buyPlan(recipe, 6, held, asks)).toEqual([
+      { item_id: 'iron_ore', quantity: 16, cost: 100, short: 4 },
+      { item_id: 'carbon', quantity: 1, cost: 0, short: 1 },
+    ])
   })
 
   test('combineItems sums by id', () => {

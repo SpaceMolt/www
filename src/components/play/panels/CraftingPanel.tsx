@@ -2,9 +2,9 @@
 
 import { useState, useCallback, useMemo } from 'react'
 import {
-  Hammer, RefreshCw, AlertTriangle, Lock, Check, ChevronDown, ChevronRight,
-  Search, Filter, Clock, RotateCcw, Trash2, Coins, Calculator, Package, Factory,
-  ArrowDownToLine, ListPlus, X,
+  Hammer, RefreshCw, AlertTriangle, Check, ChevronDown, ChevronRight,
+  Search, Clock, RotateCcw, Trash2, Coins, Calculator, Package, Factory,
+  ArrowDownToLine, ListPlus, X, ShoppingCart,
 } from 'lucide-react'
 import type {
   BulkCraftResponse,
@@ -14,7 +14,7 @@ import type {
   FacilityResponse,
   StorageResponse,
 } from '@spacemolt/lib'
-import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useCurrentTick, useLocationState, useSkills } from '@/lib/spacemolt'
+import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useCurrentTick, useLocationState, useMarket, usePlayer } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
 import { ProgressBar } from '../ProgressBar'
@@ -23,10 +23,11 @@ import { BugReportButton } from '../BugReportButton'
 import { buildRecipeContext } from '../bugReportContext'
 import type { Recipe, CraftJobView, CraftQuote, Facility } from '../types'
 import { recipesById, formatItemId } from '@/data/catalog'
-import { titleCase } from '@/lib/format'
-import { canCraftRecipe, availableQuantity, type SkillEntry } from '@/lib/crafting'
+import { hasImage, imageUrl } from '@/data/images'
+import { canCraftRecipe, availableQuantity } from '@/lib/crafting'
 import { estimateJobProgress } from './craftProgress'
-import { combineItems, isRecyclable, maxCraftable, missingFromCargo, runsFor } from './craftPlan'
+import { buyPlan, combineItems, isRecyclable, maxCraftable, missingFromCargo, runsFor, type BuyLine } from './craftPlan'
+import { mergeLiveBook } from './trading/tradingLogic'
 import { FacilityVenuePicker } from './facilities/FacilityVenuePicker'
 import { useFactionPermissions, useStationServices } from '../hooks/useGates'
 import styles from './CraftingPanel.module.css'
@@ -58,12 +59,15 @@ export function CraftingPanel() {
   const services = useStationServices()
   const canCraft = services.includes('crafting')
   const hasStorage = services.includes('storage')
+  // Buy & craft buys missing inputs into storage, so it needs all three services.
+  const canBuy = canCraft && hasStorage && services.includes('market')
+  const credits = usePlayer()?.credits ?? 0
   // Crafting with or into faction storage needs manage_treasury (gameserver crafting.go).
   const canUseFactionStore = useFactionPermissions({ enabled: isDocked }).can('manage_treasury')
 
   const [busyId, setBusyId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [filter, setFilter] = useState<'all' | 'craftable'>('all')
+  const [filter, setFilter] = useState<'all' | 'craftable' | 'buyable'>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
@@ -131,15 +135,18 @@ export function CraftingPanel() {
   const cargoItems = useMemo(() => cargo ?? [], [cargo])
   const heldItems = useMemo(() => combineItems(storageItems, cargoItems), [storageItems, cargoItems])
 
-  const skillsRaw = useSkills()
-  const skillsMap = useMemo(() => {
-    if (!skillsRaw) return undefined
-    const result: Record<string, SkillEntry> = {}
-    for (const [id, s] of Object.entries(skillsRaw)) {
-      result[id] = { level: s.level ?? 0, xp: s.xp ?? 0, next_level_xp: s.next_level_xp ?? 0 }
-    }
-    return result
-  }, [skillsRaw])
+  // Local sell orders: the asks a Buy & craft fills from. The snapshot gives
+  // our own order quantities; the live book keeps prices current.
+  const liveBook = useMarket()
+  const { data: marketSnapshot, refetch: refetchMarket } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_market.view_market({})).structuredContent,
+    [dockedAt],
+    { enabled: canBuy },
+  )
+  const asksFor = useMemo(() => {
+    const byId = new Map(mergeLiveBook(marketSnapshot?.items ?? [], liveBook).map((i) => [i.item_id, i.sell_orders]))
+    return (itemId: string) => byId.get(itemId) ?? []
+  }, [marketSnapshot, liveBook])
 
   // The job queue: `craft` with no recipe is a read on the server, so send it
   // as a query (no action slot) and re-read on every crafting_update push.
@@ -205,6 +212,31 @@ export function CraftingPanel() {
     }
     setBusyId(null)
   }, [getQty, storageItems, cargoItems, mutate, toast, reportError])
+
+  // Move any cargo inputs to storage, buy the rest into storage (one buy per
+  // item, at the full quantity), then queue the craft. A short fill stops it
+  // before the craft, so no job queues without its inputs.
+  const handleBuyAndCraft = useCallback(async (recipe: Recipe) => {
+    const runs = runsFor(recipe, getQty(recipe.id))
+    const deposit = missingFromCargo(recipe, runs, storageItems, cargoItems)
+    const lines = buyPlan(recipe, runs, heldItems, asksFor)
+    setBusyId(recipe.id)
+    try {
+      if (deposit.length > 0) await mutate((c) => c.spacemolt_storage.deposit({ items: deposit }), { label: 'deposit' })
+      for (const { item_id, quantity } of lines) {
+        const { delta } = await mutate((c) => c.spacemolt.buy({ id: item_id, quantity, deliver_to: 'storage' }), { label: 'buy' })
+        const bought = delta.details?.quantity ?? 0
+        if (bought < quantity) throw new Error(`Bought only ${bought} of ${quantity} ${formatItemId(item_id)}. Craft not queued; earlier purchases are in storage.`)
+      }
+    } catch (err) {
+      reportError(err)
+      setBusyId(null)
+      return
+    } finally {
+      refetchMarket()
+    }
+    await handleCraft(recipe.id, 'craft')
+  }, [getQty, storageItems, cargoItems, heldItems, asksFor, mutate, reportError, refetchMarket, handleCraft])
 
   const handleQueueBatch = useCallback(async () => {
     setBusyId('batch')
@@ -274,17 +306,21 @@ export function CraftingPanel() {
   // Filter, group by category, sort
   const groupedRecipes = useMemo(() => {
     const search = searchQuery.toLowerCase().trim()
-    const withStatus = recipes.map((recipe) => ({
-      recipe,
-      ...canCraftRecipe(recipe, skillsMap, storageItems),
-    }))
+    const withStatus = recipes.map((recipe) => {
+      const status = canCraftRecipe(recipe, storageItems)
+      // One run's shortfall against storage + cargo, priced on the local book.
+      const plan = canBuy && !status.craftable ? buyPlan(recipe, 1, heldItems, asksFor) : []
+      const buyCost = sumCost(plan)
+      const buyable = status.craftable || (canBuy && isFillable(plan) && buyCost <= credits)
+      return { recipe, ...status, buyable, buyCost }
+    })
 
     let filtered = withStatus
     if (categoryFilter !== 'all') {
       filtered = filtered.filter((r) => r.recipe.category === categoryFilter)
     }
-    if (filter === 'craftable') {
-      filtered = filtered.filter((r) => r.craftable)
+    if (filter !== 'all') {
+      filtered = filtered.filter((r) => r[filter])
     }
     if (search) {
       filtered = filtered.filter((r) =>
@@ -301,11 +337,11 @@ export function CraftingPanel() {
       )
     }
 
-    // Sort: craftable first, then alphabetical
-    filtered.sort((a, b) => {
-      if (a.craftable !== b.craftable) return a.craftable ? -1 : 1
-      return a.recipe.name.localeCompare(b.recipe.name)
-    })
+    // Sort: craftable, then craftable with a purchase, then alphabetical
+    filtered.sort((a, b) =>
+      Number(b.craftable) - Number(a.craftable) ||
+      Number(b.buyable) - Number(a.buyable) ||
+      a.recipe.name.localeCompare(b.recipe.name))
 
     // Group by category
     const groups: Record<string, typeof filtered> = {}
@@ -316,7 +352,7 @@ export function CraftingPanel() {
     }
 
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
-  }, [recipes, skillsMap, storageItems, filter, categoryFilter, searchQuery])
+  }, [recipes, storageItems, heldItems, asksFor, canBuy, credits, filter, categoryFilter, searchQuery])
 
   const toggleCategory = useCallback((cat: string) => {
     setCollapsedCategories(prev => {
@@ -471,7 +507,7 @@ export function CraftingPanel() {
         {isDocked && (
           <div className={styles.filterBar}>
             <select
-              className={styles.categoryDropdown}
+              className={styles.select}
               value={preset}
               onChange={(e) => setPreset(e.target.value as Preset)}
               aria-label="Venue preset"
@@ -483,7 +519,7 @@ export function CraftingPanel() {
               <option value="workshop">Route: workshop only</option>
             </select>
             <select
-              className={styles.categoryDropdown}
+              className={styles.select}
               value={source}
               onChange={(e) => setSource(e.target.value as Store)}
               aria-label="Input source"
@@ -493,7 +529,7 @@ export function CraftingPanel() {
               {canUseFactionStore && <option value="faction">Inputs: faction storage</option>}
             </select>
             <select
-              className={styles.categoryDropdown}
+              className={styles.select}
               value={deliverTo}
               onChange={(e) => setDeliverTo(e.target.value as Store)}
               aria-label="Output destination"
@@ -518,20 +554,17 @@ export function CraftingPanel() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className={styles.categorySelect}>
-              <Filter size={10} className={styles.categorySelectIcon} />
-              <select
-                className={styles.categoryDropdown}
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                aria-label="Filter by category"
-              >
-                <option value="all">All Categories</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
+            <select
+              className={styles.select}
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              aria-label="Filter by category"
+            >
+              <option value="all">All categories</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
             <div className={styles.filterRow}>
               <button
                 className={`${styles.filterBtn} ${filter === 'all' ? styles.filterBtnActive : ''}`}
@@ -547,13 +580,23 @@ export function CraftingPanel() {
               >
                 <Check size={10} /> Craftable
               </button>
+              {canBuy && (
+                <button
+                  className={`${styles.filterBtn} ${filter === 'buyable' ? styles.filterBtnActive : ''}`}
+                  onClick={() => setFilter('buyable')}
+                  type="button"
+                  title="Craftable now, or after you buy the missing inputs here (one run, within your credits)"
+                >
+                  <ShoppingCart size={10} /> With purchase
+                </button>
+              )}
             </div>
           </div>
         )}
 
         {groupedRecipes.length === 0 && (
           <div className={shared.emptyState}>
-            {searchQuery || filter === 'craftable' || categoryFilter !== 'all'
+            {searchQuery || filter !== 'all' || categoryFilter !== 'all'
               ? 'No recipes match your filters.'
               : 'No recipes available.'}
           </div>
@@ -563,6 +606,7 @@ export function CraftingPanel() {
         {groupedRecipes.map(([category, items]) => {
           const isCollapsed = collapsedCategories.has(category)
           const craftableCount = items.filter(r => r.craftable).length
+          const buyableCount = items.filter(r => r.buyable && !r.craftable).length
           return (
             <div key={category} className={styles.categoryGroup}>
               <button
@@ -574,24 +618,29 @@ export function CraftingPanel() {
                 <span className={styles.categoryName}>{category}</span>
                 <span className={styles.categoryCount}>
                   {craftableCount > 0 && <span className={styles.craftableCount}>{craftableCount} craftable</span>}
+                  {buyableCount > 0 && <span className={styles.buyableCount}>{buyableCount} with purchase</span>}
                   {items.length}
                 </span>
               </button>
 
               {!isCollapsed && (
                 <div className={styles.recipeGrid}>
-                  {items.map(({ recipe, craftable, reasons }) => {
+                  {items.map(({ recipe, craftable, reasons, buyable, buyCost }) => {
                     const isExpanded = expandedId === recipe.id
                     const qty = getQty(recipe.id)
                     const quote = quotes[recipe.id]
                     const busy = busyId === recipe.id
                     // MAX plans with cargo too: "Move inputs from cargo" deposits the gap before crafting.
                     const maxQty = isExpanded ? Math.max(1, maxCraftable(recipe, heldItems)) : 1
-                    const missing = isExpanded ? missingFromCargo(recipe, runsFor(recipe, qty), storageItems, cargoItems) : []
+                    const runs = runsFor(recipe, qty)
+                    const missing = isExpanded ? missingFromCargo(recipe, runs, storageItems, cargoItems) : []
+                    const plan = isExpanded && canBuy ? buyPlan(recipe, runs, heldItems, asksFor) : []
+                    const planCost = sumCost(plan)
+                    const cardClass = craftable ? styles.recipeCardCraftable : buyable ? styles.recipeCardBuyable : styles.recipeCardLocked
                     return (
                       <div
                         key={recipe.id}
-                        className={`${styles.recipeCard} ${craftable ? styles.recipeCardCraftable : styles.recipeCardLocked}`}
+                        className={cardClass}
                       >
                         {/* header is a div, not a button: BugReportButton renders
                             a <button> and buttons cannot nest */}
@@ -604,8 +653,12 @@ export function CraftingPanel() {
                           >
                             <div className={styles.recipeCardTitle}>
                               {isExpanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                              <ItemIcon itemId={recipe.outputs?.[0]?.item_id ?? recipe.id} size={28} />
                               <span className={styles.recipeName}>{recipe.name}</span>
                             </div>
+                            {craftable
+                              ? <span className={styles.badgeReady}><Check size={10} /> Ready</span>
+                              : buyable && <span className={styles.badgeBuy}><ShoppingCart size={10} /> ~{buyCost.toLocaleString()} cr</span>}
                           </button>
                           <BugReportButton contextType="recipe" entityName={recipe.name} entityContext={buildRecipeContext(recipe)} />
                         </div>
@@ -615,63 +668,47 @@ export function CraftingPanel() {
                             {recipe.description && (
                               <div className={styles.recipeDesc}>{recipe.description}</div>
                             )}
-                            <div className={styles.recipeRow}>
-                              <span className={styles.recipeLabel}>In:</span>
-                              <span className={styles.recipeInputs}>
-                                {(recipe.inputs ?? []).map((i) => {
-                                  const name = formatItemId(i.item_id)
-                                  // The server takes inputs from station storage only (crafting.go craftStoreRef);
-                                  // cargo counts once "Move inputs from cargo" deposits it.
-                                  const have = availableQuantity(i.item_id, storageItems)
-                                  const inCargo = availableQuantity(i.item_id, cargoItems)
-                                  const enough = have >= i.quantity
-                                  return (
-                                    <span key={i.item_id} className={enough ? styles.inputOk : styles.inputMissing}>
-                                      {name} x{i.quantity}{(!enough || inCargo > 0) && ` (${have} in storage${inCargo > 0 ? `, ${inCargo} in cargo` : ''})`}
+                            <div className={styles.ioLabel}>Inputs for {runs} run{runs === 1 ? '' : 's'}</div>
+                            <div className={styles.ioList}>
+                              {(recipe.inputs ?? []).map((i) => {
+                                // The server takes inputs from station storage only (crafting.go craftStoreRef);
+                                // cargo counts once it is deposited.
+                                const need = i.quantity * runs
+                                const have = availableQuantity(i.item_id, storageItems)
+                                const inCargo = availableQuantity(i.item_id, cargoItems)
+                                const line = plan.find((l) => l.item_id === i.item_id)
+                                const showCargo = inCargo > 0 && have < need
+                                return (
+                                  <div key={i.item_id} className={styles.ioRow}>
+                                    <ItemIcon itemId={i.item_id} />
+                                    <span className={styles.ioName}>{formatItemId(i.item_id)}</span>
+                                    <span className={styles.ioBar}>
+                                      <ProgressBar value={have} max={need} size="sm" showText={false} color={have >= need ? 'green' : 'orange'} />
                                     </span>
-                                  )
-                                })}
-                                {(recipe.inputs ?? []).length === 0 && 'None'}
-                              </span>
+                                    <span className={have >= need ? styles.inputOk : styles.inputMissing}>
+                                      {have.toLocaleString()}/{need.toLocaleString()}
+                                    </span>
+                                    {(showCargo || line) && (
+                                      <span className={styles.ioMeta}>
+                                        {showCargo && <span className={styles.ioNote}>+{inCargo.toLocaleString()} in cargo</span>}
+                                        {line && <span className={line.short ? styles.inputMissing : styles.ioBuy}>{marketNote(line)}</span>}
+                                      </span>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                              {(recipe.inputs ?? []).length === 0 && <span className={styles.ioNote}>None</span>}
                             </div>
-                            <div className={styles.recipeRow}>
-                              <span className={styles.recipeLabel}>Out:</span>
-                              <span className={styles.recipeOutputs}>
-                                {(recipe.outputs ?? []).map((o) => {
-                                  const name = formatItemId(o.item_id)
-                                  return `${name} x${o.quantity}`
-                                }).join(', ') || 'None'}
-                              </span>
+                            <div className={styles.ioLabel}>Output</div>
+                            <div className={styles.ioList}>
+                              {(recipe.outputs ?? []).map((o) => (
+                                <div key={o.item_id} className={styles.ioRow}>
+                                  <ItemIcon itemId={o.item_id} />
+                                  <span className={`${styles.ioName} ${styles.recipeOutputs}`}>{formatItemId(o.item_id)}</span>
+                                  <span className={`${styles.ioQty} ${styles.recipeOutputs}`}>x{(o.quantity * runs).toLocaleString()}</span>
+                                </div>
+                              ))}
                             </div>
-                            {recipe.required_skills && Object.keys(recipe.required_skills).length > 0 && (
-                              <div className={styles.recipeRow}>
-                                <span className={styles.recipeLabel}>Skills:</span>
-                                <span className={styles.recipeSkills}>
-                                  {Object.entries(recipe.required_skills)
-                                    .map(([skill, level]) => {
-                                      const name = titleCase(skill)
-                                      const have = skillsMap?.[skill]?.level ?? 0
-                                      const met = have >= (level as number)
-                                      return (
-                                        <span key={skill} className={met ? styles.skillMet : styles.skillUnmet}>
-                                          {name} Lv{level as number}{!met && ` (have ${have})`}
-                                        </span>
-                                      )
-                                    })}
-                                </span>
-                              </div>
-                            )}
-                            {!craftable && reasons.length > 0 && (
-                              <div className={styles.reasonsList}>
-                                <Lock size={10} />
-                                {reasons.map((r, i) => (
-                                  <span key={i} className={styles.reasonItem}>{r}</span>
-                                ))}
-                                {missing.length > 0 && (
-                                  <span className={styles.reasonItem}>Crafting uses station storage: press &quot;Move inputs from cargo&quot; first.</span>
-                                )}
-                              </div>
-                            )}
 
                             {/* Quote result */}
                             {quote && ('error' in quote ? (
@@ -781,6 +818,16 @@ export function CraftingPanel() {
                                   size="sm"
                                 />
                               )}
+                              {plan.length > 0 && isFillable(plan) && (
+                                <ActionButton
+                                  label={`Buy & craft · ~${planCost.toLocaleString()} cr`}
+                                  icon={<ShoppingCart size={12} />}
+                                  onClick={() => handleBuyAndCraft(recipe)}
+                                  disabled={busy || planCost > credits}
+                                  loading={busy}
+                                  size="sm"
+                                />
+                              )}
                               {canCraft && (
                                 <ActionButton
                                   label="Craft"
@@ -832,6 +879,23 @@ export function CraftingPanel() {
         )}
     </Panel>
   )
+}
+
+/** Market status of one missing input. */
+const marketNote = ({ quantity, cost, short }: BuyLine) =>
+  short === quantity ? 'not sold here'
+    : short > 0 ? `only ${(quantity - short).toLocaleString()} for sale`
+      : `buy ${quantity.toLocaleString()} · ~${cost.toLocaleString()} cr`
+
+const sumCost = (plan: BuyLine[]) => plan.reduce((sum, l) => sum + l.cost, 0)
+const isFillable = (plan: BuyLine[]) => plan.every((l) => l.short === 0)
+
+/** Codex art for an item, or a crate icon when the item has none. */
+function ItemIcon({ itemId, size = 20 }: { itemId: string; size?: number }) {
+  const path = `items/${itemId}.webp`
+  return hasImage(path)
+    ? <img src={imageUrl(path)} alt="" width={size} height={size} loading="lazy" className={styles.itemIcon} />
+    : <span className={styles.itemIconFallback} style={{ width: size, height: size }}><Package size={Math.round(size * 0.6)} /></span>
 }
 
 interface FacilityLists {

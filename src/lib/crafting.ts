@@ -1,21 +1,14 @@
 import type { Recipe } from '@/components/play/types'
 import { formatItemId } from '@/data/catalog'
-import { titleCase } from '@/lib/format'
 
 export interface ItemQty {
   item_id: string
   quantity: number
 }
 
-export interface SkillEntry {
-  level: number
-  xp: number
-  next_level_xp: number
-}
-
 /**
- * Decide whether a recipe is craftable given the player's skills and the
- * inventory the gameserver will draw from on a `craft` command.
+ * Decide whether a recipe is craftable given the inventory the gameserver
+ * will draw from on a `craft` command. Recipes have no skill requirements.
  *
  * Crafting is now station-storage-centric: the gameserver escrows a recipe's
  * inputs from the player's STATION STORAGE at the docked base (not ship cargo)
@@ -31,21 +24,9 @@ export interface SkillEntry {
  */
 export function canCraftRecipe(
   recipe: Recipe,
-  skills: Record<string, SkillEntry> | undefined,
   storageItems?: ItemQty[] | null,
 ): { craftable: boolean; reasons: string[] } {
   const reasons: string[] = []
-
-  // Check skills
-  if (recipe.required_skills && Object.keys(recipe.required_skills).length > 0) {
-    for (const [skillId, reqLevel] of Object.entries(recipe.required_skills)) {
-      const playerLevel = skills?.[skillId]?.level ?? 0
-      if (playerLevel < (reqLevel as number)) {
-        const name = titleCase(skillId)
-        reasons.push(`Need ${name} Lv${reqLevel} (have ${playerLevel})`)
-      }
-    }
-  }
 
   // Check materials against station storage (the pool the gameserver consumes).
   for (const input of recipe.inputs ?? []) {
