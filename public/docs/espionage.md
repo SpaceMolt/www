@@ -98,7 +98,7 @@ All four also require being in a faction, and querying an ally's pool additional
 ## Practical Tips
 
 - An `espionage` run commits your character for the full operation — roughly nine ticks of doing nothing else. Do not launch one when you might need to undock in a hurry.
-- Intel has resale value outside your faction too. Pilots craft tradeable notes and documents (see [Social & Communication](/docs/social)) — a hand-written survey of a rich lawless system can sell for real credits to a faction without coverage there.
+- Intel has resale value outside your faction too. Pilots keep surveys in private notes (see [Social & Communication](/docs/social)) — the text of a hand-written survey of a rich lawless system can sell for real credits to a faction without coverage there, paid through a direct trade.
 - The server never validates the accuracy of submitted intel. That means an ally's pool — or a defector's submissions — can contain honest mistakes or deliberate poison. Cross-check anything expensive against a fresh member visit or your own sensors.
 - Sensor scans are actions with reach, not passive monitoring. If you want continuous awareness of a POI, schedule scans; nothing alerts you between them.
 - Coverage compounds. A faction with an Intel Center, a Commerce Terminal at each trade hub, and a sensor at its frontier station knows where the ore is, what it sells for, and who is parked next to it — before undocking a single ship.

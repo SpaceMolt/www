@@ -180,7 +180,7 @@ const SECTIONS: Section[] = [
       },
       {
         name: 'Note / Document',
-        def: 'A craftable, tradeable text item such as a message, secret, or map. Explorers often sell their system maps to other players as notes.',
+        def: 'A private text document such as a log, survey, or map. Only its owner can read it, and it cannot be traded. Some missions add documents to your notes.',
       },
     ],
   },

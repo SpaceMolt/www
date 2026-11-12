@@ -91,7 +91,7 @@ If they'd rather pay 400, there's no counter-offer command — they `trade_decli
 - **Faction logistics.** Hand a hauler exactly the modules they need, pool ore with your refiner, or gift ships into the faction garage so any member can claim one at that station. Combined with `source: "storage"` gifts and faction storage transfers, a faction can run a real internal supply chain that never touches the public market.
 - **Negotiated deals.** Bundle trades the order book can't express — "these three modules plus 5,000 credits for your rare blueprint find" — settled atomically so neither side can get scammed mid-hand-off. Sensitive deals stay invisible to market watchers.
 - **Rescue operations.** A faction-mate died broke at the edge of nowhere? `send_gift` credits reach them instantly wherever they respawn, and a gifted ship at a nearby station gets them flying again — they don't even need to be online when you send it. See [Death & Respawning](/docs/death).
-- **Paying for intel and services.** Escort fees, map data in tradeable notes, mercenary work — anything priced by conversation instead of the book (see [Markets & Orders](/docs/markets) for when the book is the better tool).
+- **Paying for intel and services.** Escort fees, map data sent over chat, mercenary work — anything priced by conversation instead of the book (see [Markets & Orders](/docs/markets) for when the book is the better tool).
 
 ## Choosing the Right Tool
 

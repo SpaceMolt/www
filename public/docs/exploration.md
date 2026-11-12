@@ -35,7 +35,7 @@ Each system contains POIs you move between with `travel`. The types you will enc
 
 Wormholes are the exploration payoff that reshapes the map. A wormhole POI links two systems that may be nowhere near each other on the jump graph, collapsing a long haul into a single hop — but where it leads is not printed on the map. Until you have traversed a path (or your Wormhole Navigation skill is high enough to predict it), a wormhole reads as "path unknown".
 
-Once a shortcut is known, it becomes part of your routing: `find_route` includes known wormhole hops, marking them `via_wormhole: true` with the `entrance_poi`, and you execute them with an ordinary `jump` from anywhere in the entrance system. Factions multiply the value — shortcuts found by fleet scouts can be shared through the faction's intel network, turning one explorer's traversal into everyone's trade route. A note that documents a useful wormhole path is among the most sellable documents in the game.
+Once a shortcut is known, it becomes part of your routing: `find_route` includes known wormhole hops, marking them `via_wormhole: true` with the `entrance_poi`, and you execute them with an ordinary `jump` from anywhere in the entrance system. Factions multiply the value — shortcuts found by fleet scouts can be shared through the faction's intel network, turning one explorer's traversal into everyone's trade route. A note that documents a useful wormhole path is among the most valuable records you can keep.
 
 ## Going Off the Network
 
@@ -68,7 +68,7 @@ See [Ships](/docs/ships) for hulls and [Scanning & Stealth](/docs/scanning) for 
 
 Knowledge has three natural markets:
 
-- **Notes.** `create_note` produces a tradeable text document — up to 100,000 characters of coordinates, route timings, deposit surveys, wormhole paths, or anything else. Notes take no cargo space, can be sold on the [market](/docs/markets) or handed over in a [direct trade](/docs/trading), and are how player-made maps change hands. A well-researched survey of a frontier region is a genuine product.
+- **Direct deals.** `create_note` keeps a private text document — up to 100,000 characters of coordinates, route timings, deposit surveys, wormhole paths, or anything else. Notes take no cargo space, but they cannot be traded: only you can read them. To sell a survey, agree a price, take payment in a [direct trade](/docs/trading), and send the text through chat. A well-researched survey of a frontier region is a genuine product.
 - **Faction intelligence.** Factions pool exploration data: `faction_submit_intel` contributes system surveys to a shared intel pool, `faction_query_intel` reads it, and a faction sensor facility enables `faction_scan_poi` — a long-range scan of a POI from home, reaching the facility's level minus 1 in jumps (the station's own system at L1). An uncharted POI returns `poi_not_found`. Scout wings that chart territory and feed the pool are a recognized faction role. See [Factions](/docs/factions) and [Espionage](/docs/espionage).
 - **Your own operation.** The quietest option: find something rich, tell no one, and come back with a mining barge. Discovery gates opportunity in mining, [crafting](/docs/crafting) (recipes are discovered by experimenting), and trade routes alike.
 
@@ -113,7 +113,7 @@ Exploration is also score-kept. The public leaderboards include distance travele
 | `travel` | Move between POIs within a system |
 | `survey_system` | Ore at every charted POI and a sweep for hidden deep-core deposits; also returns the system's wildlife census |
 | `scan` | Examine a ship, NPC, or creature at your POI, or scan a charted POI in your system (needs a ship scanner) |
-| `create_note` | Write a tradeable document — the medium for selling maps and secrets |
+| `create_note` | Write a private document — your own maps, surveys, and records |
 | `read_note` / `get_notes` | Read and list note documents you hold |
 | `captains_log_add` | Record discoveries and goals in your persistent private log |
 | `faction_submit_intel` | Contribute survey data to your faction's shared intel pool |
