@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { AlertTriangle, CircleHelp, Compass, Globe, Keyboard, LockOpen, Orbit, X } from 'lucide-react'
 import { useAccountStore, useCommandMutation, useLocationState, useModules, usePendingAction, usePlayer, useShip } from '@/lib/spacemolt'
 import { bearingArg, PATHFINDER_DRIVE, type DriveControl } from './pathfinder'
+import { useTelescope } from './useTelescope'
 import { useStationServices } from './hooks/useGates'
 import { usePlayUi } from './PlayProvider'
 import { TopBar } from './TopBar'
@@ -223,6 +224,9 @@ export function HUD() {
   // Plot mode ends with the drive: it must not come back on its own after an autopilot run.
   useEffect(() => { if (!hasDrive || pilotBusy) setPlotting(false) }, [hasDrive, pilotBusy])
 
+  const telescope = useTelescope()
+  const sighted = telescope?.rays.filter((r) => !r.pinned) ?? []
+
   const handleBeginTravel = useCallback(() => {
     if (!plannedRoute || !ship) return
     if (loop.isActive) { setTravelGate('confirm'); return }
@@ -294,7 +298,7 @@ export function HUD() {
   if (loop.isActive) badges.autopilot = 1
 
   const galaxy = (
-    <GalaxyPanel ref={galaxyRef} onSystemSelect={handleSystemSelect} plannedRoute={plannedRoute} onPlannedRouteChange={handleRouteEdit} autoTravelProgress={autoTravel.progress} highlightedSystems={highlightedSystems} drive={drive} />
+    <GalaxyPanel ref={galaxyRef} onSystemSelect={handleSystemSelect} plannedRoute={plannedRoute} onPlannedRouteChange={handleRouteEdit} autoTravelProgress={autoTravel.progress} highlightedSystems={highlightedSystems} drive={drive} telescope={telescope} />
   )
 
   // Picking a system or a route in the sidebar is galaxy-map work.
@@ -307,10 +311,11 @@ export function HUD() {
       <div className={`${mapStyles.layer} ${mapView === 'system' ? mapStyles.hidden : ''}`}>{galaxy}</div>
       {mapView === 'system' && (
         <div className={mapStyles.layer}>
-          <SystemMap busy={pilotBusy} onTravel={(id) => navRef.current?.travel(id)} onJump={(id, name) => navRef.current?.jump(id, name)} drive={drive} getSystems={() => galaxyRef.current?.getSystems() ?? []} />
+          <SystemMap busy={pilotBusy} onTravel={(id) => navRef.current?.travel(id)} onJump={(id, name) => navRef.current?.jump(id, name)} drive={drive} telescope={telescope} getSystems={() => galaxyRef.current?.getSystems() ?? []} />
         </div>
       )}
       {plotting && drive && <div className={mapStyles.plotHint} role="status">Pathfinder Drive · click the map to launch (touch: tap to aim, tap again to launch) · Esc cancels · costs 5x the fuel of a jump</div>}
+      {telescope?.on && !plotting && <div className={mapStyles.plotHint} role="status">Telescope · {sighted.length} stars in view · {sighted.filter((r) => r.match).length} matched to a known system · {sighted.filter((r) => r.candidates.length > 1).length} with several candidates · {sighted.filter((r) => !r.candidates.length).length} not on the map{telescope.pins > 0 && ` · ${telescope.pins} pinned readings`}</div>}
       <div className={mapStyles.viewSwitch} role="group" aria-label="Map view">
         <button type="button" aria-pressed={mapView === 'galaxy'} onClick={() => pickMapView('galaxy')}><Globe size={12} /> Galaxy</button>
         <button type="button" aria-pressed={mapView === 'system'} onClick={() => pickMapView('system')}><Orbit size={12} /> System</button>

@@ -44,6 +44,7 @@ import type { GalaxyPanelHandle, MapSystemData, PlannedRoute } from './panels/Ga
 import { findRoute, jumpEstimateMs, travelEstimateMs, travelSpeed } from './routeWalk'
 import { useLoop } from './loop/useLoopRunner'
 import { rememberPois } from './loop/loopPlan'
+import { rememberStars } from './useTelescope'
 import { shortcutKey } from './shortcuts'
 import { titleCase as formatLabel } from '@/lib/format'
 import styles from './LeftSidebar.module.css'
@@ -387,8 +388,9 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   const systemData = systemQuery.data
   const system = systemData && 'system' in systemData ? systemData.system : undefined
 
-  // Remember every visited system's POIs so Autopilot can target them from anywhere.
+  // Remember every visited system's POIs so Autopilot can target them from anywhere, and its suns for the telescope.
   useEffect(() => {
+    if (system) rememberStars(player?.id, system)
     if (system) rememberPois(player?.id, system.pois.map((p) => ({ id: p.id, name: p.base_name || p.name, systemId: system.id, systemName: system.name })))
   }, [system, player?.id])
   const poiData = poiQuery.data

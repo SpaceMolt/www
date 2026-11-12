@@ -7,6 +7,8 @@ import { fixedStations, splitStationRegistry } from '@/lib/stationPresentation'
 import { FRONTIER_COLOR } from '@/lib/frontier'
 import { useAccountStore, useCurrentTick, useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
 import { alongBearing, bearingTo, dropOut, isSameAim, plotLabel, PATHFINDER_SPEED, type DriveControl } from '../pathfinder'
+import type { TelescopeControl } from '../telescope'
+import { TelescopeButtons } from './TelescopeButtons'
 import type { Point } from './systemMapMath'
 import { fractionalTick } from '../tickEstimate'
 import styles from './GalaxyPanel.module.css'
@@ -226,12 +228,14 @@ interface GalaxyPanelProps {
   highlightedSystems?: Set<string> | null
   /** The Pathfinder Drive, when the ship has one fitted. */
   drive?: DriveControl
+  /** The telescope overlay, when the ship has a telescope fitted. */
+  telescope?: TelescopeControl
 }
 
 /** Longer than the galaxy is wide: a heading into the void runs off the map. */
 const VOID_REACH_GU = 100_000
 
-export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(function GalaxyPanel({ onSystemSelect, plannedRoute, onPlannedRouteChange, autoTravelProgress, highlightedSystems, drive }, ref) {
+export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(function GalaxyPanel({ onSystemSelect, plannedRoute, onPlannedRouteChange, autoTravelProgress, highlightedSystems, drive, telescope }, ref) {
   const player = usePlayer()
   const location = useLocationState()
   const map = useMap()
@@ -304,6 +308,8 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
 
   const driveRef = useRef(drive)
   driveRef.current = drive
+  const telescopeRef = useRef(telescope)
+  telescopeRef.current = telescope
 
   const autoTravelProgressRef = useRef<AutoTravelProgress | null>(null)
   autoTravelProgressRef.current = autoTravelProgress ?? null
@@ -726,6 +732,38 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     [worldToScreen],
   )
 
+  // Telescope: one line per sighted star, in the star's color. A line ends at the one system it
+  // can be. With several candidates, or none, it runs off the map.
+  const drawTelescope = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      const scope = telescopeRef.current
+      if (!scope?.on) return
+      ctx.save()
+      for (const ray of scope.rays) {
+        const at = worldToScreen(ray.from.x, ray.from.y)
+        const end = ray.match ?? alongBearing(ray.from, ray.bearing, VOID_REACH_GU)
+        const to = worldToScreen(end.x, end.y)
+        ctx.strokeStyle = ray.color
+        ctx.globalAlpha = (ray.pinned ? 0.3 : 0.45) + ray.strength * 0.4
+        ctx.lineWidth = 1 + ray.strength * 1.5
+        ctx.setLineDash(ray.pinned ? [8, 6] : [])
+        ctx.beginPath()
+        ctx.moveTo(at.x, at.y)
+        ctx.lineTo(to.x, to.y)
+        ctx.stroke()
+        ctx.setLineDash([])
+        if (ray.match) {
+          ctx.lineWidth = 2
+          ctx.beginPath()
+          ctx.arc(to.x, to.y, 12, 0, Math.PI * 2)
+          ctx.stroke()
+        }
+      }
+      ctx.restore()
+    },
+    [worldToScreen],
+  )
+
   // Pathfinder Drive: the drifting ship with its course, and the course under the pointer in plot mode.
   // Each course ends at the system it is predicted to drop out at, or runs off the map.
   const drawPathfinder = useCallback(
@@ -1102,9 +1140,10 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
 
       // Travelling blue dot rides on top of the nodes and route overlay.
       drawTransitDot(ctx)
+      drawTelescope(ctx)
       drawPathfinder(ctx)
     },
-    [drawStarfield, drawGrid, drawPlannedRoute, drawTransitDot, drawPathfinder, worldToScreen],
+    [drawStarfield, drawGrid, drawPlannedRoute, drawTransitDot, drawTelescope, drawPathfinder, worldToScreen],
   )
 
   // ── Tooltip ────────────────────────────────────────────────────────
@@ -1803,6 +1842,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
 
       {/* Zoom Controls */}
       <div className={styles.zoomControls}>
+        {telescope && <TelescopeButtons telescope={telescope} />}
         {drive && (
           <button
             className={`${styles.zoomBtn} ${styles.driveBtn}`}

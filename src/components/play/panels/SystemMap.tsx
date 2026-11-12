@@ -25,6 +25,8 @@ import shared from '../shared.module.css'
 import galaxy from './GalaxyPanel.module.css'
 import styles from './SystemMap.module.css'
 import { circle, classLabel, COLOR, drawnBySpecial, drawPoi, drawSystemSpecial, KIND_COLOR, poiColor, seeded, TAU, type Poi } from './systemMapBodies'
+import { rayLabel, type TelescopeControl } from '../telescope'
+import { TelescopeButtons } from './TelescopeButtons'
 import { edgePoint, formatAU, formatSecs, spread, stepToward, type Point } from './systemMapMath'
 
 type IntelPoi = NonNullable<FactionQueryIntelResponse['entries'][number]['pois']>[number]
@@ -38,6 +40,8 @@ interface SystemMapProps {
   onJump: (systemId: string, systemName: string) => void
   /** The Pathfinder Drive, when the ship has one fitted. */
   drive?: DriveControl
+  /** The telescope overlay, when the ship has a telescope fitted. */
+  telescope?: TelescopeControl
   /** The systems of the galaxy map, to predict where a plotted course drops out. */
   getSystems: () => { id: string; name: string; x: number; y: number }[]
 }
@@ -110,7 +114,7 @@ function drawArrow(ctx: CanvasRenderingContext2D, x: number, y: number, angle: n
  * The current system as a ship-centered chart: the camera follows the ship, so travel is a smooth
  * pan. Click a POI to travel, click a jump exit on the edge to jump.
  */
-export function SystemMap({ busy, onTravel, onJump, drive, getSystems }: SystemMapProps) {
+export function SystemMap({ busy, onTravel, onJump, drive, telescope, getSystems }: SystemMapProps) {
   const store = useAccountStore()
   const factionId = usePlayer()?.faction_id
   const ship = useShip()
@@ -174,7 +178,7 @@ export function SystemMap({ busy, onTravel, onJump, drive, getSystems }: SystemM
   const blocked = busy || usePendingAction() !== null
 
   // What the animation loop reads each frame. A ref, so the loop does not restart on every update.
-  const live = { pois, poiId: location?.poi_id, systemId, exits, deposits, speed, tickMs, etaSecs, hoverId, showRings, blocked, onTravel, onJump, drive, getSystems,
+  const live = { pois, poiId: location?.poi_id, systemId, exits, deposits, speed, tickMs, etaSecs, hoverId, showRings, blocked, onTravel, onJump, drive, telescope, getSystems,
     destId: inTransit ? location?.transit_dest_poi_id : undefined,
     transitAt: location?.transit_x !== undefined && location.transit_y !== undefined ? { x: location.transit_x, y: location.transit_y } : undefined }
   const liveRef = useRef(live)
@@ -357,6 +361,18 @@ export function SystemMap({ busy, onTravel, onJump, drive, getSystems }: SystemM
         drawLabel(ctx, `JUMP · ${exit.name.toUpperCase()}`, edge.x - ux * 8, edge.y - uy * 8 - stack * 14 * (edge.y > cy ? 1 : -1), -ux, -uy, 14, W, d.hoverId === exit.id ? COLOR.white : COLOR.purple)
       }
 
+      // Telescope: each star seen from here is a line to the chart edge, in the star's color.
+      if (d.telescope?.on) {
+        const RAD = Math.PI / 180
+        for (const ray of d.telescope.rays.filter((r) => !r.pinned)) {
+          const [ux, uy] = [Math.cos(ray.bearing * RAD), Math.sin(ray.bearing * RAD)]
+          const edge = edgePoint({ x: cx + ux * (W + H), y: cy + uy * (W + H) }, { x: cx, y: cy }, W / 2 - pad, H / 2 - pad)!
+          ctx.strokeStyle = ray.color; ctx.globalAlpha = 0.35 + ray.strength * 0.5; ctx.lineWidth = 1 + ray.strength * 1.5
+          ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(edge.x, edge.y); ctx.stroke(); ctx.globalAlpha = 1
+          drawLabel(ctx, rayLabel(ray), edge.x - ux * 8, edge.y - uy * 8, -ux, -uy, 14, W, ray.color, [], 0, placed)
+        }
+      }
+
       // --- course, ship, hover ---
       const hover = d.hoverId ? nodes.get(d.hoverId) : undefined
       if (dest) {
@@ -507,6 +523,7 @@ export function SystemMap({ busy, onTravel, onJump, drive, getSystems }: SystemM
       )}
 
       <div className={galaxy.zoomControls}>
+        {telescope && <TelescopeButtons telescope={telescope} />}
         {drive && (
           <button className={`${galaxy.zoomBtn} ${galaxy.driveBtn}`} onClick={drive.onToggle} disabled={blocked} aria-pressed={drive.plotting} aria-label="Pathfinder Drive: plot a course" title="Pathfinder Drive: plot a course" type="button">
             <Compass size={16} />
