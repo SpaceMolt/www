@@ -24,7 +24,7 @@ import shared from '../shared.module.css'
 import galaxy from './GalaxyPanel.module.css'
 import styles from './SystemMap.module.css'
 import { circle, classLabel, COLOR, drawnBySpecial, drawPoi, drawSystemSpecial, KIND_COLOR, poiColor, seeded, TAU, type Poi } from './systemMapBodies'
-import { edgePoint, formatAU, formatSecs, stepToward, type Point } from './systemMapMath'
+import { edgePoint, formatAU, formatSecs, spread, stepToward, type Point } from './systemMapMath'
 
 type IntelPoi = NonNullable<FactionQueryIntelResponse['entries'][number]['pois']>[number]
 interface Deposit { id: string; name: string; richness: number; remaining?: number; capacity?: number }
@@ -41,6 +41,8 @@ const MONO = '"JetBrains Mono", monospace'
 /** The least and most AU from the center of the view to its nearer edge. */
 const MIN_VIEW_AU = 0.01
 const MAX_VIEW_AU = 400
+/** The least px between two bodies on the map, so that each keeps a click target of its own. */
+const SPREAD_PX = 22
 const point = (p: Poi | undefined): Point | undefined => (p ? { x: p.position?.x ?? 0, y: p.position?.y ?? 0 } : undefined)
 const isRing = (p: Poi) => p.type === 'asteroid_belt' || p.type === 'ice_field'
 interface Rock { atSpot: boolean; angle: number; offset: number; size: number; alpha: number }
@@ -305,9 +307,14 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
       nodes.clear()
       const pad = 24
       const placed: LabelBox[] = []
+      // A station in orbit of a planet is a pixel from it at this scale. Bodies that close move apart.
+      // The ship's POI keeps its place, then stars, then planets.
+      const rank = (p: Poi) => (p.id === d.poiId ? 0 : p.type === 'sun' ? 1 : p.type === 'planet' ? 2 : 3)
+      const ranked = [...d.pois].sort((a, b) => rank(a) - rank(b))
+      const spots = new Map(spread(ranked.map((p) => project(point(p)!)), SPREAD_PX).map((q, i) => [ranked[i].id, q]))
       for (const p of d.pois) {
         const world = point(p)!
-        const screen = project(world)
+        const screen = spots.get(p.id)!
         const color = d.hoverId === p.id || d.poiId === p.id ? COLOR.white : COLOR.silver
         const edge = edgePoint(screen, { x: cx, y: cy }, W / 2 - pad, H / 2 - pad)
         if (edge) {
@@ -342,7 +349,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
       // --- course, ship, hover ---
       const hover = d.hoverId ? nodes.get(d.hoverId) : undefined
       if (dest) {
-        const to = project(dest)
+        const to = nodes.get(d.destId!) ?? project(dest)
         const from = project(ship.from ?? s)
         ctx.strokeStyle = COLOR.cyan; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(cx, cy); ctx.stroke()
         ctx.strokeStyle = 'rgba(0,212,255,0.5)'; ctx.lineWidth = 1.2; ctx.setLineDash([4, 5]); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(to.x, to.y); ctx.stroke(); ctx.setLineDash([])

@@ -12,6 +12,23 @@ export function edgePoint(p: Point, center: Point, halfWidth: number, halfHeight
 }
 
 /**
+ * Screen points moved so that each is at least `gap` px from every point before it in the list.
+ * A point moves along the line from the point it is too close to, so the bearing stays true.
+ * ponytail: one pass, so a moved point can land near a third one; iterate if a crowded cluster shows it.
+ */
+export function spread(points: Point[], gap: number): Point[] {
+  const placed: Point[] = []
+  for (let p of points) {
+    for (const q of placed) {
+      const d = Math.hypot(p.x - q.x, p.y - q.y)
+      if (d < gap) p = d < 1e-6 ? { x: q.x, y: q.y + gap } : { x: q.x + ((p.x - q.x) / d) * gap, y: q.y + ((p.y - q.y) / d) * gap }
+    }
+    placed.push(p)
+  }
+  return placed
+}
+
+/**
  * One animation step of the ship toward its destination. It covers the share of the remaining
  * distance that `dtMs` is of the remaining time, so the ship arrives on time from wherever it is
  * drawn now, with no jump when a server update corrects the arrival time.
