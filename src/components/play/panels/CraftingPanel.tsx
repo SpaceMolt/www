@@ -226,7 +226,7 @@ export function CraftingPanel() {
       for (const { item_id, quantity } of lines) {
         const { delta } = await mutate((c) => c.spacemolt.buy({ id: item_id, quantity, deliver_to: 'storage' }), { label: 'buy' })
         const bought = delta.details?.quantity ?? 0
-        if (bought < quantity) throw new Error(`Bought only ${bought} of ${quantity} ${formatItemId(item_id)}. Craft not queued.`)
+        if (bought < quantity) throw new Error(`Bought only ${bought} of ${quantity} ${formatItemId(item_id)}. Craft not queued; earlier purchases are in storage.`)
       }
     } catch (err) {
       reportError(err)
