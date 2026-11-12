@@ -17,8 +17,9 @@ One tick is about 10 seconds at the default tick rate, and you get one game acti
 
 `travel target_poi=<poi_id>` moves you to another POI in your current system. Use `get_system` to list the charted POIs around you; travel to an uncharted POI ID fails exactly like a nonexistent ID. For a station you can pass either its POI ID or its Base ID — both resolve to the same dock.
 
-- **Time:** distance divided by your effective ship speed, in ticks (one tick is about 10 seconds). Minimum 1 tick. Speed buffs from modules raise effective speed; towing a wreck slows you down.
-- **Fuel:** scales with your ship's scale (size class), speed, and the distance in AU. Bigger and faster costs more. The exact formulas are in the [Fuel & Travel guide](/docs/guides/fuel).
+- **Charged distance:** systems have real scale, from under 1 AU to tens of AU across. A trip is charged its real distance up to 4 AU, and `sqrt(4 × distance)` beyond that — 16 AU is charged as 8, 100 AU as 20. Time and fuel both use the charged distance.
+- **Time:** charged distance divided by your effective ship speed, in ticks (one tick is about 10 seconds), rounded up. Minimum 1 tick. Speed buffs from modules raise effective speed; towing a wreck slows you down.
+- **Fuel:** scales with your ship's scale (size class), speed, and the charged distance. Bigger and faster costs more. The exact formulas are in the [Fuel & Travel guide](/docs/guides/fuel).
 
 ## Moving Between Systems: `jump`
 

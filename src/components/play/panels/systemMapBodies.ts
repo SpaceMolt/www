@@ -22,6 +22,7 @@ export const KIND_COLOR = { mining: '#ff9f6b', ice: '#bfe6ff', gas: '#2dd4bf', r
 export const circle = (ctx: Ctx, x: number, y: number, r: number) => { ctx.beginPath(); ctx.arc(x, y, r, 0, TAU) }
 const rgba = ([r, g, b]: Rgb, a: number) => `rgba(${r},${g},${b},${a})`
 const hex = ([r, g, b]: Rgb) => `rgb(${r},${g},${b})`
+const mix = (from: Rgb, to: Rgb, k: number) => from.map((v, i) => Math.round(v + (to[i] - v) * k)) as Rgb
 
 /** Seeded random, so a body looks the same each time you enter the system. */
 export function seeded(text: string) {
@@ -41,12 +42,28 @@ const SPECTRAL: Record<string, Rgb> = {
   O: [155, 176, 255], B: [170, 191, 255], A: [202, 215, 255], F: [248, 247, 255],
   G: [255, 233, 168], K: [255, 196, 122], M: [255, 155, 107],
 }
-/** Disc radius in px by luminosity class: supergiants down to dwarfs. */
-const LUMINOSITY: Record<string, number> = { Ia: 16, I: 15, II: 13, III: 11, IV: 9, V: 8 }
-const STAR_NAMES: Record<string, string> = { Ia: 'supergiant', I: 'supergiant', II: 'bright giant', III: 'giant', IV: 'subgiant', V: 'main sequence' }
+/** Least disc radius in px by luminosity class: supergiants down to dwarfs. */
+const LUMINOSITY: Record<string, number> = { Ia: 16, Ib: 15, I: 15, II: 13, III: 11, IV: 9, V: 8 }
+/** Typical star radius in solar radii, by luminosity class and spectral letter. */
+const SOLAR_RADII: Record<string, Record<string, number>> = {
+  V: { O: 10, B: 4, A: 1.8, F: 1.3, G: 1, K: 0.75, M: 0.4 },
+  IV: { O: 15, B: 7, A: 3.5, F: 2.5, G: 2.5, K: 3, M: 3 },
+  III: { O: 15, B: 8, A: 5, F: 5, G: 10, K: 20, M: 60 },
+  II: { O: 20, B: 15, A: 20, F: 30, G: 40, K: 80, M: 150 },
+  I: { O: 20, B: 30, A: 60, F: 100, G: 150, K: 250, M: 500 },
+  Ia: { O: 25, B: 50, A: 100, F: 150, G: 250, K: 400, M: 750 },
+}
+SOLAR_RADII.Ib = SOLAR_RADII.I
+const SOLAR_RADIUS_AU = 0.00465
+/** The real radius of a star in AU. Zero for the compact stars, which are far smaller than a pixel. */
+export function starRadiusAU(cls = ''): number {
+  const match = spectral(cls)
+  return match ? SOLAR_RADII[match[2] ?? 'V'][match[1]] * SOLAR_RADIUS_AU : 0
+}
+const STAR_NAMES: Record<string, string> = { Ia: 'supergiant', Ib: 'supergiant', I: 'supergiant', II: 'bright giant', III: 'giant', IV: 'subgiant', V: 'main sequence' }
 const EXOTIC_STARS: Record<string, string> = { BH: 'Black hole', NS: 'Neutron star', DA: 'White dwarf', WR: 'Wolf-Rayet star' }
 
-const spectral = (cls = '') => /^([OBAFGKM])\d?(Ia|IV|III|II|I|V)?$/.exec(cls)
+const spectral = (cls = '') => /^([OBAFGKM])\d?(Ia|Ib|IV|III|II|I|V)?$/.exec(cls)
 
 function drawGlow(ctx: Ctx, x: number, y: number, color: Rgb, radius: number, strength = 0.9) {
   const glow = ctx.createRadialGradient(x, y, 1, x, y, radius)
@@ -78,7 +95,8 @@ function drawBlackHole(ctx: Ctx, x: number, y: number, t: number, tilted = true)
   half(0, Math.PI)
 }
 
-function drawStar(ctx: Ctx, cls: string | undefined, x: number, y: number, t: number): number {
+/** `scale` is px per AU: a star is never drawn smaller than its real size. */
+function drawStar(ctx: Ctx, cls: string | undefined, x: number, y: number, t: number, scale: number): number {
   if (cls === 'BH') { drawBlackHole(ctx, x, y, t); return 12 }
   if (cls === 'NS') {
     // A pulsar: a tiny hot core with two beams that sweep.
@@ -116,9 +134,35 @@ function drawStar(ctx: Ctx, cls: string | undefined, x: number, y: number, t: nu
   }
   const match = spectral(cls)
   const color = SPECTRAL[match?.[1] ?? 'G']
-  const r = LUMINOSITY[match?.[2] ?? 'V']
-  drawGlow(ctx, x, y, color, r * 5)
-  ctx.fillStyle = hex(color); circle(ctx, x, y, r); ctx.fill()
+  const least = LUMINOSITY[match?.[2] ?? 'V']
+  const r = Math.max(least, starRadiusAU(cls) * scale)
+  // The corona breathes. The disc is hot at the center and darker at the limb.
+  drawGlow(ctx, x, y, color, (r + least * 4) * (1 + 0.05 * Math.sin(t * 0.0011)))
+  const body = ctx.createRadialGradient(x, y, 0, x, y, r)
+  body.addColorStop(0, hex(mix(color, [255, 255, 255], 0.6))); body.addColorStop(0.55, hex(color)); body.addColorStop(1, hex(mix(color, [40, 8, 0], 0.45)))
+  ctx.fillStyle = body; circle(ctx, x, y, r); ctx.fill()
+  // A disc large enough to read gets a surface: convection cells that turn with the star, and loops at the limb.
+  const detail = Math.min(1, (r - 18) / 20)
+  if (detail > 0) {
+    const rand = seeded(cls ?? 'star')
+    const turn = t * 0.00002
+    ctx.save(); circle(ctx, x, y, r); ctx.clip()
+    for (let i = 0; i < 46; i++) {
+      const d = Math.sqrt(rand()) * r * 0.95, a = rand() * TAU + turn * (0.6 + rand()), size = r * (0.1 + rand() * 0.2)
+      const [cx, cy] = [x + Math.cos(a) * d, y + Math.sin(a) * d]
+      const cell = ctx.createRadialGradient(cx, cy, 0, cx, cy, size)
+      const tone: Rgb = i % 3 ? [255, 250, 235] : [50, 10, 0]
+      cell.addColorStop(0, rgba(tone, (i % 3 ? 0.16 : 0.1) * detail)); cell.addColorStop(1, rgba(tone, 0))
+      ctx.fillStyle = cell; circle(ctx, cx, cy, size); ctx.fill()
+    }
+    ctx.restore()
+    ctx.lineWidth = 1.2
+    for (let i = 0; i < 4; i++) {
+      const a = rand() * TAU + turn, size = r * (0.07 + rand() * 0.07)
+      ctx.strokeStyle = rgba(mix(color, [255, 255, 255], 0.35), detail * (0.35 + 0.3 * Math.sin(t * 0.0013 + i * 1.9)))
+      ctx.beginPath(); ctx.ellipse(x + Math.cos(a) * r, y + Math.sin(a) * r, size, size * 0.55, a, 0, TAU); ctx.stroke()
+    }
+  }
   return r + 2
 }
 
@@ -332,12 +376,12 @@ function drawBrackets(ctx: Ctx, x: number, y: number, color: string) {
   ctx.fillStyle = color; circle(ctx, x, y, 1.8); ctx.fill()
 }
 
-/** Draw a POI; returns its radius. `lit` is the unit vector away from the star, `t` the animation time in ms. */
-export function drawPoi(ctx: Ctx, p: Poi, x: number, y: number, lit: [number, number], t: number): number {
+/** Draw a POI; returns its radius. `lit` is the unit vector away from the star, `t` the animation time in ms, `scale` the px per AU. */
+export function drawPoi(ctx: Ctx, p: Poi, x: number, y: number, lit: [number, number], t: number, scale: number): number {
   let r: number
   // Alzirr draws The Maw's disk from above, so the hole itself is bare.
   if (p.id === 'the_maw') { drawBlackHole(ctx, x, y, t, false); return 9 }
-  if (p.type === 'sun') return drawStar(ctx, p.class, x, y, t)
+  if (p.type === 'sun') return drawStar(ctx, p.class, x, y, t, scale)
   if (p.id === 'blood_arena') return drawArena(ctx, x, y, t)
   if (p.stronghold) return drawStronghold(ctx, x, y, t)
   if (p.base_id === 'frontier_station') return drawWelded(ctx, p.id, x, y, 4, t)

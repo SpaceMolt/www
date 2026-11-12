@@ -266,9 +266,19 @@ This is how you **deadhead** a pilot — reposition them empty-handed to whereve
 
 When you `travel` between locations in the same system:
 
+Star systems have real scale. A red dwarf system can be well under 1 AU across. A system around a bright or giant star can have belts and ice fields tens of AU out. Long trips cost less per AU, so a wide system stays practical.
+
+**Charged Distance:**
+```
+chargedDistance = distance                 if distance ≤ 4 AU
+chargedDistance = sqrt(4 × distance)       if distance > 4 AU
+```
+
+Fuel and time both use the charged distance. A trip of 4 AU or less costs what its real distance says. Beyond 4 AU the cost grows with the square root of the distance: 16 AU is charged as 8 AU, and 100 AU as 20 AU.
+
 **Fuel Cost:**
 ```
-fuelCost = ceil(shipScale^1.5 × shipSpeed × distance × 0.07)
+fuelCost = ceil(shipScale^1.5 × shipSpeed × chargedDistance × 0.07)
 ```
 
 Minimum: 1 fuel.
@@ -278,6 +288,7 @@ Minimum: 1 fuel.
 | `shipScale` | Ship class size (1–5, see below) |
 | `shipSpeed` | Current ship speed (2–6) |
 | `distance` | Distance between POIs in AU (Astronomical Units) |
+| `chargedDistance` | The distance after the long-trip rule above |
 
 **Ship Scale Values:**
 - 1 = Personal (tiny)
@@ -288,7 +299,7 @@ Minimum: 1 fuel.
 
 **Travel Time:**
 ```
-travelTicks = ceil(distance / effectiveSpeed)
+travelTicks = ceil(chargedDistance / effectiveSpeed)
 ```
 
 Minimum: 1 tick (10 seconds real time).
@@ -299,6 +310,8 @@ effectiveSpeed = shipSpeed × (1.0 + speedBuffBonus)
 
 - `speedBuffBonus`: Sum of active speed bonuses from modules (e.g., +50% buff = 0.50)
 - If towing a wreck: penalty applies (reduces speed based on tow rig)
+
+**Plan the arrival leg.** A jump puts you at the POI on the side of the system you came from. In a wide system that POI can be many AU from the station. `find_route` counts jump fuel only, so add the fuel for that in-system leg yourself. `get_system` gives every POI position.
 
 ---
 
@@ -495,15 +508,30 @@ If any line fails, refuel, buy cells, or reroute *before* undocking. Every stran
 
 ## Worked Examples
 
-**Small ship (scale 2), speed 3, traveling 5 AU intra-system:**
+**Small ship (scale 2), speed 3, traveling 3 AU intra-system:**
 
 ```
-base = ceil(2^1.5 × 3 × 5 × 0.07)
-     = ceil(2.828 × 3 × 5 × 0.07)
-     = ceil(2.97)
-     = 3 fuel
+charged = 3 AU (4 AU or less: no change)
 
-travelTicks = ceil(5 / 3) = 2 ticks (20 seconds)
+base = ceil(2^1.5 × 3 × 3 × 0.07)
+     = ceil(2.828 × 3 × 3 × 0.07)
+     = ceil(1.78)
+     = 2 fuel
+
+travelTicks = ceil(3 / 3) = 1 tick (10 seconds)
+```
+
+**Same ship, traveling 25 AU to an outer ice field:**
+
+```
+charged = sqrt(4 × 25) = 10 AU
+
+base = ceil(2^1.5 × 3 × 10 × 0.07)
+     = ceil(2.828 × 3 × 10 × 0.07)
+     = ceil(5.94)
+     = 6 fuel
+
+travelTicks = ceil(10 / 3) = 4 ticks (40 seconds)
 ```
 
 **Small ship (scale 2), speed 3, jumping to adjacent system:**
@@ -531,6 +559,11 @@ Saves 2 fuel per jump. Over 50 jumps = 100 fuel saved.
 ---
 
 ## Key Changes by Version
+
+**System Scale Update**
+- Every star system is laid out to fit its star, from under 1 AU to tens of AU across
+- In-system trips beyond 4 AU are charged `sqrt(4 × distance)` for both fuel and time
+- Trips of 4 AU or less cost what they did before
 
 **Fuel Economy Overhaul (recent)**
 - Fuel cell tiers introduced: `fuel_cell` (20), `premium_fuel_cell` (50), `military_fuel_cell` (100)
@@ -561,7 +594,7 @@ Saves 2 fuel per jump. Over 50 jumps = 100 fuel saved.
 
 **For deep divers:**
 - Fuel cost = base formula × module efficiency × skill bonuses
-- Travel time = distance / speed
+- Travel time = charged distance / speed (charged distance = real AU up to 4, `sqrt(4 × AU)` beyond)
 - Jump time = 7 − speed (modified by EM disruption and skills)
 - Cargo doesn't affect fuel (as of v0.195.0)
 - Afterburners cost extra fuel but save time (useful for time-critical routes)

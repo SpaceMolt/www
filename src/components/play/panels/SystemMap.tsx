@@ -17,14 +17,14 @@ import { getItem } from '@/data/catalog'
 import { titleCase as formatLabel } from '@/lib/format'
 import { depositKind, DepositIcon, DepositRating } from '../LeftSidebar'
 import { depositTitle } from '../richness'
-import { travelEstimateMs, travelSpeed } from '../routeWalk'
+import { reachAU, travelEstimateMs, travelSpeed } from '../routeWalk'
 import { useTransitClock } from '../TravelProgress'
 import sidebar from '../LeftSidebar.module.css'
 import shared from '../shared.module.css'
 import galaxy from './GalaxyPanel.module.css'
 import styles from './SystemMap.module.css'
 import { circle, classLabel, COLOR, drawnBySpecial, drawPoi, drawSystemSpecial, KIND_COLOR, poiColor, seeded, TAU, type Poi } from './systemMapBodies'
-import { edgePoint, formatSecs, stepToward, type Point } from './systemMapMath'
+import { edgePoint, formatAU, formatSecs, spread, stepToward, type Point } from './systemMapMath'
 
 type IntelPoi = NonNullable<FactionQueryIntelResponse['entries'][number]['pois']>[number]
 interface Deposit { id: string; name: string; richness: number; remaining?: number; capacity?: number }
@@ -38,6 +38,11 @@ interface SystemMapProps {
 }
 
 const MONO = '"JetBrains Mono", monospace'
+/** The least and most AU from the center of the view to its nearer edge. */
+const MIN_VIEW_AU = 0.01
+const MAX_VIEW_AU = 400
+/** The least px between two bodies on the map, so that each keeps a click target of its own. */
+const SPREAD_PX = 22
 const point = (p: Poi | undefined): Point | undefined => (p ? { x: p.position?.x ?? 0, y: p.position?.y ?? 0 } : undefined)
 const isRing = (p: Poi) => p.type === 'asteroid_belt' || p.type === 'ice_field'
 interface Rock { atSpot: boolean; angle: number; offset: number; size: number; alpha: number }
@@ -48,22 +53,29 @@ function rocks(p: Poi): Rock[] {
   const { x, y } = point(p)!
   return Array.from({ length: 520 }, (_, i) => {
     const atSpot = i % 5 < 2
-    return { atSpot, angle: atSpot ? Math.atan2(y, x) + gauss() * 0.3 : rand() * TAU, offset: gauss() * 0.17, size: 0.5 + rand() * 1.1, alpha: 0.25 + rand() * 0.6 }
+    return { atSpot, angle: atSpot ? Math.atan2(y, x) + gauss() * 0.3 : rand() * TAU, offset: gauss() * 0.05, size: 0.5 + rand() * 1.1, alpha: 0.25 + rand() * 0.6 }
   })
 }
 
 const unit = (dx: number, dy: number): [number, number] => { const d = Math.hypot(dx, dy); return d < 1e-6 ? [0, 1] : [dx / d, dy / d] }
 
-/** A name beside a body, pushed along (ux, uy), with deposit-kind marks and the ship count after it. Kept inside `width`. */
-function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, ux: number, uy: number, gap: number, width: number, color: string, kinds: string[] = [], ships = 0) {
+interface LabelBox { left: number; right: number; y: number }
+/**
+ * A name beside a body, pushed along (ux, uy), with deposit-kind marks and the ship count after it. Kept inside `width`.
+ * A label that would cover one already in `placed` moves a line further from its body.
+ */
+function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, ux: number, uy: number, gap: number, width: number, color: string, kinds: string[] = [], ships = 0, placed: LabelBox[] = []) {
   ctx.font = `500 10.5px ${MONO}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'
   const textWidth = ctx.measureText(text).width
   const kindsWidth = kinds.length ? kinds.length * 7 + 5 : 0
   const shipsWidth = ships ? ctx.measureText(String(ships)).width + 13 : 0
   const total = textWidth + kindsWidth + shipsWidth
   const tx = x + ux * gap
-  const ty = y + uy * (gap + 4)
+  let ty = y + uy * (gap + 4)
   let left = Math.max(6, Math.min(width - 6 - total, ux > 0.35 ? tx : ux < -0.35 ? tx - total : tx - total / 2))
+  const isCovered = (q: LabelBox) => Math.abs(q.y - ty) < 11 && left < q.right + 6 && left + total > q.left - 6
+  while (placed.some(isCovered)) ty += uy < -0.35 ? -12 : 12
+  placed.push({ left, right: left + total, y: ty })
   ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(13,19,33,0.85)'; ctx.strokeText(text, left, ty)
   ctx.fillStyle = color; ctx.fillText(text, left, ty)
   left += textWidth
@@ -110,7 +122,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
   const [showRings, setShowRings] = useState(true)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
-  const viewRef = useRef({ radius: 0, target: 0, fit: true }) // AU from the center to the nearer edge
+  const viewRef = useRef({ radius: 0, target: 0, near: 0, fit: true, whole: false }) // AU from the center to the nearer edge
 
   // Faction intel for this system; factions without an intel terminal get nothing.
   const systemId = system?.id
@@ -228,11 +240,17 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
       const cy = H / 2
       const R = Math.max(40, Math.min(W, H) / 2 - 30)
       if (view.fit || !view.target) {
-        view.target = Math.max(1, ...d.pois.map((p) => Math.hypot((p.position?.x ?? 0) - s.x, (p.position?.y ?? 0) - s.y))) * 1.1
+        // Fit frames the neighbourhood: three times the median distance to the other POIs. A far belt
+        // becomes a marker on the edge. A second fit frames the whole system.
+        const reach = d.pois.map((p) => Math.hypot((p.position?.x ?? 0) - s.x, (p.position?.y ?? 0) - s.y)).filter(Boolean).sort((a, b) => a - b)
+        const whole = (reach.at(-1) ?? 1) * 1.1
+        view.near = Math.min(whole, (reach[reach.length >> 1] ?? 1) * 3.3)
+        view.target = view.whole ? whole : view.near
         view.fit = false
+        view.whole = false
         if (!view.radius) view.radius = view.target
       }
-      view.target = Math.max(0.3, Math.min(80, view.target))
+      view.target = Math.max(MIN_VIEW_AU, Math.min(MAX_VIEW_AU, view.target))
       view.radius += (view.target - view.radius) * (reduced ? 1 : 0.12)
       const z = R / view.radius
       const project = (p: Point): Point => ({ x: cx + (p.x - s.x) * z, y: cy + (p.y - s.y) * z })
@@ -256,7 +274,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
         ctx.fillStyle = poiColor(p)
         for (const rock of belts.get(p.id)!) {
           const angle = rock.angle + (reduced || rock.atSpot ? 0 : now * 0.000012)
-          const r = Math.max(0.05, orbit + rock.offset)
+          const r = orbit * (1 + rock.offset)
           const q = project({ x: Math.cos(angle) * r, y: Math.sin(angle) * r })
           if (q.x < 0 || q.y < 0 || q.x > W || q.y > H) continue
           ctx.globalAlpha = rock.alpha * (rock.atSpot ? 0.95 : 0.55)
@@ -272,7 +290,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
       if (d.showRings && !dest) {
         const tickSecs = d.tickMs / 1000
         for (const ticks of [1, 2, 4, 8, 16, 32, 64]) {
-          const r = ticks * d.speed * z
+          const r = reachAU(ticks * d.speed) * z
           if (r < 28 || r > Math.hypot(W, H) / 2) continue
           ctx.strokeStyle = 'rgba(0,212,255,0.24)'; ctx.lineWidth = 1; ctx.setLineDash([3, 5]); circle(ctx, cx, cy, r); ctx.stroke(); ctx.setLineDash([])
           const ly = cy - r > 16 ? cy - r : cy + r < H - 16 ? cy + r : null
@@ -288,26 +306,32 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
       // --- POIs; one outside the view becomes a marker on the edge ---
       nodes.clear()
       const pad = 24
+      const placed: LabelBox[] = []
+      // A station in orbit of a planet is a pixel from it at this scale. Bodies that close move apart.
+      // The ship's POI keeps its place, then stars, then planets.
+      const rank = (p: Poi) => (p.id === d.poiId ? 0 : p.type === 'sun' ? 1 : p.type === 'planet' ? 2 : 3)
+      const ranked = [...d.pois].sort((a, b) => rank(a) - rank(b))
+      const spots = new Map(spread(ranked.map((p) => project(point(p)!)), SPREAD_PX).map((q, i) => [ranked[i].id, q]))
       for (const p of d.pois) {
         const world = point(p)!
-        const screen = project(world)
+        const screen = spots.get(p.id)!
         const color = d.hoverId === p.id || d.poiId === p.id ? COLOR.white : COLOR.silver
         const edge = edgePoint(screen, { x: cx, y: cy }, W / 2 - pad, H / 2 - pad)
         if (edge) {
           const [ux, uy] = unit(screen.x - cx, screen.y - cy)
           nodes.set(p.id, edge)
           drawArrow(ctx, edge.x, edge.y, Math.atan2(uy, ux), poiColor(p))
-          drawLabel(ctx, `${(p.base_name || p.name).toUpperCase()} · ${formatSecs(secsTo(world))}`, edge.x, edge.y, -ux, -uy, 12, W, d.hoverId === p.id ? COLOR.white : COLOR.grey)
+          drawLabel(ctx, `${(p.base_name || p.name).toUpperCase()} · ${formatSecs(secsTo(world))}`, edge.x, edge.y, -ux, -uy, 12, W, d.hoverId === p.id ? COLOR.white : COLOR.grey, [], 0, placed)
           continue
         }
         nodes.set(p.id, screen)
         const lit = unit(screen.x - star.x, screen.y - star.y)
-        const r = drawPoi(ctx, drawnBySpecial(d.systemId, p) ? { ...p, type: 'marker' } : p, screen.x, screen.y, lit, t)
+        const r = drawPoi(ctx, drawnBySpecial(d.systemId, p) ? { ...p, type: 'marker' } : p, screen.x, screen.y, lit, t, z)
         // A plain star at the center needs no name. A black hole or a companion star does.
         if (p.type === 'sun' && classLabel(p)?.includes('·') && !world.x && !world.y) continue
         const here = Math.hypot(screen.x - cx, screen.y - cy) < 4
         const kinds = [...new Set((d.deposits.get(p.id) ?? []).map((dep) => depositKind(dep.id)))]
-        drawLabel(ctx, (p.base_name || p.name).toUpperCase(), screen.x, screen.y, here ? 0 : lit[0], here ? 1 : lit[1], here ? 22 : r + 7, W, color, kinds, p.ship_count)
+        drawLabel(ctx, (p.base_name || p.name).toUpperCase(), screen.x, screen.y, here ? 0 : lit[0], here ? 1 : lit[1], here ? 22 : Math.min(r, 60) + 7, W, color, kinds, p.ship_count, placed)
       }
       const exitLabels: Point[] = []
       for (const exit of d.exits) {
@@ -325,7 +349,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
       // --- course, ship, hover ---
       const hover = d.hoverId ? nodes.get(d.hoverId) : undefined
       if (dest) {
-        const to = project(dest)
+        const to = nodes.get(d.destId!) ?? project(dest)
         const from = project(ship.from ?? s)
         ctx.strokeStyle = COLOR.cyan; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(cx, cy); ctx.stroke()
         ctx.strokeStyle = 'rgba(0,212,255,0.5)'; ctx.lineWidth = 1.2; ctx.setLineDash([4, 5]); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(to.x, to.y); ctx.stroke(); ctx.setLineDash([])
@@ -426,7 +450,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
             {hoverPoi?.base_name && <><dt>Station</dt><dd>{hoverPoi.base_name}</dd></>}
             {hoverPoi && !isHere && travelSecs !== undefined && from && (
               <>
-                <dt>Distance</dt><dd>{Math.hypot(point(hoverPoi)!.x - from.x, point(hoverPoi)!.y - from.y).toFixed(1)} AU</dd>
+                <dt>Distance</dt><dd>{formatAU(Math.hypot(point(hoverPoi)!.x - from.x, point(hoverPoi)!.y - from.y))} AU</dd>
                 <dt>Travel</dt><dd>{formatSecs(travelSecs)}</dd>
               </>
             )}
@@ -454,7 +478,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
         <button className={`${galaxy.zoomBtn} ${showRings ? '' : styles.off}`} onClick={() => setShowRings((v) => !v)} aria-pressed={showRings} aria-label="Travel-time rings" title="Travel-time rings" type="button">
           <Radar size={16} />
         </button>
-        <button className={galaxy.zoomBtn} onClick={() => { viewRef.current.fit = true }} aria-label="Fit the system in view" title="Fit system" type="button">
+        <button className={galaxy.zoomBtn} onClick={() => { const view = viewRef.current; view.whole = Math.abs(view.target - view.near) < view.near * 0.05; view.fit = true }} aria-label="Fit nearby, then the whole system" title="Fit nearby, then the whole system" type="button">
           <Maximize size={16} />
         </button>
         <button className={galaxy.zoomBtn} onClick={() => { viewRef.current.target *= 0.62 }} aria-label="Zoom in" type="button">+</button>

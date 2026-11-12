@@ -36,10 +36,19 @@ export function jumpEstimateMs(shipSpeed: number): number {
 
 type Position = { x?: number; y?: number } | undefined
 
-/** In-system travel: one 10 s tick per distance/speed unit, at least one tick. */
+/** Beyond this many AU, the server charges an in-system trip less than its real distance. */
+const LONG_TRIP_AU = 4
+
+/** The distance the server charges for an in-system trip: the real AU up to 4, sqrt(4 x AU) beyond. */
+export const chargedAU = (distance: number): number => (distance <= LONG_TRIP_AU ? distance : Math.sqrt(LONG_TRIP_AU * distance))
+
+/** The real distance that a charged distance covers: the inverse of chargedAU. */
+export const reachAU = (charged: number): number => (charged <= LONG_TRIP_AU ? charged : charged ** 2 / LONG_TRIP_AU)
+
+/** In-system travel: one 10 s tick per charged distance/speed unit, at least one tick. */
 export function travelEstimateMs(from: Position, to: Position, shipSpeed: number): number {
   const distance = Math.hypot((to?.x ?? 0) - (from?.x ?? 0), (to?.y ?? 0) - (from?.y ?? 0))
-  return Math.max(1, Math.ceil(distance / Math.max(0.1, shipSpeed))) * 10_000
+  return Math.max(1, Math.ceil(chargedAU(distance) / Math.max(0.1, shipSpeed))) * 10_000
 }
 
 /** Refuel at this system's station, travelling there first. Returns the station name, or null when there is none. */
