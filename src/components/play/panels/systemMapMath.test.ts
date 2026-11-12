@@ -33,7 +33,7 @@ test('formatSecs', () => {
 })
 
 test('distances keep two digits below 1 AU', () => {
-  expect([0.0154, 0.83, 5.23, 83.3].map(formatAU)).toEqual(['0.015', '0.83', '5.2', '83'])
+  expect([0.0154, 0.83, 5.23, 9.96, 83.3].map(formatAU)).toEqual(['0.015', '0.83', '5.2', '10', '83'])
 })
 
 test('a supergiant is AU wide, a dwarf is not, a compact star has no disc', () => {

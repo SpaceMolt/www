@@ -324,7 +324,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
         if (p.type === 'sun' && classLabel(p)?.includes('·') && !world.x && !world.y) continue
         const here = Math.hypot(screen.x - cx, screen.y - cy) < 4
         const kinds = [...new Set((d.deposits.get(p.id) ?? []).map((dep) => depositKind(dep.id)))]
-        drawLabel(ctx, (p.base_name || p.name).toUpperCase(), screen.x, screen.y, here ? 0 : lit[0], here ? 1 : lit[1], here ? 22 : r + 7, W, color, kinds, p.ship_count, placed)
+        drawLabel(ctx, (p.base_name || p.name).toUpperCase(), screen.x, screen.y, here ? 0 : lit[0], here ? 1 : lit[1], here ? 22 : Math.min(r, 60) + 7, W, color, kinds, p.ship_count, placed)
       }
       const exitLabels: Point[] = []
       for (const exit of d.exits) {
@@ -471,7 +471,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
         <button className={`${galaxy.zoomBtn} ${showRings ? '' : styles.off}`} onClick={() => setShowRings((v) => !v)} aria-pressed={showRings} aria-label="Travel-time rings" title="Travel-time rings" type="button">
           <Radar size={16} />
         </button>
-        <button className={galaxy.zoomBtn} onClick={() => { const view = viewRef.current; view.whole = Math.abs(view.target - view.near) < view.near * 0.05; view.fit = true }} aria-label="Fit the system in view" title="Fit nearby, then the whole system" type="button">
+        <button className={galaxy.zoomBtn} onClick={() => { const view = viewRef.current; view.whole = Math.abs(view.target - view.near) < view.near * 0.05; view.fit = true }} aria-label="Fit nearby, then the whole system" title="Fit nearby, then the whole system" type="button">
           <Maximize size={16} />
         </button>
         <button className={galaxy.zoomBtn} onClick={() => { viewRef.current.target *= 0.62 }} aria-label="Zoom in" type="button">+</button>

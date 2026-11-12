@@ -142,7 +142,7 @@ function drawStar(ctx: Ctx, cls: string | undefined, x: number, y: number, t: nu
   body.addColorStop(0, hex(mix(color, [255, 255, 255], 0.6))); body.addColorStop(0.55, hex(color)); body.addColorStop(1, hex(mix(color, [40, 8, 0], 0.45)))
   ctx.fillStyle = body; circle(ctx, x, y, r); ctx.fill()
   // A disc large enough to read gets a surface: convection cells that turn with the star, and loops at the limb.
-  const detail = Math.min(1, (r - 14) / 20)
+  const detail = Math.min(1, (r - 18) / 20)
   if (detail > 0) {
     const rand = seeded(cls ?? 'star')
     const turn = t * 0.00002
