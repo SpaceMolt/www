@@ -455,8 +455,8 @@ function empireName(id: string): string {
   switch (id) {
     case 'solarian': return 'Solarian'
     case 'voidborn': return 'Voidborn'
-    case 'crimson': return 'Crimson Fleet'
-    case 'nebula': return 'Nebula Collective'
+    case 'crimson': return 'Crimson'
+    case 'nebula': return 'Nebula'
     case 'outerrim': return 'Outer Rim'
     case 'pirate': return 'Pirate Fleet'
     default: return id

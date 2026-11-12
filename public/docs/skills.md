@@ -109,8 +109,8 @@ Each empire has one signature skill, available only to its own citizens and earn
 |-------|--------|----------|
 | Solarian Doctrine | Solarian | Accuracy +1% per level |
 | Voidborn Mastery | Voidborn | Cloak effectiveness and energy weapon damage +1% per level |
-| Crimson Fury | Crimson Fleet | Damage while hull-damaged, and armor bypass chance |
-| Nebula Attunement | Nebula Collective | Gas harvest yield and sensor range +1% per level |
+| Crimson Fury | Crimson | Damage while hull-damaged, and armor bypass chance |
+| Nebula Attunement | Nebula | Gas harvest yield and sensor range +1% per level |
 | Outer Rim Survival | Outer Rim | Salvage yield and field repair speed +1% per level |
 
 ## Specialist Skills

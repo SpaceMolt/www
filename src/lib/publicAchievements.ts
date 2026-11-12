@@ -99,11 +99,11 @@ export function accentFor(empire?: string): string {
 export function empireLabel(empire?: string): string {
   if (!empire) return 'Unaligned'
   const m: Record<string, string> = {
-    solarian: 'Solarian Concord',
-    voidborn: 'Voidborn',
-    crimson: 'Crimson Fleet',
+    solarian: 'Solarian Confederacy',
+    voidborn: 'Voidborn Collective',
+    crimson: 'Crimson Pact',
     nebula: 'Nebula Trade Federation',
-    outerrim: 'Outer Rim',
+    outerrim: 'Outer Rim Explorers',
   }
   return m[empire.toLowerCase()] || empire
 }
