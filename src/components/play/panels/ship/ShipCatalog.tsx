@@ -22,6 +22,8 @@ import {
   ClipboardList,
   Lock,
   Check,
+  MapPin,
+  Landmark,
 } from 'lucide-react'
 import type { BrowseShipsResponse, StorageResponse } from '@spacemolt/lib'
 import { useCargo, useCatalog, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useShip, useSkills } from '@/lib/spacemolt'
@@ -66,7 +68,69 @@ export interface CatalogShip extends MobileBaseIdentity, GatedShip {
   build_time?: number
 }
 
-type ShipListing = BrowseShipsResponse['listings'][number]
+/** A listing with the station that holds it (browse_ships sends base_id and base_name on each listing). */
+type ShipListing = BrowseShipsResponse['listings'][number] & { base_id: string; base_name: string }
+
+/** One page of browse_ships with all_stations: listings at every charted station, cheapest first. */
+type AllStationsPage = { listings?: ShipListing[]; total_pages?: number }
+
+/** Bot sellers arrive as "[Empire Treasury: Outer Rim Explorers]"; show "Outer Rim Explorers (Empire Treasury)". */
+export function sellerLabel(seller = ''): string {
+  const bot = seller.match(/^\[([^:\]]+): (.+)\]$/)
+  return bot ? `${bot[2]} (${bot[1]})` : seller
+}
+
+function Seller({ name = '' }: { name?: string }) {
+  return (
+    <span className={listingStyles.listingStat}>
+      {name.startsWith('[') ? <Landmark size={10} /> : <User size={10} />} {sellerLabel(name)}
+    </span>
+  )
+}
+
+/** The server's largest page_size for browse_ships all_stations. */
+export const LISTINGS_PAGE_SIZE = 100
+/** Hard ceiling on pages, so a bad total_pages cannot loop. */
+export const MAX_LISTING_PAGES = 20
+
+/** Every listing the search matches: reads page 1, then each further page the server declares. */
+export async function fetchAllListings(
+  queryPage: (page: number) => Promise<AllStationsPage | undefined>,
+): Promise<ShipListing[]> {
+  const first = await queryPage(1)
+  const listings = [...(first?.listings ?? [])]
+  const lastPage = Math.min(first?.total_pages ?? 1, MAX_LISTING_PAGES)
+  for (let page = 2; page <= lastPage; page++) listings.push(...((await queryPage(page))?.listings ?? []))
+  return listings
+}
+
+/** How long one listing search is reused, so reopening the catalog does not query again. */
+export const LISTINGS_TTL_MS = 60_000
+const listingsCache = new WeakMap<object, { at: number; key: string; listings: Promise<ShipListing[]> }>()
+
+/**
+ * The account's search for `key` (its filters), keyed by the account's stable
+ * `commands` object and reused until it is LISTINGS_TTL_MS old or the filters
+ * change. A failed search is not kept, so the next read tries again.
+ */
+export function cachedListings(
+  account: object,
+  key: string,
+  search: () => Promise<ShipListing[]>,
+  now = Date.now(),
+): Promise<ShipListing[]> {
+  const hit = listingsCache.get(account)
+  if (hit && hit.key === key && now - hit.at < LISTINGS_TTL_MS) return hit.listings
+  const listings = search()
+  listingsCache.set(account, { at: now, key, listings })
+  listings.catch(() => {
+    if (listingsCache.get(account)?.listings === listings) listingsCache.delete(account)
+  })
+  return listings
+}
+
+/** Drops the cached search, so the next read sees a purchase at once. */
+export const clearListingsCache = (account: object) => listingsCache.delete(account)
 
 /**
  * Whether a catalog ship passes the tier dropdown filter.
@@ -217,18 +281,6 @@ export function ShipCatalog() {
     [isDocked, commissionableFromServer]
   )
 
-  // Other pilots' listings at this station, cheapest first per class. Your own are on the Sell tab.
-  const { data: browseData, refetch: refetchBrowse } = useCommandQuery(
-    async (account) => (await account.commands.spacemolt_ship.browse_ships({})).structuredContent,
-    [],
-    { enabled: isDocked }
-  )
-  const listingsByClass = useMemo(() => {
-    if (!isDocked) return {}
-    const others = (browseData?.listings ?? []).filter((l) => l.seller !== player?.username)
-    return groupBy([...others].sort((a, b) => a.price - b.price), (l) => l.class_id)
-  }, [browseData, isDocked, player?.username])
-
   const [buyTarget, setBuyTarget] = useState<{ ship: Pick<CatalogShip, 'name'>; listing: ShipListing } | null>(null)
   const [buying, setBuying] = useState(false)
 
@@ -263,9 +315,28 @@ export function ShipCatalog() {
   const [category, setCategory] = useState('')
   const [shipClass, setShipClass] = useState('')
   const [search, setSearch] = useState('')
-  const [buyHereOnly, setBuyHereOnly] = useState(false)
+  const [forSaleOnly, setForSaleOnly] = useState(false)
   const [commissionHereOnly, setCommissionHereOnly] = useState(false)
   const [canFlyOnly, setCanFlyOnly] = useState(false)
+
+  // Other pilots' listings at every charted station, cheapest first per class. Your own are on the Sell tab.
+  // With "Can fly" on, the server keeps only listings you could buy and fly, including each listing's fit.
+  // The raw query carries all_stations and can_fly, which the published lib types do not list yet.
+  const { data: browseData, loading: browseLoading, error: browseError, refetch: refetchBrowse } = useCommandQuery(
+    async (account) =>
+      cachedListings(account.commands, `can_fly=${canFlyOnly}`, () =>
+        fetchAllListings(async (page) =>
+          (await account.query('spacemolt_ship', 'browse_ships', {
+            all_stations: true, can_fly: canFlyOnly, page, page_size: LISTINGS_PAGE_SIZE,
+          })).structuredContent as AllStationsPage | undefined)),
+    [canFlyOnly]
+  )
+  const listingsByClass = useMemo(() => {
+    const others = (browseData ?? []).filter((l) => l.seller !== player?.username)
+    return groupBy([...others].sort((a, b) => a.price - b.price), (l) => l.class_id)
+  }, [browseData, player?.username])
+  // buy_listed_ship only works at the listing's own station.
+  const buyableHere = (l: ShipListing) => l.base_id === location?.docked_at
 
   // The spec's ShipClass omits mobile_base and marks every stat optional; the dump always carries them.
   const allShips = useMemo(() => (catalog?.ships ?? []) as unknown as CatalogShip[], [catalog])
@@ -290,13 +361,13 @@ export function ShipCatalog() {
       if (!matchesTierFilter(s, tier)) return false
       if (category && s.category !== category) return false
       if (shipClass && s.class !== shipClass) return false
-      if (buyHereOnly && !listingsByClass[s.id]) return false
+      if (forSaleOnly && !listingsByClass[s.id]) return false
       if (commissionHereOnly && !commissionableIds.has(s.id)) return false
       if (canFlyOnly && blockReasons(s).length > 0) return false
       if (q && !`${s.name} ${s.description ?? ''}`.toLowerCase().includes(q)) return false
       return true
     })
-  }, [allShips, empire, tier, category, shipClass, buyHereOnly, listingsByClass, commissionHereOnly, commissionableIds, canFlyOnly, blockReasons, search])
+  }, [allShips, empire, tier, category, shipClass, forSaleOnly, listingsByClass, commissionHereOnly, commissionableIds, canFlyOnly, blockReasons, search])
 
   const total = filteredShips.length
   const pageStart = (page - 1) * PAGE_SIZE
@@ -313,7 +384,7 @@ export function ShipCatalog() {
   const handleBuyListing = useCallback(() => {
     if (!buyTarget) return
     setBuying(true)
-    mutate((c) => c.spacemolt_ship.buy_listed_ship({ id: buyTarget.listing.listing_id }), { label: 'buy_listed_ship' })
+    mutate((c) => c.spacemolt_ship.buy_listed_ship({ id: buyTarget.listing.listing_id }).finally(() => clearListingsCache(c)), { label: 'buy_listed_ship' })
       .then(() => {
         setBuying(false)
         setBuyTarget(null)
@@ -355,9 +426,9 @@ export function ShipCatalog() {
   )
 
   const toggles = [
-    { label: 'Buy now here', title: 'Show only ships listed for sale at this station', on: buyHereOnly, set: setBuyHereOnly, icon: <ShoppingCart size={11} /> },
+    { label: 'For sale', title: 'Show only ships listed for sale at any station', on: forSaleOnly, set: setForSaleOnly, icon: <ShoppingCart size={11} /> },
     { label: 'Commission here', title: 'Show only ships you can commission at this shipyard', on: commissionHereOnly, set: setCommissionHereOnly, icon: <Hammer size={11} /> },
-    { label: 'Can fly', title: 'Hide ships your piloting, reputation, or a prestige lock blocks', on: canFlyOnly, set: setCanFlyOnly, icon: <Check size={11} /> },
+    { label: 'Can fly', title: 'Hide ships and listings you cannot fly: piloting, reputation, a prestige lock, or a listed fit your Engineering cannot run', on: canFlyOnly, set: setCanFlyOnly, icon: <Check size={11} /> },
   ]
 
   return (
@@ -376,6 +447,9 @@ export function ShipCatalog() {
             />
           </div>
         </div>
+        <span className={styles.countLabel} role="status">
+          {browseLoading ? 'Searching listings...' : browseError && `Could not load ship listings: ${browseError}`}
+        </span>
         <div className={styles.filterRow}>
           {toggles.map((t) => (
             <button
@@ -548,10 +622,10 @@ export function ShipCatalog() {
                           <div className={styles.shipLore}>{catShip.lore}</div>
                         )}
 
-                      {/* Get one: listings here, commission, buy order. A blocked class shows none of these. */}
+                      {/* Get one: listings, commission, buy order. A blocked class shows none of these. */}
                       {listings.length > 0 && (
                         <div className={listingStyles.listingsList}>
-                          <span className={shared.sectionTitle}>For Sale Here</span>
+                          <span className={shared.sectionTitle}>For Sale</span>
                           {listings.map((listing) => {
                             const canAfford = credits >= listing.price
                             return (
@@ -562,19 +636,22 @@ export function ShipCatalog() {
                                   </span>
                                   <span className={listingStyles.listingStat}><Heart size={10} /> {listing.hull}/{listing.max_hull}</span>
                                   <span className={listingStyles.listingStat}><CircuitBoard size={10} /> {listing.modules_count ?? 0} modules</span>
-                                  <span className={listingStyles.listingStat}><User size={10} /> {listing.seller}</span>
+                                  <Seller name={listing.seller} />
+                                  <span className={listingStyles.listingStat}><MapPin size={10} /> {listing.base_name}</span>
                                 </div>
-                                {!blocked && (
+                                {!blocked && (buyableHere(listing) ? (
                                   <button
                                     className={shared.accentBtn}
                                     onClick={() => setBuyTarget({ ship: catShip, listing })}
                                     disabled={!canAfford}
-                                    title={canAfford ? `Buy from ${listing.seller}` : `Need ${(listing.price - credits).toLocaleString()} more credits`}
+                                    title={canAfford ? `Buy from ${sellerLabel(listing.seller)}` : `Need ${(listing.price - credits).toLocaleString()} more credits`}
                                     type="button"
                                   >
                                     <ShoppingCart size={12} /> Buy
                                   </button>
-                                )}
+                                ) : (
+                                  <span className={listingStyles.listingStat}>Dock at {listing.base_name} to buy</span>
+                                ))}
                               </div>
                             )
                           })}
@@ -644,7 +721,7 @@ export function ShipCatalog() {
       )}
       {otherListings.length > 0 && (
         <div className={listingStyles.listingsList}>
-          <span className={shared.sectionTitle}>Other listings here</span>
+          <span className={shared.sectionTitle}>Other listings</span>
           {otherListings.map((listing) => (
             <div key={listing.listing_id} className={listingStyles.sellCard}>
               <div className={listingStyles.listingStatsRow}>
@@ -653,16 +730,21 @@ export function ShipCatalog() {
                   <Credits amount={listing.price} />
                 </span>
                 <span className={listingStyles.listingStat}><Heart size={10} /> {listing.hull}/{listing.max_hull}</span>
-                <span className={listingStyles.listingStat}><User size={10} /> {listing.seller}</span>
+                <Seller name={listing.seller} />
+                <span className={listingStyles.listingStat}><MapPin size={10} /> {listing.base_name}</span>
               </div>
-              <button
-                className={shared.accentBtn}
-                onClick={() => setBuyTarget({ ship: { name: listing.ship_name ?? listing.class_id }, listing })}
-                disabled={(player?.credits ?? 0) < listing.price}
-                type="button"
-              >
-                <ShoppingCart size={12} /> Buy
-              </button>
+              {buyableHere(listing) ? (
+                <button
+                  className={shared.accentBtn}
+                  onClick={() => setBuyTarget({ ship: { name: listing.ship_name ?? listing.class_id }, listing })}
+                  disabled={(player?.credits ?? 0) < listing.price}
+                  type="button"
+                >
+                  <ShoppingCart size={12} /> Buy
+                </button>
+              ) : (
+                <span className={listingStyles.listingStat}>Dock at {listing.base_name} to buy</span>
+              )}
             </div>
           ))}
         </div>
@@ -829,7 +911,7 @@ export function ShipCatalog() {
                   </div>
                   <div className={styles.commissionRow}>
                     <span className={styles.commissionLabel}>Seller</span>
-                    <span className={styles.commissionValue}>{buyTarget.listing.seller}</span>
+                    <span className={styles.commissionValue}>{sellerLabel(buyTarget.listing.seller)}</span>
                   </div>
                   <div className={styles.commissionRow}>
                     <span className={styles.commissionLabel}>Your Credits</span>

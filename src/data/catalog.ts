@@ -245,9 +245,10 @@ export interface CatalogMeta<Counts = Record<string, number>> {
   /**
    * Which source the build fetched from: 'dump' is GET /api/catalog.json (the
    * whole catalog), 'paged' is the POST /api/v2/spacemolt_catalog fallback that
-   * runs when the dump is rate-limited. Absent on a file left by an older build.
+   * runs when the dump is rate-limited, 'fixture' is the offline slice that
+   * CATALOG_FIXTURE=1 writes. Absent on a file left by an older build.
    */
-  source?: 'dump' | 'paged'
+  source?: 'dump' | 'paged' | 'fixture'
   /** True when the source could not supply every section of this file. */
   partial?: boolean
 }

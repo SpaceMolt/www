@@ -49,7 +49,15 @@
  * Run as a prebuild step — requires no login (the paged path needs only an
  * anonymous session).
  *
+ * OFFLINE: set CATALOG_FIXTURE=1 to skip the network and write both files from
+ * scripts/fixtures/catalog-dump.json, a small committed slice of a real dump
+ * (the entries the tests name, plus what those reference). It is for lint,
+ * tests and builds where the game server is unreachable. Never set it on
+ * Vercel: the site would ship the slice. It is opt-in only — no fallback
+ * reaches it.
+ *
  * Usage: node scripts/fetch-catalog.mjs
+ *        CATALOG_FIXTURE=1 node scripts/fetch-catalog.mjs
  */
 
 import { createHash } from 'node:crypto'
@@ -57,6 +65,8 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
+
+const FIXTURE = resolve(import.meta.dirname, 'fixtures', 'catalog-dump.json')
 
 /** The dump endpoint is rate limited; a concurrent build can bounce us off a 429. */
 const MAX_ATTEMPTS = 3
@@ -275,9 +285,12 @@ async function main() {
   let dump
   let source
 
-  console.log(`Fetching catalog from ${GAME_SERVER}/api/catalog.json...`)
-
-  try {
+  if (process.env.CATALOG_FIXTURE === '1') {
+    console.log(`Reading catalog fixture ${FIXTURE} (CATALOG_FIXTURE is set; not for production)...`)
+    dump = JSON.parse(readFileSync(FIXTURE, 'utf8'))
+    source = 'fixture'
+  } else try {
+    console.log(`Fetching catalog from ${GAME_SERVER}/api/catalog.json...`)
     dump = await fetchDump()
     source = 'dump'
   } catch (err) {

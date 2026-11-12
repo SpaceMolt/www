@@ -8,6 +8,12 @@
 import { test, expect } from 'bun:test'
 import {
   matchesTierFilter,
+  fetchAllListings,
+  sellerLabel,
+  cachedListings,
+  clearListingsCache,
+  LISTINGS_TTL_MS,
+  MAX_LISTING_PAGES,
   EMPIRES,
   fetchCommissionableShipIds,
   commissionableCatalogRequest,
@@ -144,4 +150,58 @@ test('a failed later page keeps the ids already collected', async () => {
 
 test('a failed first page propagates so the panel can show the error', async () => {
   await expect(fetchCommissionableShipIds(async () => { throw new Error('network') })).rejects.toThrow('network')
+})
+
+const listing = (id: string) => ({ listing_id: id, ship_id: 's', class_id: 'hauler', price: 100, listed_at: '', base_id: 'b', base_name: 'B' })
+
+test('fetchAllListings reads every page the server declares', async () => {
+  const pages: number[] = []
+  const got = await fetchAllListings(async (page) => {
+    pages.push(page)
+    return { listings: [listing(`l${page}`)], total_pages: 3 }
+  })
+  expect(pages).toEqual([1, 2, 3])
+  expect(got.map((l) => l.listing_id)).toEqual(['l1', 'l2', 'l3'])
+})
+
+test('fetchAllListings costs one request for one page and stops at the page ceiling', async () => {
+  let calls = 0
+  await fetchAllListings(async () => { calls++; return { listings: [], total_pages: 1 } })
+  expect(calls).toBe(1)
+  calls = 0
+  await fetchAllListings(async () => { calls++; return { listings: [], total_pages: 10_000 } })
+  expect(calls).toBe(MAX_LISTING_PAGES)
+})
+
+test('cachedListings reuses one search per account until the TTL passes, the filters change, or the cache is cleared', async () => {
+  const account = {}
+  let searches = 0
+  const search = async () => { searches++; return [] }
+  await cachedListings(account, 'can_fly=false', search, 0)
+  await cachedListings(account, 'can_fly=false', search, LISTINGS_TTL_MS - 1)
+  expect(searches).toBe(1)
+  await cachedListings({}, 'can_fly=false', search, 0)
+  expect(searches).toBe(2)
+  await cachedListings(account, 'can_fly=false', search, LISTINGS_TTL_MS)
+  expect(searches).toBe(3)
+  clearListingsCache(account)
+  await cachedListings(account, 'can_fly=false', search, LISTINGS_TTL_MS)
+  expect(searches).toBe(4)
+  await cachedListings(account, 'can_fly=true', search, LISTINGS_TTL_MS)
+  expect(searches).toBe(5)
+})
+
+test('a failed search is not cached', async () => {
+  const account = {}
+  let searches = 0
+  const search = async () => { searches++; throw new Error('rate_limited') }
+  await expect(cachedListings(account, 'k', search, 0)).rejects.toThrow('rate_limited')
+  await expect(cachedListings(account, 'k', search, 1)).rejects.toThrow('rate_limited')
+  expect(searches).toBe(2)
+})
+
+test('sellerLabel names bot sellers by what they act for', () => {
+  expect(sellerLabel('[Empire Treasury: Outer Rim Explorers]')).toBe('Outer Rim Explorers (Empire Treasury)')
+  expect(sellerLabel('[Station Manager: Grand Exchange]')).toBe('Grand Exchange (Station Manager)')
+  expect(sellerLabel('some_pilot')).toBe('some_pilot')
 })
