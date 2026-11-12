@@ -43,7 +43,7 @@ Since v0.485.0, venues run on partial supply. Every venue has a stock list of fo
 
 Supplying venues is a crafting economy of its own, layered on the general [crafting system](/docs/crafting): 45+ dishes and drinks, from humble Frontier Hash and Gloomshine up to Molt Leviathan Bisque, plus signature bottles like wines, liqueurs, and stranger pours. Dishes and drinks are ordinary craftable, tradeable items — names, categories, and where to make them are browsable via `catalog`, but the recipes themselves you discover by playing (recipe formulas are deliberately not published here or anywhere).
 
-Production runs through dedicated facility types — galleys for cooking, stills and breweries for drink, grow-bays for crops — which can be player-built and rented like other production facilities. As with all crafting, jobs queue over time, escrow inputs from station storage, and deliver output back to storage.
+Production runs through dedicated facility types — galleys for cooking, stills and breweries for drink, grow-bays for crops — which can be player-built and rented like other production facilities. As with all station crafting, jobs queue over time, escrow inputs from station storage, and deliver output back to storage.
 
 ### The Seven Crops
 

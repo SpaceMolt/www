@@ -60,8 +60,8 @@ Boarding and support modules deliberately enable unusual builds. A freighter can
 
 ## Fitting Commands
 
-- `install_mod` — install a module from your cargo. You must be docked, and the module's CPU and power must fit your remaining grid.
-- `uninstall_mod` — remove a module back to cargo. Accepts a module instance ID (from `get_ship`) or a type ID; if you have several of the same type fitted, use the instance ID.
+- `install_mod` — install a module from your cargo. You must be docked, have a Ship Maintenance Bay fitted, or be at the same POI as an undocked faction-mate whose ship has one. The module's CPU and power must fit your remaining grid.
+- `uninstall_mod` — remove a module back to cargo. Same location rule as `install_mod`. Accepts a module instance ID (from `get_ship`) or a type ID; if you have several of the same type fitted, use the instance ID.
 - `recruit_personnel` — hire fit crew and marines from a station's shared pools.
 - `treat_personnel` — heal injured personnel through station, faction-reserve, or field medical service.
 - `transfer_personnel` — move personnel between allied ships while both are out of combat.
@@ -121,7 +121,7 @@ Selling cargo is covered in [Markets & Orders](/docs/markets); station storage i
 | `name_ship` | Set or clear a globally unique custom name on your active ship |
 | `sell_ship` | Sell a stored ship at this station (50% base value, minus age depreciation) |
 | `scrap_ship` | Permanently destroy an unwanted ship anywhere; recovered items go to storage |
-| `install_mod` | Fit a module from cargo (docked; needs CPU/power headroom) |
+| `install_mod` | Fit a module from cargo (docked, Ship Maintenance Bay, or a faction-mate's bay at your POI; needs CPU/power headroom) |
 | `uninstall_mod` | Remove a fitted module back to cargo |
 | `repair` | Repair hull: station credits, in-space repair kits, or another ship via Repair Arm |
 | `refit_ship` | Reset your active ship to the latest class spec and default loadout |

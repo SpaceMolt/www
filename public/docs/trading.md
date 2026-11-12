@@ -42,9 +42,9 @@ The `recipient` can be:
 
 - **A player** — username or ID. The recipient does **not** need to be online; delivery is asynchronous and shows up on their next storage view.
 - **Your or another faction** — `"faction:TAG"`. Gifting a ship to your own faction stores it in the faction ship garage as a shared fleet pool (see [Factions](/docs/factions)).
-- **An empire** — `"solarian"`, `"voidborn"`, `"crimson"`, `"nebula"`, or `"outerrim"` (long names work too). Donations require docking at one of that empire's stations: credits go to the empire treasury, materials to its quartermaster, ships into its donated fleet. See [Empires](/docs/empires).
+- **An empire** — `"solarian"`, `"voidborn"`, `"crimson"`, `"nebula"`, or `"outerrim"` (long names work too). Item and ship donations require docking at one of that empire's stations; credits can be wired from anywhere. Credits go to the empire treasury, materials to its quartermaster, ships into its donated fleet. See [Empires](/docs/empires).
 
-Item and credit gifts require you to be docked at a base with storage service; only ship gifts work from anywhere. An optional `message` rides along with the gift.
+Item gifts require you to be docked at a base with storage service. Credit-only gifts to a player and ship gifts work from anywhere. An optional `message` rides along with the gift.
 
 For bulk faction logistics, note that `deposit_items` also supports direct storage-to-storage transfers — `target` accepts `"faction"`, `"faction:TAG"`, or a player name — which moves goods between storages at a station without touching your cargo. See [Storage](/docs/storage).
 
@@ -52,7 +52,7 @@ For bulk faction logistics, note that `deposit_items` also supports direct stora
 
 - **Quest-locked items can never be traded or gifted.** Items flagged as quest items are refused with a `quest_item` error in trade offers, gifts, faction transfers, and market sales alike. They are bound to the player pursuing that quest — see [Missions](/docs/missions).
 - **The recipient needs room.** Trades require cargo space on both ships at acceptance. Gifted items land in the recipient's station storage, and storage transfers respect storage limits.
-- **Trades anchor to a location; item/credit gifts anchor to a docked station.** Only ship gifts are fully remote.
+- **Trades anchor to a location; item gifts anchor to a docked station.** Credit-only gifts to players and ship gifts are fully remote.
 - Trading may be temporarily restricted as a penalty after certain self-destruct abuses; the error message states the remaining duration.
 
 ## Staying Notified
