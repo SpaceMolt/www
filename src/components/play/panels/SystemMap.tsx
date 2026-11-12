@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Maximize, Radar } from 'lucide-react'
+import { Compass, Maximize, Radar } from 'lucide-react'
 import type { FactionQueryIntelResponse } from '@spacemolt/lib'
 import {
   knownPoiDescription,
@@ -16,6 +16,7 @@ import {
 import { getItem } from '@/data/catalog'
 import { titleCase as formatLabel } from '@/lib/format'
 import { depositKind, DepositIcon, DepositRating } from '../LeftSidebar'
+import { bearingTo, dropOut, isSameAim, plotLabel, type DriveControl } from '../pathfinder'
 import { depositTitle } from '../richness'
 import { reachAU, travelEstimateMs, travelSpeed } from '../routeWalk'
 import { useTransitClock } from '../TravelProgress'
@@ -35,6 +36,10 @@ interface SystemMapProps {
   busy: boolean
   onTravel: (poiId: string) => void
   onJump: (systemId: string, systemName: string) => void
+  /** The Pathfinder Drive, when the ship has one fitted. */
+  drive?: DriveControl
+  /** The systems of the galaxy map, to predict where a plotted course drops out. */
+  getSystems: () => { id: string; name: string; x: number; y: number }[]
 }
 
 const MONO = '"JetBrains Mono", monospace'
@@ -105,7 +110,7 @@ function drawArrow(ctx: CanvasRenderingContext2D, x: number, y: number, angle: n
  * The current system as a ship-centered chart: the camera follows the ship, so travel is a smooth
  * pan. Click a POI to travel, click a jump exit on the edge to jump.
  */
-export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
+export function SystemMap({ busy, onTravel, onJump, drive, getSystems }: SystemMapProps) {
   const store = useAccountStore()
   const factionId = usePlayer()?.faction_id
   const ship = useShip()
@@ -169,13 +174,15 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
   const blocked = busy || usePendingAction() !== null
 
   // What the animation loop reads each frame. A ref, so the loop does not restart on every update.
-  const live = { pois, poiId: location?.poi_id, systemId, exits, deposits, speed, tickMs, etaSecs, hoverId, showRings, blocked, onTravel, onJump,
+  const live = { pois, poiId: location?.poi_id, systemId, exits, deposits, speed, tickMs, etaSecs, hoverId, showRings, blocked, onTravel, onJump, drive, getSystems,
     destId: inTransit ? location?.transit_dest_poi_id : undefined,
     transitAt: location?.transit_x !== undefined && location.transit_y !== undefined ? { x: location.transit_x, y: location.transit_y } : undefined }
   const liveRef = useRef(live)
   liveRef.current = live
 
-  const hasSystem = Boolean(system)
+  // A Pathfinder drift is outside every system: the last chart is stale, so the map shows none.
+  const drifting = Boolean(location?.in_transit) && location?.transit_type === 'pathfinder'
+  const hasSystem = Boolean(system) && !drifting
   useEffect(() => {
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
@@ -189,6 +196,10 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
     let ship: { pos: Point | null; from: Point | null; key: string; eta: number | null; arriveAt: number; systemId?: string } = { pos: null, from: null, key: '', eta: null, arriveAt: 0 }
     let last = performance.now()
     let raf = 0
+    let pointer: Point | null = null // for the Pathfinder plot line
+    // The ship is the center of the view, so the bearing runs from the center to the pointer.
+    const plotBearing = (to: Point) => bearingTo({ x: canvas.clientWidth / 2, y: canvas.clientHeight / 2 }, to)
+    const isPlotting = () => Boolean(liveRef.current.drive?.plotting) && !liveRef.current.blocked
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1
@@ -369,6 +380,16 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
       }
       if (hover) { ctx.strokeStyle = COLOR.white; ctx.lineWidth = 1; circle(ctx, hover.x, hover.y, 11); ctx.stroke() }
 
+      // --- Pathfinder plot: a dotted course from the ship through the pointer, off the chart ---
+      if (pointer && isPlotting() && !dest) {
+        const bearing = plotBearing(pointer)
+        const systems = d.getSystems()
+        const here = systems.find((sys) => sys.id === d.systemId)
+        const [ux, uy] = unit(pointer.x - cx, pointer.y - cy)
+        ctx.strokeStyle = COLOR.white; ctx.lineWidth = 1.5; ctx.setLineDash([2, 5]); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + ux * (W + H), cy + uy * (W + H)); ctx.stroke(); ctx.setLineDash([])
+        drawChip(ctx, plotLabel(bearing, here ? dropOut(systems, here, bearing, here.id) : null, d.tickMs / 1000), Math.max(120, Math.min(W - 120, pointer.x)), pointer.y > 30 ? pointer.y - 20 : pointer.y + 24, COLOR.white)
+      }
+
       // The tooltip follows its POI as the view moves.
       const tip = tooltipRef.current
       if (tip && hover) {
@@ -392,13 +413,24 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
     }
     const onMove = (e: PointerEvent) => {
       if (e.pointerType === 'touch') return
+      const rect = canvas.getBoundingClientRect()
+      pointer = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+      if (isPlotting()) { setHoverId(null); canvas.style.cursor = 'crosshair'; return }
       const id = pick(e)
       setHoverId(id)
       canvas.style.cursor = id && !liveRef.current.blocked && id !== liveRef.current.poiId ? 'pointer' : 'default'
     }
-    const onLeave = (e: PointerEvent) => { if (e.pointerType !== 'touch') setHoverId(null) }
+    const onLeave = (e: PointerEvent) => { if (e.pointerType !== 'touch') { pointer = null; setHoverId(null) } }
     const onClick = (e: MouseEvent) => {
       const d = liveRef.current
+      if (isPlotting()) {
+        const rect = canvas.getBoundingClientRect()
+        const at = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+        // Touch has no hover: the first tap aims, the second tap on the same spot launches.
+        if ((e as PointerEvent).pointerType === 'touch' && !isSameAim(pointer, at)) { pointer = at; return }
+        d.drive!.onLaunch(plotBearing(at))
+        return
+      }
       const id = pick(e)
       // Touch has no hover: the first tap shows the details, the second tap goes.
       if ((e as PointerEvent).pointerType === 'touch' && d.hoverId !== id) { setHoverId(id); return }
@@ -422,7 +454,7 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
     }
   }, [hasSystem])
 
-  if (!system) return <div className={galaxy.mapContainer}><div className={`${shared.emptyState} ${styles.empty}`}>No system chart. The map returns when the jump ends.</div></div>
+  if (!system || drifting) return <div className={galaxy.mapContainer}><div className={`${shared.emptyState} ${styles.empty}`}>No system chart. The map returns when the {drifting ? 'drift' : 'jump'} ends.</div></div>
 
   const hoverPoi = pois.find((p) => p.id === hoverId)
   const hoverExit = exits.find((x) => x.id === hoverId)
@@ -475,6 +507,11 @@ export function SystemMap({ busy, onTravel, onJump }: SystemMapProps) {
       )}
 
       <div className={galaxy.zoomControls}>
+        {drive && (
+          <button className={`${galaxy.zoomBtn} ${galaxy.driveBtn}`} onClick={drive.onToggle} disabled={blocked} aria-pressed={drive.plotting} aria-label="Pathfinder Drive: plot a course" title="Pathfinder Drive: plot a course" type="button">
+            <Compass size={16} />
+          </button>
+        )}
         <button className={`${galaxy.zoomBtn} ${showRings ? '' : styles.off}`} onClick={() => setShowRings((v) => !v)} aria-pressed={showRings} aria-label="Travel-time rings" title="Travel-time rings" type="button">
           <Radar size={16} />
         </button>

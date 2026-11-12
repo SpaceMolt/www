@@ -123,6 +123,25 @@
   color: var(--plasma-cyan);
 }
 
+/* What a click does while the Pathfinder Drive plots a course, bottom center over either map. */
+.plotHint {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 150;
+  max-width: calc(100% - 7rem);
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--plasma-cyan);
+  border-radius: 6px;
+  background: rgba(10, 14, 23, 0.9);
+  color: var(--star-white);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  text-align: center;
+  pointer-events: none;
+}
+
 /* A POI description, cut after five lines. */
 .tooltipDescription {
   margin: 0.4rem 0 0;

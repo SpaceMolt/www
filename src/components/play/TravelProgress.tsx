@@ -1,8 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useAccountStore, useCurrentTick, useLocationState, usePendingAction, useSystem } from '@/lib/spacemolt'
-import { Navigation, Zap } from 'lucide-react'
+import { useAccountStore, useCommandMutation, useCurrentTick, useLocationState, usePendingAction, useSystem } from '@/lib/spacemolt'
+import { Compass, Navigation, Zap } from 'lucide-react'
+import { bearingArg, reverseBearing, type DriveControl } from './pathfinder'
+import { usePlay } from './PlayProvider'
+import { errorMessage } from './shared'
 import { fractionalTick, tickStartingNow, transitClock } from './tickEstimate'
 import styles from './TravelProgress.module.css'
 
@@ -19,6 +22,7 @@ export function transitDestination(
   pickedTarget?: string,
   pois: { id: string; name: string; base_name?: string }[] = [],
 ): string {
+  if (location?.transit_type === 'pathfinder') return 'open space' // a drift has no destination
   const poi = pois.find((p) => p.id === location?.transit_dest_poi_id)
   const poiName = location?.transit_dest_poi_name || poi?.base_name || poi?.name
   const systemName = location?.transit_dest_system_name
@@ -60,7 +64,49 @@ export function useTransitClock() {
   return transitClock(inTransit ? arrivalTick : undefined, start.current.tick, nowTick, tickSecs)
 }
 
-export function TravelProgress() {
+/** A Pathfinder drift has no destination and no ETA: it shows the heading, the position, and what the pilot can do. */
+function DriftProgress({ drive }: { drive?: DriveControl }) {
+  const location = useLocationState()
+  const busy = usePendingAction() !== null
+  const mutate = useCommandMutation()
+  const { uiStore } = usePlay()
+  // The server omits a zero, so a missing coordinate or bearing is 0.
+  const { transit_bearing: bearing = 0, transit_x: x = 0, transit_y: y = 0, void_message: voidMessage } = location ?? {}
+  const burnFuelCell = () => mutate((c) => c.spacemolt.refuel(), { label: 'refuel' })
+    .catch((err) => uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) }))
+  const fuelNote = 'Costs 5x the fuel of a jump'
+
+  return (
+    <div className={`${styles.container} ${styles.pulse}`}>
+      <div className={styles.content}>
+        <div className={styles.header}>
+          <div className={styles.typeTag}>
+            <Compass size={14} className={styles.travelIcon} />
+            <span className={styles.typeLabel}>Drifting</span>
+          </div>
+          <div className={styles.destination}>
+            <span className={styles.destLabel}>bearing</span>
+            <span className={styles.destName}>{bearingArg(bearing)}°</span>
+            <span className={styles.destLabel}>at</span>
+            <span className={styles.destName}>{Math.round(x)}, {Math.round(y)}</span>
+          </div>
+          <div className={styles.driftActions}>
+            {drive && (
+              <>
+                <button type="button" onClick={drive.onToggle} aria-pressed={drive.plotting} disabled={busy} title={`Pick a new heading on the galaxy map. ${fuelNote}.`}>Replot course</button>
+                <button type="button" onClick={() => drive.onLaunch(reverseBearing(bearing))} disabled={busy} title={`Turn 180 degrees, back the way you came. ${fuelNote}.`}>Reverse course</button>
+              </>
+            )}
+            <button type="button" onClick={burnFuelCell} disabled={busy} title="Refuel from a fuel cell in the cargo hold">Burn fuel cell</button>
+          </div>
+        </div>
+        {voidMessage && <div className={styles.voidMessage}>{voidMessage}</div>}
+      </div>
+    </div>
+  )
+}
+
+export function TravelProgress({ drive }: { drive?: DriveControl }) {
   const location = useLocationState()
   const pending = usePendingAction()
   const { etaSecs, percent: progress } = useTransitClock()
@@ -68,6 +114,7 @@ export function TravelProgress() {
   const pois = systemData && 'system' in systemData ? systemData.system.pois : undefined
 
   if (!location?.in_transit) return null
+  if (location.transit_type === 'pathfinder') return <DriftProgress drive={drive} />
 
   const isJump = location.transit_type === 'jump'
   const destination = transitDestination(location, pending?.target, pois)

@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useState } from 'react'
-import { Home, Crosshair } from 'lucide-react'
+import { Compass, Home, Crosshair } from 'lucide-react'
 import { fetchStations, type MapSystem, type MapSystemInfo, type RouteStep } from '@spacemolt/lib'
 import { fixedStations, splitStationRegistry } from '@/lib/stationPresentation'
 import { FRONTIER_COLOR } from '@/lib/frontier'
 import { useAccountStore, useCurrentTick, useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
+import { alongBearing, bearingTo, dropOut, isSameAim, plotLabel, PATHFINDER_SPEED, type DriveControl } from '../pathfinder'
+import type { Point } from './systemMapMath'
 import { fractionalTick } from '../tickEstimate'
 import styles from './GalaxyPanel.module.css'
 
@@ -222,9 +224,14 @@ interface GalaxyPanelProps {
   onPlannedRouteChange?: (route: PlannedRoute | null) => void
   autoTravelProgress?: AutoTravelProgress | null
   highlightedSystems?: Set<string> | null
+  /** The Pathfinder Drive, when the ship has one fitted. */
+  drive?: DriveControl
 }
 
-export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(function GalaxyPanel({ onSystemSelect, plannedRoute, onPlannedRouteChange, autoTravelProgress, highlightedSystems }, ref) {
+/** Longer than the galaxy is wide: a heading into the void runs off the map. */
+const VOID_REACH_GU = 100_000
+
+export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(function GalaxyPanel({ onSystemSelect, plannedRoute, onPlannedRouteChange, autoTravelProgress, highlightedSystems, drive }, ref) {
   const player = usePlayer()
   const location = useLocationState()
   const map = useMap()
@@ -273,6 +280,8 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     draggingWaypointIdx: -1,
     dragPreviewRoute: null as PlannedRoute | null,
     lastDragSystemId: '',
+    // Where the pointer is, for the Pathfinder plot line
+    pointer: null as Point | null,
   })
   const stationsRef = useRef<Array<{ system_id: string; type?: string; faction_id?: string }> | null>(null)
   const factionIdRef = useRef<string | undefined>(undefined)
@@ -293,6 +302,9 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   const onSystemSelectRef = useRef(onSystemSelect)
   onSystemSelectRef.current = onSystemSelect
 
+  const driveRef = useRef(drive)
+  driveRef.current = drive
+
   const autoTravelProgressRef = useRef<AutoTravelProgress | null>(null)
   autoTravelProgressRef.current = autoTravelProgress ?? null
 
@@ -302,8 +314,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   // Travelling blue dot: derive an ms-based animation timeline for the current
   // jump so the dot glides linearly along the edge. The timeline is pinned once
   // per trip (keyed by origin/destination/arrival) so advancing ticks don't
-  // re-sync and jitter the position. Off-network "pathfinder" jumps report no
-  // destination, so no dot is shown for them.
+  // re-sync and jitter the position.
   const currentTick = useCurrentTick()
   const store = useAccountStore()
 
@@ -367,6 +378,25 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   } else {
     transitAnimRef.current = null
   }
+
+  // A Pathfinder drift reports a position and a bearing, never a destination. The marker runs on
+  // from the last report at drive speed, so it moves between reports.
+  // ponytail: a report is up to one tick old (10 GU), which the galaxy scale hides.
+  const driftRef = useRef<(Point & { bearing: number; atMs: number }) | null>(null)
+  if (location?.in_transit && location.transit_type === 'pathfinder') {
+    // The server omits a zero, so a missing coordinate or bearing is 0.
+    const { transit_x: x = 0, transit_y: y = 0, transit_bearing: bearing = 0 } = location
+    const last = driftRef.current
+    if (last?.x !== x || last.y !== y || last.bearing !== bearing) driftRef.current = { x, y, bearing, atMs: Date.now() }
+  } else {
+    driftRef.current = null
+  }
+  /** The live position of the ship in GU: on its drift, or at its system. */
+  const shipPoint = useCallback((): Point | null => {
+    const drift = driftRef.current
+    if (drift) return alongBearing(drift, drift.bearing, (PATHFINDER_SPEED * (Date.now() - drift.atMs)) / TRANSIT_TICK_DURATION_MS)
+    return stateRef.current.mapData?.systems.find((sys) => sys.id === currentSystemIdRef.current) ?? null
+  }, [])
 
   const hasCenteredRef = useRef(false)
 
@@ -696,6 +726,75 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     [worldToScreen],
   )
 
+  // Pathfinder Drive: the drifting ship with its course, and the course under the pointer in plot mode.
+  // Each course ends at the system it is predicted to drop out at, or runs off the map.
+  const drawPathfinder = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      const s = stateRef.current
+      const ship = shipPoint()
+      if (!s.mapData || !ship) return
+      const drift = driftRef.current
+      const at = worldToScreen(ship.x, ship.y)
+      const drawCourse = (bearing: number, color: string, dash: number[]) => {
+        // From open space every system can catch the ship, the launch system too.
+        const hit = dropOut(s.mapData!.systems, ship, bearing, drift ? '' : currentSystemIdRef.current ?? '')
+        const end = alongBearing(ship, bearing, hit?.distance ?? VOID_REACH_GU)
+        const to = worldToScreen(end.x, end.y)
+        ctx.strokeStyle = color
+        ctx.lineWidth = 1.5
+        ctx.setLineDash(dash)
+        ctx.beginPath()
+        ctx.moveTo(at.x, at.y)
+        ctx.lineTo(to.x, to.y)
+        ctx.stroke()
+        ctx.setLineDash([])
+        if (hit) {
+          const node = worldToScreen(hit.system.x, hit.system.y)
+          ctx.beginPath()
+          ctx.arc(node.x, node.y, 14, 0, Math.PI * 2)
+          ctx.stroke()
+        }
+        return hit
+      }
+
+      ctx.save()
+      if (drift) {
+        drawCourse(drift.bearing, 'rgba(103, 232, 249, 0.55)', [6, 6])
+        ctx.save()
+        ctx.fillStyle = TRANSIT_DOT_COLOR
+        ctx.shadowColor = TRANSIT_DOT_GLOW
+        ctx.shadowBlur = TRANSIT_DOT_GLOW_RADIUS
+        ctx.translate(at.x, at.y)
+        ctx.rotate((drift.bearing * Math.PI) / 180)
+        ctx.beginPath()
+        ctx.moveTo(9, 0)
+        ctx.lineTo(-5, 6)
+        ctx.lineTo(-5, -6)
+        ctx.closePath()
+        ctx.fill()
+        ctx.restore()
+      }
+      if (driveRef.current?.plotting && s.pointer) {
+        const bearing = bearingTo(ship, screenToWorld(s.pointer.x, s.pointer.y))
+        const label = plotLabel(bearing, drawCourse(bearing, '#ffffff', [2, 5]), TRANSIT_TICK_DURATION_MS / 1000)
+        ctx.font = '500 11px "JetBrains Mono", monospace'
+        ctx.textBaseline = 'middle'
+        ctx.textAlign = 'left'
+        const width = ctx.measureText(label).width + 12
+        const left = Math.min(s.pointer.x + 14, (canvasRef.current?.clientWidth ?? 0) - width - 4)
+        ctx.fillStyle = 'rgba(10, 14, 23, 0.92)'
+        ctx.fillRect(left, s.pointer.y - 26, width, 18)
+        ctx.strokeStyle = '#ffffff'
+        ctx.lineWidth = 1
+        ctx.strokeRect(left + 0.5, s.pointer.y - 25.5, width - 1, 17)
+        ctx.fillStyle = '#ffffff'
+        ctx.fillText(label, left + 6, s.pointer.y - 16.5)
+      }
+      ctx.restore()
+    },
+    [shipPoint, worldToScreen, screenToWorld],
+  )
+
   const render = useCallback(
     (ctx?: CanvasRenderingContext2D | null) => {
       const canvas = canvasRef.current
@@ -1003,8 +1102,9 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
 
       // Travelling blue dot rides on top of the nodes and route overlay.
       drawTransitDot(ctx)
+      drawPathfinder(ctx)
     },
-    [drawStarfield, drawGrid, drawPlannedRoute, drawTransitDot, worldToScreen],
+    [drawStarfield, drawGrid, drawPlannedRoute, drawTransitDot, drawPathfinder, worldToScreen],
   )
 
   // ── Tooltip ────────────────────────────────────────────────────────
@@ -1090,12 +1190,19 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
 
   const handleGoCurrentLocation = useCallback(() => {
     const s = stateRef.current
+    const drifting = driftRef.current && shipPoint()
+    if (drifting) {
+      s.targetViewX = -drifting.x
+      s.targetViewY = -drifting.y
+      s.isAnimating = true
+      return
+    }
     if (!s.mapData || !location?.system_id) return
     const currentSystem = s.mapData.systems.find((sys) => sys.id === location.system_id)
     if (currentSystem) {
       panToSystemWithHighlight(currentSystem.id)
     }
-  }, [location?.system_id, panToSystemWithHighlight])
+  }, [location?.system_id, panToSystemWithHighlight, shipPoint])
 
   // Snap the view to a system without animation (used for initial centering)
   const snapToSystem = useCallback((system: MapSystemData) => {
@@ -1355,7 +1462,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       const pos = canvasCoords(e.clientX, e.clientY)
 
       // Check for waypoint drag start
-      const wpIdx = findWaypointAt(pos.x, pos.y)
+      const wpIdx = driveRef.current?.plotting ? -1 : findWaypointAt(pos.x, pos.y)
       if (wpIdx >= 0) {
         s.draggingWaypointIdx = wpIdx
         s.lastDragSystemId = plannedRouteRef.current!.route[wpIdx].system_id
@@ -1370,7 +1477,14 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       s.viewStart = { x: s.viewX, y: s.viewY }
     }
 
+    // A click or a tap in plot mode launches the drive toward that point.
+    function launchToward(point: Point) {
+      const ship = shipPoint()
+      if (ship) driveRef.current?.onLaunch(bearingTo(ship, screenToWorld(point.x, point.y)))
+    }
+
     function onMouseMove(e: MouseEvent) {
+      s.pointer = canvasCoords(e.clientX, e.clientY)
       // Waypoint dragging
       if (s.draggingWaypointIdx >= 0) {
         const pos = canvasCoords(e.clientX, e.clientY)
@@ -1425,7 +1539,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
 
         // Show move cursor when hovering over a draggable waypoint
         const wpIdx = findWaypointAt(pos.x, pos.y)
-        canvas!.style.cursor = wpIdx >= 0 ? 'move' : (system ? 'pointer' : 'grab')
+        canvas!.style.cursor = driveRef.current?.plotting ? 'crosshair' : wpIdx >= 0 ? 'move' : (system ? 'pointer' : 'grab')
       }
     }
 
@@ -1446,7 +1560,9 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       const dy = e.clientY - s.dragStart.y
       const wasDrag = Math.abs(dx) > 5 || Math.abs(dy) > 5
 
-      if (!wasDrag && onSystemSelectRef.current) {
+      if (!wasDrag && driveRef.current?.plotting) {
+        launchToward(canvasCoords(e.clientX, e.clientY))
+      } else if (!wasDrag && onSystemSelectRef.current) {
         const pos = canvasCoords(e.clientX, e.clientY)
         const system = findSystemAt(pos.x, pos.y)
         if (system) onSystemSelectRef.current(system)
@@ -1466,6 +1582,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       }
       s.isDragging = false
       s.hoveredSystem = null
+      s.pointer = null
       if (tooltipRef.current) {
         tooltipRef.current.className = styles.tooltip
       }
@@ -1609,8 +1726,11 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         const dy = touch.clientY - s.initialTouchPos.y
         const wasMove = Math.abs(dx) > 10 || Math.abs(dy) > 10
 
-        if (!wasMove && onSystemSelectRef.current) {
-          const tpos = canvasCoords(touch.clientX, touch.clientY)
+        const tpos = canvasCoords(touch.clientX, touch.clientY)
+        if (!wasMove && driveRef.current?.plotting) {
+          if (isSameAim(s.pointer, tpos)) launchToward(s.pointer!)
+          else s.pointer = tpos
+        } else if (!wasMove && onSystemSelectRef.current) {
           const system = findSystemAt(tpos.x, tpos.y)
           if (system) onSystemSelectRef.current(system)
         }
@@ -1665,7 +1785,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       if (resizeObserver) resizeObserver.disconnect()
       cancelAnimationFrame(animFrameId)
     }
-  }, [render, generateStars, canvasCoords, findSystemAt, updateTooltip, worldToScreen, applyStationFlags])
+  }, [render, generateStars, canvasCoords, findSystemAt, updateTooltip, worldToScreen, screenToWorld, shipPoint, applyStationFlags])
 
   // ── JSX ────────────────────────────────────────────────────────────
 
@@ -1683,6 +1803,17 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
 
       {/* Zoom Controls */}
       <div className={styles.zoomControls}>
+        {drive && (
+          <button
+            className={`${styles.zoomBtn} ${styles.driveBtn}`}
+            onClick={drive.onToggle}
+            aria-pressed={drive.plotting}
+            aria-label="Pathfinder Drive: plot a course"
+            title="Pathfinder Drive: plot a course"
+          >
+            <Compass size={16} />
+          </button>
+        )}
         <button
           className={styles.zoomBtn}
           onClick={handleGoHome}
