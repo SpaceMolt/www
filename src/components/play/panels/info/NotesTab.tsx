@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, Plus, Save, Trash2, X } from 'lucide-react'
+import { FileText, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
 import { useAccountStore, useCommandQuery } from '@/lib/spacemolt'
 import { timeAgoOrDate } from '@/lib/format'
 import { usePlay } from '../../PlayProvider'
@@ -12,7 +12,7 @@ import { Pager } from './ReleaseNotes'
 
 const PAGE_SIZE = 20
 
-/** Notes: paged list, open one to read/edit (full replace), create, delete. */
+/** Notes: paged list, open one to read, then edit (full replace) or delete; create. */
 export function NotesTab() {
   const store = useAccountStore()
   const { uiStore } = usePlay()
@@ -23,8 +23,8 @@ export function NotesTab() {
     [page],
   )
 
-  // Open note editor; noteId null = creating a new note
-  const [editing, setEditing] = useState<{ noteId: string | null; title: string; content: string } | null>(null)
+  // Open note; noteId null = creating a new note. An existing note opens in the read view first.
+  const [editing, setEditing] = useState<{ noteId: string | null; title: string; content: string; author?: string; reading?: boolean } | null>(null)
   const [busy, setBusy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -49,7 +49,7 @@ export function NotesTab() {
     setBusy(true)
     try {
       const note = (await social.read_note({ target })).structuredContent
-      if (note) setEditing({ noteId: note.note_id, title: note.title, content: note.content })
+      if (note) setEditing({ noteId: note.note_id, title: note.title, content: note.content, author: note.created_by, reading: true })
     } catch (err) {
       toast('danger', errorMessage(err))
     } finally {
@@ -72,6 +72,7 @@ export function NotesTab() {
           <div className={shared.sectionTitle}>
             <span className={styles.sectionIcon}><FileText size={12} /></span>
             {editing.title}
+            {editing.author && <span className={styles.noteMeta}>by {editing.author}</span>}
           </div>
         ) : (
           <input
@@ -82,13 +83,17 @@ export function NotesTab() {
             onChange={(e) => setEditing({ ...editing, title: e.target.value })}
           />
         )}
-        <textarea
-          className={styles.noteTextarea}
-          rows={10}
-          placeholder="Note content..."
-          value={editing.content}
-          onChange={(e) => setEditing({ ...editing, content: e.target.value })}
-        />
+        {editing.reading ? (
+          <div className={`${styles.textBody} ${styles.noteBody}`}>{editing.content}</div>
+        ) : (
+          <textarea
+            className={styles.noteTextarea}
+            rows={10}
+            placeholder="Note content..."
+            value={editing.content}
+            onChange={(e) => setEditing({ ...editing, content: e.target.value })}
+          />
+        )}
         {confirmDelete && editing.noteId ? (
           <ConfirmAction
             message="Delete this note permanently?"
@@ -98,14 +103,18 @@ export function NotesTab() {
           />
         ) : (
           <div className={styles.linkRow}>
-            <ActionButton
-              label={editing.noteId ? 'Save' : 'Create'}
-              icon={<Save size={12} />}
-              onClick={save}
-              disabled={(!editing.noteId && !editing.title.trim()) || !editing.content.trim()}
-              loading={busy}
-              size="sm"
-            />
+            {editing.reading ? (
+              <ActionButton label="Edit" icon={<Pencil size={12} />} onClick={() => setEditing({ ...editing, reading: false })} size="sm" />
+            ) : (
+              <ActionButton
+                label={editing.noteId ? 'Save' : 'Create'}
+                icon={<Save size={12} />}
+                onClick={save}
+                disabled={(!editing.noteId && !editing.title.trim()) || !editing.content.trim()}
+                loading={busy}
+                size="sm"
+              />
+            )}
             <ActionButton label="Close" icon={<X size={12} />} onClick={() => setEditing(null)} variant="secondary" size="sm" />
             {editing.noteId && (
               <ActionButton label="Delete" icon={<Trash2 size={12} />} onClick={() => setConfirmDelete(true)} variant="danger" size="sm" />
@@ -142,7 +151,7 @@ export function NotesTab() {
             >
               <span className={styles.noteIcon}><FileText size={12} /></span>
               <span className={styles.noteTitle}>{note.title}</span>
-              <span className={styles.noteMeta}>{timeAgoOrDate(note.created_at)}</span>
+              <span className={styles.noteMeta}>{[note.created_by, timeAgoOrDate(note.created_at)].filter(Boolean).join(' · ')}</span>
             </button>
           ))}
         </div>
