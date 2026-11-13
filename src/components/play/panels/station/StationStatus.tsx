@@ -9,7 +9,7 @@ import { formatItemId } from '@/data/catalog'
 import { formatDuration, formatNumber, titleCase } from '@/lib/format'
 
 const CONDITION_OK = new Set(['thriving', 'operational'])
-// Station upkeep (power fuel, life support) is billed once per facility cycle.
+// Station upkeep (power fuel, life support) draws a small share of the listed bill each facility cycle.
 const FACILITY_CYCLE_TICKS = 100
 const ratio = (have: number, max: number) => `${formatNumber(have)}/${formatNumber(max)}`
 const lowTone = (fill: number): Tone => (fill < 0.25 ? 'warn' : 'ok')
@@ -23,8 +23,16 @@ export function Row({ label, ok = true, title, children }: { label: string; ok?:
   )
 }
 
-const chipsOf = (items?: { item_id: string; name?: string; quantity_per_cycle: number }[], bad = false) =>
-  items?.map((i) => ({ id: i.item_id, name: i.name ?? formatItemId(i.item_id), value: `×${formatNumber(i.quantity_per_cycle)}`, bad }))
+// average_burn_per_cycle is new on the server; until it ships, show the listed amount as a restock target only.
+type Upkeep = { item_id: string; name?: string; quantity_per_cycle: number; average_burn_per_cycle?: number }
+const chipsOf = (items?: Upkeep[], bad = false) =>
+  items?.map((i) => ({
+    id: i.item_id,
+    name: i.name ?? formatItemId(i.item_id),
+    value: i.average_burn_per_cycle != null ? `~${formatNumber(i.average_burn_per_cycle)}` : `listed ×${formatNumber(i.quantity_per_cycle)}`,
+    tip: `Listed upkeep ${formatNumber(i.quantity_per_cycle)}. Keep this much in storage as a restock target.`,
+    bad,
+  }))
 
 /** Hull, shield, condition, power, life support, repair bill and construction for the docked base. */
 export function StationStatus({ data }: { data: GetBaseResponse }) {
@@ -89,9 +97,12 @@ export function StationStatus({ data }: { data: GetBaseResponse }) {
 
       <Notes notes={[condition.condition_text]} />
       <Notes warn notes={[power?.remediation, life?.remediation]} />
-      <ItemChips title={<>Power fuel, {every}</>} items={chipsOf(power?.fuel_inputs, drawFill > 1)} />
-      <ItemChips title={<>Life support starved, {every}</>} items={chipsOf(life?.starved, true)} />
-      <ItemChips title={<>Life support upkeep, {every}</>} items={chipsOf(life?.maintenance)} />
+      <ItemChips title={<>Power fuel, average draw {every}</>} items={chipsOf(power?.fuel_inputs, drawFill > 1)} />
+      <ItemChips
+        title={<>Life support starved. Deposit at least 1 of each item to restart it, average draw {every}</>}
+        items={chipsOf(life?.starved, true)}
+      />
+      <ItemChips title={<>Life support upkeep, average draw {every}</>} items={chipsOf(life?.maintenance)} />
 
       {repairs && (repairs.damaged_count > 0 || repairs.wrecked) && (
         <div className={fac.section}>
