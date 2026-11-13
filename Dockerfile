@@ -17,6 +17,9 @@ RUN --mount=type=secret,id=CLERK_SECRET_KEY,env=CLERK_SECRET_KEY \
     pnpm build
 
 FROM node:24-bookworm-slim
+# The server needs only node. Drop the bundled package managers and their CVEs.
+RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+    /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-*
 WORKDIR /app
 ENV NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000
 COPY --from=build --chown=node:node /app/.next/standalone ./
