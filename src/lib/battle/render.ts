@@ -375,6 +375,8 @@ const SCALE_RADIUS = [9, 9, 12, 15.5, 20, 25.5]
  */
 function creatureRadius(name: string): number {
   name = name.replace(/^\[[^\]]*\]\s*/, '')
+  // Blanket, Overlord Nyx's pet leviathan, shows at juvenile size.
+  if (name === 'Blanket') return 16
   if (!/leviathan|cloudwhale/i.test(name) || /\b(egg|hatchling)\b/i.test(name)) return 9
   if (/\b(juvenile|young|calf)\b/i.test(name)) return 16
   return 32

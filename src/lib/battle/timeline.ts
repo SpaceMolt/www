@@ -337,7 +337,8 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
           name: snap.username || snap.player_id.slice(0, 8),
           sideId: snap.side_id,
           sideIndex,
-          color: sideColor(sideIndex),
+          // Blanket, Overlord Nyx's pet leviathan, wears her pink on any side.
+          color: kind === 'creature' && snap.username === 'Blanket' ? '#FF2BD6' : sideColor(sideIndex),
           kind,
           actorKind,
           isNPC: snap.is_npc ?? terminal?.is_npc ?? (actorKind !== 'player' && actorKind !== 'unknown'),
