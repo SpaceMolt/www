@@ -5,7 +5,7 @@
  */
 
 import { getShip, type RawShip } from '@/data/catalog'
-import { archetypeForShip, type GlyphArchetype } from './shipGlyphs'
+import { archetypeForShip, isBlanket, type GlyphArchetype } from './shipGlyphs'
 import { secondaryAttackKind, shieldDrained } from './combatTelemetry'
 import { humanizeID } from './format'
 import {
@@ -42,6 +42,8 @@ export interface ParticipantMeta {
   armed: boolean
   /** Ship scale 1 (personal) … 5 (capital); drives glyph size */
   scale: number
+  /** Max hull at first appearance */
+  maxHull: number
   category: string
   factionId?: string
   /** Stable lateral slot within the side (assigned at first appearance) */
@@ -338,7 +340,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
           sideId: snap.side_id,
           sideIndex,
           // Blanket, Overlord Nyx's pet leviathan, wears her pink on any side.
-          color: kind === 'creature' && snap.username === 'Blanket' ? '#FF2BD6' : sideColor(sideIndex),
+          color: kind === 'creature' && isBlanket(snap.username) ? '#FF2BD6' : sideColor(sideIndex),
           kind,
           actorKind,
           isNPC: snap.is_npc ?? terminal?.is_npc ?? (actorKind !== 'player' && actorKind !== 'unknown'),
@@ -349,6 +351,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
           archetype: archetypeForShip(kind, ship?.class, ship?.category, ship?.scale ?? 1, snap.username),
           armed: resolveArmed(kind, ship),
           scale: ship?.scale ?? (kind === 'drone' ? 0 : 1),
+          maxHull: snap.max_hull,
           category: (ship?.category || kind).toLowerCase(),
           factionId: snap.faction_id,
           slot,

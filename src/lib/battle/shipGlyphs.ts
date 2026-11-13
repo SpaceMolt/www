@@ -56,6 +56,14 @@ export const GLYPH_NOSE_X: Record<GlyphArchetype, number> = {
 }
 
 /**
+ * Whether a creature is Blanket, Overlord Nyx's pet Rainbow Leviathan, by its
+ * name minus any ranch brand tag ("[TAG] "), in any case.
+ */
+export function isBlanket(name: string): boolean {
+  return name.replace(/^\[[^\]]*\]\s*/, '').toLowerCase() === 'blanket'
+}
+
+/**
  * Creature name → body plan. Battle logs carry the species display name, not
  * its id, so match on the name, minus any ranch brand tag ("[TAG] "). First
  * match wins; anything unmatched (eggs, crystal druses, corals, urchins) keeps

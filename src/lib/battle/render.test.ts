@@ -294,4 +294,11 @@ describe('shipRadius for creatures', () => {
     const radius = names.map((_, i) => shipRadius(t.participants.get(`c${i}`)!, 360))
     expect(radius).toEqual([9, 9, 9, 16, 16, 32, 32, 32, 9])
   })
+
+  it('draws Blanket to scale by its max hull, past any wild leviathan, in pink', () => {
+    const hulls = [440, 1100, 2200, 4400, 22000]
+    const t = buildTimeline([entry(hulls.map((max_hull, i) => snap({ player_id: `b${i}`, username: i === 4 ? '[NYX] blanket' : 'Blanket', kind: 'creature', max_hull, hull: max_hull })))], null)
+    expect(hulls.map((_, i) => shipRadius(t.participants.get(`b${i}`)!, 360))).toEqual([9, 16, 32, 64, 96])
+    expect(t.participants.get('b4')!.color).toBe('#FF2BD6')
+  })
 })
