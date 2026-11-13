@@ -10,6 +10,7 @@ import { battleMomentPath, acceptsPlaybackShortcut, reconcilePlayhead } from '@/
 import { writeClipboardText } from '@/lib/battle/clipboardFeedback'
 import { buildTimeline } from '@/lib/battle/timeline'
 import { arenaVenueName } from '@/lib/battle/format'
+import { fetchMobileBaseClasses } from '@/lib/mobileBases'
 import { getCinemaEligibility } from '@/lib/cinema/director'
 import {
   makeTransform,
@@ -48,7 +49,17 @@ export interface BattlePresentationProps {
 export default function BattlePresentation({ battleId, data, embedded = false, focusPlayerId, enabled = true, reachRings, onPickShip }: BattlePresentationProps) {
   const { t } = useTranslation()
   const { summary, entries, isLive, loading, error } = data
-  const timeline = useMemo(() => buildTimeline(entries, summary), [entries, summary])
+  // A battle log does not mark mobile bases; the live list says which stations are.
+  const [mobileBaseClasses, setMobileBaseClasses] = useState<ReadonlyMap<string, string>>()
+  const hasStation = summary?.has_station === true
+  useEffect(() => {
+    if (!hasStation) return
+    const controller = new AbortController()
+    // On failure every station draws as a plain station.
+    fetchMobileBaseClasses(controller.signal).then(setMobileBaseClasses, () => {})
+    return () => controller.abort()
+  }, [hasStation])
+  const timeline = useMemo(() => buildTimeline(entries, summary, mobileBaseClasses), [entries, summary, mobileBaseClasses])
   const cinemaReady = useMemo(() => getCinemaEligibility(summary, entries, data.phase) === 'ready', [summary, entries, data.phase])
   const timelineRef = useRef(timeline)
   timelineRef.current = timeline

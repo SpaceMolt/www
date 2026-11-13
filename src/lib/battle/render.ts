@@ -46,6 +46,9 @@ function rand01(...seeds: (string | number)[]): number {
 /** Ring radii in arena units, indexed by zoneIndex (outer=0 … engaged=3). */
 const RING_R = [1.0, 0.72, 0.45, 0.17]
 export const RING_LABELS = ['OUTER', 'MID', 'INNER', 'ENGAGED']
+/** Where stations stand when a battle has more than one: off-centre and apart by more than a station glyph. */
+const STATION_R = 0.1
+const STATION_SPACING = 0.22
 
 export interface ViewState {
   zoom: number
@@ -91,15 +94,25 @@ function arenaPos(
   meta: ParticipantMeta,
   snap: ParticipantSnapshot,
 ): Vec {
+  const sideCount = timeline.sides.length
+  const angle = sideAngle(meta.sideIndex, sideCount)
   // A station is bolted to the middle of the arena — the engine pins it at the
   // engaged ring, never moves it, and lets the fight come to it. So it sits on
   // the bullseye rather than out along its side's bearing like a ship: it is the
   // thing both sides are converging on, and drawing it anywhere else would put
   // the object of the siege off to one flank.
-  if (meta.kind === 'station') return { x: 0, y: 0 }
-
-  const sideCount = timeline.sides.length
-  const angle = sideAngle(meta.sideIndex, sideCount)
+  if (meta.kind === 'station') {
+    const stations = [...timeline.participants.values()].filter(p => p.kind === 'station')
+    if (stations.length === 1) return { x: 0, y: 0 }
+    // More than one: each sits just off the bullseye toward its own side, and
+    // stations of one side stand next to each other, so none hides another.
+    const own = stations.filter(p => p.sideIndex === meta.sideIndex)
+    const offset = (own.indexOf(meta) - (own.length - 1) / 2) * STATION_SPACING
+    return {
+      x: Math.cos(angle) * STATION_R - Math.sin(angle) * offset,
+      y: Math.sin(angle) * STATION_R + Math.cos(angle) * offset,
+    }
+  }
   const r = RING_R[zoneIndex(snap.zone)]
   const side = timeline.sides[meta.sideIndex]
   const n = side ? side.participantIds.length : 1

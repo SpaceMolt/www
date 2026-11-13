@@ -45,6 +45,21 @@ describe('participant kind', () => {
     expect(meta?.shipClassName).toBe('Station')
   })
 
+  it('draws a mobile base as its catalog hull, not a fixed station', () => {
+    const t = buildTimeline(
+      [entry([snap({ player_id: 'irlc_civitas', username: 'Civitas', kind: 'station', max_hull: 2200, hull: 2200 })])],
+      null,
+      new Map([['irlc_civitas', 'civitas']]),
+    )
+    const meta = t.participants.get('irlc_civitas')
+    expect(meta?.kind).toBe('ship')
+    expect(meta?.actorKind).toBe('station')
+    expect(meta?.archetype).toBe('capital')
+    expect(meta?.scale).toBe(5)
+    expect(meta?.shipClassName).toBe('Civitas')
+    expect(meta?.armed).toBe(true)
+  })
+
   it('keeps players, pirates and police as ships whatever they are flying', () => {
     const t = buildTimeline(
       [

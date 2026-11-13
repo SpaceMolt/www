@@ -188,6 +188,30 @@ describe('ship facing', () => {
     expect(ships.get('base_1')!.facing).toBe(0)
   })
 
+  it('keeps a lone station on the bullseye', () => {
+    const timeline = buildTimeline([entry([snap({ player_id: 'base_1', kind: 'station' }), snap({ player_id: 'p3', side_id: 2 })])], null)
+    expect(sampleShips(timeline, 0, 0, true).get('base_1')!.pos).toEqual({ x: 0, y: 0 })
+  })
+
+  it('draws every station apart when a battle has more than one', () => {
+    const timeline = buildTimeline(
+      [
+        entry([
+          snap({ player_id: 'base_1', kind: 'station', side_id: 2 }),
+          snap({ player_id: 'base_2', kind: 'station', side_id: 2 }),
+          snap({ player_id: 'base_3', kind: 'station', side_id: 1 }),
+          snap({ player_id: 'p3', side_id: 1 }),
+        ]),
+      ],
+      null,
+    )
+    const ships = sampleShips(timeline, 0, 0, true)
+    const pos = ['base_1', 'base_2', 'base_3'].map(id => ships.get(id)!.pos)
+    const gaps = [[0, 1], [0, 2], [1, 2]].map(([a, b]) => Math.hypot(pos[a].x - pos[b].x, pos[a].y - pos[b].y))
+    // Station glyphs are 30px at the default 360px-per-unit scale: 60px apart clears them.
+    for (const gap of gaps) expect(gap).toBeGreaterThan(60 / 360)
+  })
+
   it('removes the former owner without an explosion after an intact capture', () => {
     const captured = entry([snap({ player_id: 'target', username: 'Target', side_id: 2, ship_class: 'axiom' })])
     captured.captures = [{

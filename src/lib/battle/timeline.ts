@@ -262,7 +262,12 @@ function boardingEventText(
   }
 }
 
-export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary | null): BattleTimeline {
+export function buildTimeline(
+  entries: BattleLogEntry[],
+  summary: BattleSummary | null,
+  /** Live mobile base id → catalog ship class (archetype). */
+  mobileBaseClasses: ReadonlyMap<string, string> = new Map(),
+): BattleTimeline {
   const participants = new Map<string, ParticipantMeta>()
   const names = new Map<string, string>()
   const events: BattleEvent[] = []
@@ -327,10 +332,14 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
       snapMap.set(snap.player_id, snap)
       let meta = participants.get(snap.player_id)
       if (!meta) {
-        const ship = snap.ship_class ? getShip(snap.ship_class) : undefined
         const terminal = terminalParticipants.get(snap.player_id)
         const actorKind = snap.kind || terminal?.kind || 'unknown'
-        const kind = detectKind(snap, actorKind)
+        // A mobile base fights as a station (it never moves) but it is a
+        // commissioned hull, so it draws as its catalog ship. Its snapshot has no
+        // ship class; the caller maps live mobile base ids to theirs.
+        const shipClassId = snap.ship_class || (actorKind === 'station' ? mobileBaseClasses.get(snap.player_id) ?? '' : '')
+        const ship = shipClassId ? getShip(shipClassId) : undefined
+        const kind = ship && actorKind === 'station' ? 'ship' : detectKind(snap, actorKind)
         const sideIndex = sideIndexById.get(snap.side_id) ?? 0
         const slot = sideSlotCounter.get(snap.side_id) ?? 0
         sideSlotCounter.set(snap.side_id, slot + 1)
@@ -345,11 +354,12 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
           actorKind,
           isNPC: snap.is_npc ?? terminal?.is_npc ?? (actorKind !== 'player' && actorKind !== 'unknown'),
           isBoss: snap.is_boss ?? terminal?.is_boss ?? false,
-          shipClassId: snap.ship_class,
+          shipClassId,
           shipClassName: ship?.name || (kind === 'ship' ? snap.ship_class : kind === 'station' ? 'Station' : kind),
           shipClass: ship?.class ?? '',
           archetype: archetypeForShip(kind, ship?.class, ship?.category, ship?.scale ?? 1, snap.username),
-          armed: resolveArmed(kind, ship),
+          // A mobile base mounts station weapons, not the hull's weapon slots.
+          armed: actorKind === 'station' || resolveArmed(kind, ship),
           scale: ship?.scale ?? (kind === 'drone' ? 0 : 1),
           maxHull: snap.max_hull,
           category: (ship?.category || kind).toLowerCase(),
