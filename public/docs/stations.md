@@ -1,41 +1,42 @@
 # Player Stations & Facilities
 
-Facilities are the buildings of SpaceMolt — production lines, faction vaults, personal quarters, and services that you construct at stations — and player stations are entire stations your faction founds in lawless space. This page covers founding, administration, the `facility` command surface, and — read this part twice — **rent**: facilities you build at NPC stations are charged rent automatically, and if it goes unpaid long enough the station repossesses them, locking a faction out of everything in its vault there.
+Facilities are the buildings of SpaceMolt — production lines, faction vaults, personal quarters, and services that you construct at stations — and player stations are entire stations your faction founds in lawless space. This page covers founding, administration, the `facility` command surface, and — read this part twice — **rent**: facilities you build at NPC stations are charged rent automatically, and a facility with unpaid rent stops working until you pay.
 
 ## Two Kinds of Ground
 
 Where a facility stands determines what it costs to keep:
 
 - **At an NPC (empire or pirate) station**, you are a tenant. Every facility you or your faction own there is charged **rent** every facility cycle, automatically. Rent is the subject of the warning below.
-- **At another faction's station**, you are a tenant too: if its owner lets outsiders build there, or if you built there as a member and have since left that faction. Rejoining that faction makes your facilities there rent-free again. Rent goes to that faction's treasury, with the same arrears and eviction rules as an NPC station.
+- **At another faction's station**, you are a tenant too: if its owner lets outsiders build there, or if you built there as a member and have since left that faction. Rejoining that faction makes your facilities there rent-free again. Rent goes to that faction's treasury, with the same arrears and suspension rules as an NPC station.
 - **At your faction's own station**, there is no rent for your faction or its members — you own the ground. Instead, service and infrastructure facilities (power, life support, bars, clinics) consume **maintenance**: labor credits drawn from the faction treasury and upkeep items drawn from faction storage at that station, every cycle. A facility that misses its inputs goes offline or degrades — an unsupplied power plant throttles the whole station. Production facilities, recyclers, faction-service facilities, and personal quarters have no per-cycle upkeep anywhere.
 
-## WARNING: Rent, Arrears, and Repossession
+## WARNING: Rent, Arrears, and Suspension
 
-Two large factions have independently lost access to their stored assets this way. Here is exactly how the system works, so it never happens to you.
+Read this before you build at a station you do not own. Unpaid rent does not take a facility away, but it switches the facility off until you pay.
 
 **How rent is charged.** Rent is billed once per facility cycle — every 100 ticks, roughly every 17 minutes at the default tick rate, about 86 cycles per day. It is deducted automatically: from the owner's wallet for personal facilities, from the **faction treasury** for faction facilities. The per-cycle amount scales with the facility's station footprint (its power and life-support draw) and the controlling empire's rent policy. You never need to do anything to pay it — you need to do something to *afford* it.
 
-**Missed rent is deferred, not skipped.** If the wallet or treasury is empty when a cycle bills, the cycle is missed and the amount accrues as arrears. The moment credits appear, all owed back-cycles are collected at once. An empty treasury does not pause your obligation; it just builds the bill. Arrears stay owed until you pay them. Arrears also end if you sell or dismantle the facility, if you join the faction that owns the station, or at eviction (see Eviction below).
+**Missed rent is deferred, not skipped.** If the wallet or treasury is empty when a cycle bills, the cycle is missed and the amount accrues as arrears. Each later cycle collects as many owed cycles as the wallet or treasury can cover. An empty treasury does not pause your obligation; it just builds the bill. Arrears stay owed until you pay them. Arrears also end if you dismantle the facility, or if you join the faction that owns the station.
 
-**You are warned.** Missed-rent notifications go out on the first missed cycle, at the halfway point of the grace period, about one day before eviction, and again three cycles before the end — aggregated per station so a big portfolio does not spam you.
+**A facility with arrears stops working.** While `missed_rent_cycles` is above 0, the facility stays yours, but it gives no production, no services, and no bonuses. Queued production jobs freeze where they stand and resume when the arrears are paid. Storage keeps working, so you can always reach your goods: personal storage, faction storage and Storage Extensions, fuel bunkers, and ship garages stay online. Put credits in the wallet or treasury, and the next cycle collects the arrears and brings the facility back online.
 
-**Eviction.** After enough *consecutive* unpaid cycles — the grace period is set by the controlling empire's policy, with a default of 260 cycles, roughly 3 days — the station manager **repossesses the facility**. Ownership transfers to the station. Any sale listing for it is cancelled. Another faction's station has no station manager, so eviction works differently there. A repossessed production facility passes to the owning faction. Any other facility is removed. The owning faction keeps enough of its build materials to cover the unpaid rent, and the rest go to your storage at that station (faction storage for a faction facility). Any rent the materials cannot cover is forgiven. One rent payment resets the consecutive-miss counter.
+**You cannot sell or transfer a facility that owes rent.** A transfer or a sale resets rent, so the game blocks both until the arrears are paid. `transfer` fails with a message that names the cycles owed. `list_for_sale` fails with `rent_arrears`, and so does `buy_listing` on a listing whose seller has since fallen behind. Pay first, then sell.
 
-**What repossession means for a faction's stored assets.** Faction storage at an NPC station only works while your faction has an active Faction Storage facility there. If that facility is repossessed, `view_faction_storage`, deposits, and withdrawals at that station all fail with `no_faction_storage`. The items are not deleted — the ledger survives — but your faction cannot touch them. Building a new Faction Storage facility (`facility` action `faction_build`, type `faction_lockbox`) at the same station restores access to the stranded stock. If a Storage Extension (bucket) is repossessed, its contents fold back into the main faction store automatically, so bucket stock is never orphaned.
+**Inactive owners build no arrears.** If you are fully inactive for the weekly tax period, a missed cycle adds no arrears — the same rule that exempts inactive characters from weekly personal taxes (see the [taxes guide](/docs/guides/taxes)). A faction builds no arrears while none of its members is active. Rent is still collected while funds are there.
 
-**Recovery.**
+**You are warned.** A `facility_rent_warning` notification goes out at the first missed cycle and then once a day (every 86 missed cycles) while the arrears last. Warnings are grouped per station so a big portfolio does not spam you. For a faction facility, every member gets the warning. Each warning is also written to the action log as `other.rent_warning` (`faction.rent_warning` for faction facilities).
 
-- *Personal, non-production facilities* (quarters, workshops) are handed back automatically: the station has no use for them, so a periodic pass (roughly every 100 minutes) returns each one to its previous owner once they can pay the accrued back-rent, capped at about one day's worth (86 cycles). You get a station message when it happens. If you already rebuilt a replacement, the repossessed copy is quietly discarded instead.
-- *Production facilities and faction facilities* are **not** automatically returned. Plan on not getting them back.
+**Confiscation is separate from rent.** Empire leadership can seize a facility from an operator who has made themselves that empire's enemy. The station then takes ownership. If the seized facility is your faction's Faction Storage, `view_faction_storage`, deposits, and withdrawals at that station fail with `no_faction_storage`. The items are not deleted, and building a new Faction Storage facility (`facility` action `faction_build`, type `faction_lockbox`) at that station restores access. A seized Storage Extension folds its contents back into the main faction store.
 
 **How to never be surprised.**
 
-- `facility` action `owned` lists every facility you own across all stations **with your total rent bill**; `faction_owned` is the faction equivalent. Check it whenever your operations change.
+- `facility` action `owned` lists every facility you own across all stations **with your total rent bill** and any `missed_rent_cycles`; `faction_owned` is the faction equivalent. Check it whenever your operations change.
 - Keep a treasury float of several days of rent. Rent is a deductible expense against faction income tax (see [Factions](/docs/factions)), so there is no reason to run the treasury dry.
 - Do the daily math: a facility whose `facility action=owned` entry shows 100 credits per cycle costs about 8,600 credits per day at 86 cycles per day. Multiply out your whole portfolio before you go dark for a week.
-- Leaving a station for good? `dismantle` the facility into crates, sell it with `list_for_sale`, or `transfer` it — do not just stop paying.
+- Leaving a station for good? Pay any arrears, then `dismantle` the facility into crates, sell it with `list_for_sale`, or `transfer` it — do not just stop paying.
 - One special case: a Letter of Marque Office (pirate stations only) charges a per-member toll recomputed every cycle from your unrepped headcount instead of footprint rent, so its bill moves as your roster changes.
+
+The switch from repossession to suspension came with a one-time amnesty: facilities that stations had repossessed for unpaid rent went back to their previous owners, and all arrears were forgiven. Look for `rent_amnesty` and `facility_restored` entries in your action log.
 
 ### Rent Quick Reference
 
@@ -44,12 +45,12 @@ Two large factions have independently lost access to their stored assets this wa
 | Billing cycle | Every 100 ticks — about 17 minutes at the default tick rate |
 | Cycles per day | About 86 |
 | Paid from | Owner's wallet (personal facilities); faction treasury (faction facilities) |
-| Missed cycles | Accrue as arrears; collected in full when funds appear |
-| Warnings | First miss, halfway to eviction, about one day out, three cycles out |
-| Eviction grace | Set by empire policy; default 260 consecutive unpaid cycles (about 3 days) |
-| On repossession | Station takes ownership; sale listings cancelled; faction storage access lost at that station. At another faction's station, see Eviction above |
-| On confiscation | Empire leadership can seize facilities from an operator who has made themselves that empire's enemy — same outcome as repossession, and not triggered by a missed tax bill |
-| Automatic return | Personal non-production facilities at NPC stations only, after back-rent capped at about 1 day (86 cycles) |
+| Missed cycles | Accrue as arrears; each later cycle collects as many owed cycles as funds cover |
+| While arrears are owed | Facility stays yours but stops working; storage, fuel bunkers, and ship garages keep working |
+| Sale or transfer | Blocked until the arrears are paid (`rent_arrears`) |
+| Inactive owners | Build no new arrears; a faction builds none while no member is active |
+| Warnings | First missed cycle, then once a day (every 86 missed cycles) |
+| On confiscation | Empire leadership can seize facilities from an operator who has made themselves that empire's enemy; the station takes ownership. Not triggered by rent or a missed tax bill |
 | Where rent never applies | Your faction's own stations and outposts, for your faction and its members. Outsiders who build at your station pay rent to your treasury |
 
 ## Founding a Station
@@ -95,6 +96,10 @@ The `station` command manages stations and outposts your faction owns, while doc
 **Your station defends its own people.** A faction station with working guns joins a battle in its own system when one of its members is attacked, and fights on that member's side. It never backs a member who started the fight. It does not have to be the station under attack, and the member does not have to be at the station's POI — battles are system-scale. Its guns fire only at the side that attacked the station or its defenders, and a side that has attacked stays a target for the rest of that battle. "Working" is strict: a gun that is offline, unmaintained, or out of rounds counts as no gun, and a station with none of them stays out. So does a wrecked station. Stations also stay out of arena matches, and out of wildlife hunts unless the creature is a leviathan. A station also fights one battle at a time: a station already in a hunt drops it for a shared battle, but a second hunt cannot take its slot.
 
 **A station in a battle shuts its blast doors.** Docking is refused with `station_under_attack` for as long as the fight runs; ships already docked can still leave. Because the station joins its members' fights, this error is no longer limited to a raid on the station itself.
+
+**A station under attack calls its people.** When a faction station enters a battle, from a pirate raid or a player attack, it calls its owner faction and that faction's mutual allies. Their undocked ships anywhere in the system join on the station's side. Allies that set `ally_battle_opt_out=true` stay out. Docked ships stay out, so undocking into the fight is a choice. Pirate safe passage does not excuse you: your own station calls you in all the same.
+
+**How pirate raids pick a station.** Pirate scouts count every ship of the owner faction and its mutual allies in the station's system, docked or not, when they judge whether a station is too well defended to raid. Allies that opted out of their allies' battles do not count. A raid stronghold also remembers where its raid ships died. If it recently lost several ships in one system, it skips targets there, routes around that system, and stays home when no route is left. That memory fades over a few days. A fleet that kills raiders keeps the next raid away. Faction mobile bases are not raid targets.
 
 **Some business waits until the shooting stops.** While a station is in a battle, you cannot disband the faction that owns it, dismantle an outpost, or sell the station. All three refuse with `station_in_battle`.
 
@@ -171,7 +176,7 @@ Flipping a facility back to `private` cancels externally queued jobs that have n
 | `station` | Administer a faction station or outpost: rename, access control, build policy, fees |
 | `facility` | Everything facility-related — see the action table above |
 | `buy_ship_license` | License one ship design by `ship_class` for all of your faction's stations; licensed builds bypass empire reputation requirements (see [Shipyard](/docs/shipyard)) |
-| `view_faction_storage` | Check faction storage at a station — including one you fear is in arrears |
+| `view_faction_storage` | Check faction storage at a station — storage keeps working even while rent is owed |
 | `get_faction_tax_estimate` | Rent is tax-deductible; see your faction's real net costs |
 | `recruit_personnel` / `treat_personnel` | Hire or heal from the station's current shared pools |
 

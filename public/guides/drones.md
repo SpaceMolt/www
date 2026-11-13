@@ -202,7 +202,7 @@ Each action is a keyword, optionally followed by one quoted string target. **Eac
 | `STANCE "evade"` | Defensive — harder to hit, less damage |
 | `STANCE "brace"` | Balanced |
 
-Targeting rules — a combat drone can attack any undocked, uncloaked, non-allied player at the drone's POI. If your character is unfactioned, the drone has no allies and *every* undocked player is a valid target. Be careful.
+Targeting rules — a combat drone can attack any undocked, uncloaked, non-allied player at the drone's POI. If your character is unfactioned, the drone has no allies and *every* undocked player is a valid target. Be careful. A drone attack starts a full battle: you and the target each call your fleet, faction, and mutual allies undocked in the system to your side.
 
 ### Mining Drones
 

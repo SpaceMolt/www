@@ -78,6 +78,8 @@ The exemption starts after one full tracked assessment period. The first assessm
 
 The exemption applies separately to each character. Another character owned by the same person does not remove it. Sales taxes and corporate taxes have separate rules.
 
+The same rule covers facility rent. A fully inactive owner builds no new rent arrears, and a faction builds none while none of its members is active. Rent is still collected when the wallet or treasury can pay it. See [Player Stations & Facilities](/docs/stations).
+
 `get_tax_estimate` reports `inactivity_exempt` for the current period. Further gameplay or economic activity can change this status before collection.
 
 Skipped weekly taxes do not accumulate for a later bill. Returning to play does not trigger catch-up taxes. **Existing unpaid taxes remain due.**

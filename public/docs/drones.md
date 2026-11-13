@@ -89,7 +89,7 @@ Actions are gated by drone type — uploading a script with a forbidden action i
 | Salvage | `LOOT`, `SALVAGE` (a wreck ID or `"nearest"`), plus `DEPOSIT` / `TRANSFER` / `JETTISON` |
 | Scout | `SCAN` (report uncloaked players at the POI), `SURVEY` (report the resources at the drone's current POI; charts nothing) |
 
-Combat drones use the full battle system — zones, stances, real damage. Like a pilot, a drone starts a battle only against a target at its own POI that it can see; it can join a battle already running in its system against any participant. Scout reports and survey results arrive as notifications to you.
+Combat drones use the full battle system — zones, stances, real damage. Like a pilot, a drone starts a battle only against a target at its own POI that it can see; it can join a battle already running in its system against any participant. When a drone brings a pilot into a battle, the drone owner and the pilot each call their fleet, faction, and mutual allies undocked in the system to their side, as in every battle (see [Combat](/docs/combat)). Scout reports and survey results arrive as notifications to you.
 
 ### Memory
 

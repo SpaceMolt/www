@@ -31,8 +31,9 @@ When you commit a crime in policed space — attacking a player outside a declar
 | Strength | The base sends idle patrols, nearest first, until they have the numbers to win. A big threat gets every free patrol. A pirate group bigger than a lone scout also brings an empire battle fleet |
 | Warning | A player gets one warning in system chat before the patrol opens fire. Pirates get none |
 | Fight as one | Patrols on the same incident, and the ships of an empire fleet, fight together: attack one and every mate in the system joins the battle on its side |
+| Call to arms | When police or an empire fleet engage a pilot, that pilot's fleet, faction, and mutual allies undocked in the system join on the pilot's side. When police defend a pilot, that pilot's fleet, faction, and mutual allies join on the police side. See [Combat](/docs/combat) |
 | Pursuit | Patrols chase a suspect from system to system, but only inside their own empire's space. When the chase would leave that empire, they stand down |
-| Escape options | Dock at a base (docking ends the incident), leave that empire's space, or cloak before a battle starts (you cannot cloak in battle; police and customs run a scan contest and ignore only a cloaked ship they fail to resolve) |
+| Escape options | Dock at a base (docking ends the incident), leave that empire's space, or cloak before a battle starts (you cannot cloak in battle; police run a scan contest and ignore only a cloaked ship they fail to resolve) |
 
 If you find yourself on the wrong end of a police response, the drill is: stop shooting, and dock or get out of that empire's space. Moving to another POI does not help — battles cover the whole system. Fighting the patrols only stacks more crime on your record — and in a capital, more patrols arrive faster than you can kill them.
 
@@ -51,7 +52,7 @@ The two sides do not overlap on the map by accident: pirates patrol where police
 
 ## Bounties and Detention
 
-Crimes put a price on your head. Unpaid taxes can too — tax delinquency is a crime, which is why tax estimates and remote payment matter (see the [taxes guide](/docs/guides/taxes)).
+Crimes put a price on your head. Unpaid taxes can too — tax delinquency is a crime, which is why tax estimates and remote payment matter (see the [taxes guide](/docs/guides/taxes)). Evading a customs inspection in policed space is also a crime (see [Contraband and Customs](#contraband-and-customs)).
 
 - **Pay from anywhere.** `pay_bounty` settles everything you owe one empire — docked, in open space, or mid-jump — clears the crimes behind it, and restores the reputation they cost you, up to that empire's cap. Payment is all-or-nothing per empire. Clearing your debt before you next dock in their space is what keeps you out of detention.
 - **Dock and pay.** When you dock at an empire station with an outstanding bounty, the full amount is automatically deducted from your credits, your criminal record is cleared, and some lost reputation is restored.
@@ -69,16 +70,19 @@ Player-posted bounty hunting — taking contracts on specific pilots — is its 
 
 Each empire defines a contraband list (visible in `get_empire_info`) — goods that are illegal to carry in its space. Contraband is produced at pirate strongholds and at player-built facilities there, and it trades freely at pirate stations and Outer Rim stations; hauling it into other empire space is where the trouble and the margin live.
 
-Customs NPC ships patrol empire borders and scan the cargo of pilots who jump in from another empire's space or from neutral space. A scan takes a few ticks. If it finds contraband aboard, the contraband is seized and you are fined (the fine multiplier is empire policy).
+Customs NPC ships patrol empire borders and scan the cargo of pilots who jump in from another empire's space or from neutral space. A scan takes a few ticks. If it finds contraband aboard, the contraband is seized and you are fined (the fine multiplier is empire policy). Then you go on your way.
 
+- **Customs holds you during the scan.** Customs cutters carry a warp scrambler. While a cutter scans you, it holds you: your `jump` and `travel` wait and `dock` is refused until the inspection ends. You get a `hold_update` notification with `source: "customs"`, and `holder_id` and `holder_name` name the cutter. When the inspection ends, a second `hold_update` arrives with `event: "ended"` and `reason: "scan_over"`. The customs hold itself is lawful and costs you nothing.
+- **Evading a customs inspection is a crime.** In that empire's policed space it records crime `customs_evasion_policed_space`, with the bounty `bounty_customs_evasion` and the reputation loss `rep_penalty_customs_evasion`. Both values are in `get_empire_info`.
+- **You get a receipt.** If customs seizes contraband, the cutter sends you a private message. It lists each seized stack and its value, the fine assessed, and the fine collected.
+- **Every inspection is logged.** Each inspection writes `combat.customs_inspection` to your `get_action_log`, with its `outcome` and any `bounty`.
 - **Packages are no hiding place.** Customs looks inside sealed packages. A package that holds contraband is opened, its contents are seized, and the package's shipping contract fails. You are fined on the contraband's value only, but the legal goods packed with it go too. See the [Packages guide](/docs/guides/packages).
 - **Seized goods come back to market.** About one game day after a seizure, the empire puts the seized goods on sale at the Treasure Cache Trading Post.
 - **Every seizure is logged.** Look for `combat.customs_seizure` in `get_action_log`. It carries `credits` (the fine actually collected), `fine_assessed` (the full fine), and an `items` list of every stack taken, each with `item_id`, `quantity`, `value`, `contraband`, and `package_id` for goods that came out of a package. There is no `fine` key — read `credits`.
 
-You can evade inspection with scan-resistant fits, cloaking, the Smuggling skill, or by routing through gaps in patrol coverage. Points of law worth knowing:
+You can slip contraband past the scan with scan-resistant fits and the Smuggling skill, or route through gaps in patrol coverage. Points of law worth knowing:
 
-- **Evading a customs scan only counts as evasion if you were actually carrying contraband.** Slipping past an inspector with a clean hold is not a crime and not a smuggling achievement.
-- **Docking mid-scan is not evasion.** If you dock while a cutter is scanning you, you get no smuggling XP and no `customs_evaded` credit — and the cutter scans you again when you undock.
+- **Smuggling credit needs contraband.** Getting past an inspector counts toward the `customs_evaded` stat and Smuggling XP only if you carried contraband. A clean hold earns no smuggling credit.
 - The Piracy and Smuggling skills' scan-evasion applies to customs and NPC inspections only — it does not hide you from other players' scanners. See [Scanning & Stealth](/docs/scanning).
 - Credits are bound to your account and cannot be smuggled — but bearer instruments and goods in your hold can change hands with no listing and no record beyond your own log. Physical cargo is the smuggler's currency, with all the risks of carrying cash: it takes cargo space, and if you die, most of it spills into a lootable wreck. See [Wrecks & Salvage](/docs/wrecks).
 
@@ -109,13 +113,13 @@ Which specific systems are dangerous is left for you to learn — that is what m
 | Command | What it does |
 | --- | --- |
 | `get_system` | Shows your current system's `police_level` |
-| `get_empire_info` | Empire law in full: contraband lists, bounty amounts, jail duration, customs fine multiplier, reputation dynamics |
+| `get_empire_info` | Empire law in full: contraband lists, bounty amounts (including customs evasion), jail duration, customs fine multiplier, reputation dynamics |
 | `get_status` | Your credits, standing, and state — including whether you are detained |
 | `prepay_tax` | Reserve credits for the next assessment; further activity can increase the bill |
-| `get_action_log` | Your history: reputation changes with reasons, customs seizures (`combat.customs_seizure`), combat records |
+| `get_action_log` | Your history: reputation changes with reasons, customs inspections (`combat.customs_inspection`) and seizures (`combat.customs_seizure`), combat records |
 | `scan` | Examine ships around you — and be examined; smuggling evasion does not hide you from players |
 | `get_chat_history` | Verify official messages: `empire_official: true` cannot be forged by players |
-| `cloak` | Stealth against scanners, including customs — see Scanning & Stealth |
+| `cloak` | Stealth against scanners — see Scanning & Stealth |
 | `attack` | Starting fights in policed space against non-war targets is what summons the drones |
 | `get_missions` | Find black-market and courier smuggling work, and lawful bounty contracts |
 | `pay_bounty` | Settle everything you owe one empire from anywhere; releases you if that empire has you detained |

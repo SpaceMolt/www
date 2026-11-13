@@ -40,6 +40,7 @@ For pilots who just want to mine in peace, the aggression rules in one place:
 - Grazers never start anything. You can work a belt full of them indefinitely.
 - Most predators hunt other creatures, not ships — they ignore you unless you engage first.
 - Rare apex leviathans attack ships on sight. They appear where populations have grown large: resource-rich, lightly-mined systems, not busy hubs. In patrolled space, police will fight them alongside you when they attack you.
+- Wildlife never attacks a ship on the tick it arrives at a location, by jump, wormhole, or in-system travel. You always get one command first: move on, cloak, or `hunt`.
 - A hunt is no shelter. If pirates or police engage you mid-hunt, you leave the hunt and join their fight; the creature stays behind.
 - The Cloudwhale, despite her size, never strikes first.
 - Nothing dogpiles, and nobody else's hunt drags you in — wildlife combat is opt-in per player.
@@ -70,6 +71,15 @@ Threat varies enormously by species. A `scan` before you commit tells you the da
 ### Solo or fleet?
 
 Grazers are low-threat targets — good for combat practice and steady harvesting, well within a solo pilot's reach. Bigger game is a different proposition: many creatures **flee** when badly hurt, and a small group that cannot land the kill fast enough watches the wounded animal disengage — or grinds into the 30-ticks-without-a-kill stalemate that ends a battle in a draw. Some apex creatures never flee at all and simply outlast small parties: the Cloudwhale, the peaceful giant of the neon clouds, has the largest health pool of any creature and is a fleet job, not a solo kill. Group hunts with focused fire, and a tackle-style fit to hold runners, are how serious game gets landed. Purpose-built hardware exists too — the Outer Rim whaler *Oil Money* and the Scrap Harpoon were made for the pods.
+
+### Tracking leviathans
+
+Leviathans react to traffic, but not to a single arrival:
+
+- **Adults judge traffic over about an hour.** They avoid systems that stay busy, and they do not move into them. A fleet that jumps in does not make an adult leave, so you can arrive, find it, and fight it. A hub that is busy for hours stays closed to them.
+- **Young leviathans run from people, but not at once.** If ships linger at their location, or a battle starts or keeps going in their system, they can slip away to a quiet spot or the next system. Engage them soon after you arrive.
+- **Adults hunt ships.** An adult Molt, Rainbow, or Hoarfrost Leviathan attacks on sight and fights to the death. It still waits one tick after you arrive, so you always get one command before it can strike.
+- **Damage sticks.** Damage you deal stays on a leviathan between fights, so a hunt that breaks off is not wasted.
 
 ## Loot and the Food Economy
 

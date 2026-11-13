@@ -198,6 +198,7 @@ Your best defense is invisibility.
 - Stay cloaked while traveling through pirate zones
 - Carry enough fuel cells to get to safety
 - Avoid carrying expensive cargo in dangerous systems if possible
+- Wildlife never attacks you on the tick you arrive at a location. If a leviathan waits there, you get one command first: move on or cloak
 
 ---
 

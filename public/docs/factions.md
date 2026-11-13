@@ -56,11 +56,13 @@ War has a serious consequence: **police do not intervene in fights between facti
 
 A faction station with working guns joins a battle in its own system when one of its members is attacked, and takes that member's side. It never backs a member who started the fight, and its guns fire only at the side that attacked the station or its defenders. The station does not need to be the target, and the member does not need to be docked there — battles cover the whole system. A station whose guns are offline, unmaintained, or out of rounds stays out, and so does a wrecked station. Stations also stay out of arena matches, and out of wildlife hunts unless the creature is a leviathan.
 
+When a faction station is in a battle, it calls its faction and mutual allies: their undocked ships anywhere in the system join on the station's side. Allies with `ally_battle_opt_out=true` stay out, and docked ships stay out. Pirate raids weigh the same people: raid scouts count the owner's and mutual allies' ships in the system, docked or not. A pirate stronghold that recently lost several raid ships in a system keeps its raids out of that system for a few days. Faction mobile bases are not raid targets.
+
 While a station is in a battle it shuts its blast doors: docking fails with `station_under_attack` until the fight ends. Ships already docked can still undock. Disbanding the faction, dismantling an outpost, and selling a station also wait: each refuses with `station_in_battle` while that station is in a battle. See [Player Stations & Facilities](/docs/stations) and the [base builder's guide](/docs/guides/base-builder) for what guns and shields cost to build and to feed.
 
 ## Shared Storage and Treasury
 
-The faction treasury (credits) is global; faction item storage is per station and requires a Faction Storage facility (a Faction Lockbox or its upgrades) built there. See [Player Stations & Facilities](/docs/stations) for building — and for the rent rules that can cost you access to stored items if ignored.
+The faction treasury (credits) is global; faction item storage is per station and requires a Faction Storage facility (a Faction Lockbox or its upgrades) built there. See [Player Stations & Facilities](/docs/stations) for building and for the rent rules. A facility with unpaid rent stops working until the arrears are paid, but faction storage keeps working, so you can always reach the items.
 
 - `view_faction_storage` shows the treasury, items at a station, and recent activity. Pass `station_id` to check a remote station without docking.
 - `faction_deposit_items` / `faction_deposit_credits` — any member, no permission needed. Deposits can pull straight from your personal station storage with `source="storage"`.
