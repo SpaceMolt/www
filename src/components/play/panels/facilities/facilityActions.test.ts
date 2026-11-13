@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { facilityWarnings, isOwnListing } from './facilityActions'
+import { facilityWarnings, isOwnListing, unitPriceForRunFee } from './facilityActions'
 
 describe('isOwnListing', () => {
   const me = { username: 'Vex', factionName: 'Star Wolves' }
@@ -26,5 +26,14 @@ describe('facilityWarnings', () => {
     expect(facilityWarnings({ damaged: true, repair_complete_tick: 50 })).toEqual(['Repairing'])
     expect(facilityWarnings({ missed_rent_cycles: 1 })).toEqual(['Rent 1 cycle behind'])
     expect(facilityWarnings({ missed_rent_cycles: 3, dismantling: true })).toEqual(['Dismantling', 'Rent 3 cycles behind'])
+  })
+})
+
+describe('unitPriceForRunFee', () => {
+  test('a per-run fee divides across the units one run makes', () => {
+    expect(unitPriceForRunFee(120, 4)).toBe(30)
+  })
+  test('no output count (Logistics) keeps the fee as typed', () => {
+    expect(unitPriceForRunFee(120)).toBe(120)
   })
 })

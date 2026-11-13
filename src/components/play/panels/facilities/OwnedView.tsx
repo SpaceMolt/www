@@ -16,6 +16,7 @@ import { FacilityCard } from './FacilityCard'
 import { UpgradeModal, fetchUpgradeOptions, type UpgradeOption } from './UpgradeModal'
 import { FacilityQueueModal } from './FacilityQueueModal'
 import { FacilityManageActions } from './FacilityManageActions'
+import { unitPriceForRunFee } from './facilityActions'
 import styles from './facilities.module.css'
 
 interface OwnedViewProps {
@@ -68,10 +69,11 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
     if (await run('access', () => mutate((c) => c.spacemolt_facility.set_access({ facility_id: facility.facility_id, access: nextAccess }), { label: 'facility_set_access' }))) onRefresh()
   }, [mutate, onRefresh, run])
 
-  const handleSetOutputPrice = useCallback(async (facilityId: string, price: string) => {
-    const parsed = Number(price)
+  const handleSetOutputPrice = useCallback(async ({ facility_id, production }: Facility, feePerRun: string) => {
+    const parsed = Number(feePerRun)
     if (!Number.isFinite(parsed) || parsed < 0) return
-    if (await run('price', () => mutate((c) => c.spacemolt_facility.set_output_price({ facility_id: facilityId, price: parsed }), { label: 'facility_set_output_price' }))) onRefresh()
+    const price = unitPriceForRunFee(parsed, production?.output_per_run)
+    if (await run('price', () => mutate((c) => c.spacemolt_facility.set_output_price({ facility_id, price }), { label: 'facility_set_output_price' }))) onRefresh()
     setPricingId(null)
   }, [mutate, onRefresh, run])
 
@@ -153,12 +155,12 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
                     className={shared.textInput}
                     type="number"
                     min={0}
-                    step="0.01"
+                    step="1"
                     autoFocus
                     defaultValue={f.production?.rental_fee_per_run ?? 0}
-                    onBlur={(e) => handleSetOutputPrice(f.facility_id, e.target.value)}
+                    onBlur={(e) => handleSetOutputPrice(f, e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSetOutputPrice(f.facility_id, (e.target as HTMLInputElement).value)
+                      if (e.key === 'Enter') handleSetOutputPrice(f, (e.target as HTMLInputElement).value)
                       if (e.key === 'Escape') setPricingId(null)
                     }}
                     style={{ width: '5rem' }}

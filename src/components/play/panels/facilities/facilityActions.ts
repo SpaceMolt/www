@@ -23,3 +23,6 @@ export function facilityWarnings(f: StatusFields): string[] {
     f.power_throttled && 'Power throttled',
   ].filter((w): w is string => Boolean(w))
 }
+
+/** set_output_price takes credits per produced unit; the UI edits the fee per run. */
+export const unitPriceForRunFee = (feePerRun: number, outputPerRun = 1): number => feePerRun / outputPerRun
