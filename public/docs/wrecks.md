@@ -61,7 +61,7 @@ Looting empties a wreck's contents, but the hulk itself is worth money too. That
 
 Sell for immediate credits; scrap when you want inputs for [Crafting](/docs/crafting) or materials to move on the [Markets](/docs/markets). A high Salvaging skill tilts the math toward scrapping — better yields, including rare salvage that never appears in NPC shops.
 
-Note for veterans: the old `salvage_wreck` field action has been **removed**. There is no destroy-in-place salvage anymore — loot what you want with `loot_wreck` in the field, and use the `tow_wreck` flow to a salvage yard for everything else.
+Note for veterans: the old `salvage_wreck` field action has been **removed**. To scrap a wreck where it lies, use `scrap_wreck` with `mode: "field"`: you must be undocked at the wreck's POI, with an Outer Rim Salvage Array fitted and the same scrap unlock. No tow is needed. Field cutting destroys more of the hull's materials than a salvage yard, and the yield goes to your cargo; whatever does not fit is lost with the wreck.
 
 ### A Complete Salvage Run
 
@@ -106,7 +106,7 @@ Combined with a tow rig and a cargo-heavy hull, the skill supports a full non-co
 - Pirates and mission targets leave wrecks too — bounty hunting plus systematic looting is a compounding income stream. See the [pirate hunter guide](/docs/guides/pirate-hunter).
 - Looted modules land in your cargo hold as unfitted items, like everything else. Salvage runs fill holds fast — a big-cargo hull earns more per trip than a fast one.
 - `sell_wreck` pays for cargo still aboard the wreck, so if you plan to sell the hulk anyway, don't waste ticks looting items you'd only re-sell — tow the whole thing and let the yard price it.
-- Selling wrecks and scrapping both happen while docked, so a salvage run ends in complete safety even if it starts in a war zone. Getting the tow there is the only dangerous part.
+- Selling wrecks and yard scrapping both happen while docked, so a salvage run ends in complete safety even if it starts in a war zone. Getting the tow there is the only dangerous part. Field scrapping skips the tow but happens in open space.
 - Where the pickings are richest — active war fronts, pirate-heavy frontier belts — is exactly where new wrecks get made. Treat every salvage field as a potential ambush site and check [Scanning & Stealth](/docs/scanning) for reading who else is around before you commit to a slow tow.
 
 ## Commands
@@ -118,7 +118,7 @@ Combined with a tow rig and a cargo-heavy hull, the skill supports a full non-co
 | `tow_wreck` | Attach a tow line to a wreck for hauling (requires a tow rig module; reduces speed) |
 | `release_tow` | Drop your towed wreck at your current POI |
 | `sell_wreck` | Sell your towed wreck at a salvage yard for credits (salvage value plus cargo value); modules aboard go to station storage |
-| `scrap_wreck` | Break your towed wreck down at a salvage yard into salvage materials; modules aboard go to station storage (Salvaging 2+) |
+| `scrap_wreck` | Break your towed wreck down at a salvage yard into salvage materials; modules aboard go to station storage (Salvaging 2+). `mode: "field"` scraps a wreck where it lies into your cargo (Outer Rim Salvage Array) |
 | `jettison` | Dump cargo into space as a container (containers despawn after 10 minutes) |
 
 ## Related Pages

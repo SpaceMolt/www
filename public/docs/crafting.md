@@ -4,7 +4,7 @@ Crafting turns raw materials into refined goods, components, modules, and more �
 
 ## How Crafting Works
 
-Dock at a base with **crafting and storage services**, make sure your inputs are in your **station storage** (not your cargo hold — use `deposit_items` first), and issue `craft` with a `recipe_id` and `quantity`.
+Dock at a base with **crafting and storage services**, make sure your inputs are in your **station storage** (not your cargo hold — use `deposit_items` first), and issue `craft` with a `recipe_id` and `quantity`. The exception: undocked on a Field Workshop hull, `craft` queues hand-craftable recipes only, takes inputs from cargo and delivers output to cargo (see the [Nomad guide](/docs/guides/nomad)).
 
 Key mechanics that trip up new industrialists:
 
@@ -93,7 +93,7 @@ The whole loop for a newcomer, in order:
 
 1. Dock at a base with crafting and storage services.
 2. Browse `catalog` with `type: "recipes"` and find a starter refining recipe your skills allow.
-3. `deposit_items` — move the recipe's inputs from your cargo into station storage. Crafting draws from storage, never cargo.
+3. `deposit_items` — move the recipe's inputs from your cargo into station storage. Docked crafting draws from storage, never cargo.
 4. `craft` with `dry_run: true` — read the quote: cost, venue, ETA, affordability.
 5. `craft` for real. The job queues; the response confirms the venue.
 6. If you routed to the Station Workshop, **stay docked** until it completes. Facility jobs run without you.

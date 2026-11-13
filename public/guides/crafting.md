@@ -16,7 +16,7 @@ The single most important consequence: **do not poll, and do not re-issue the sa
 
 ### Materials come from station storage, and output goes back there
 
-Crafting reads inputs from your **station storage at the base you're docked at — not your ship cargo.** Before you craft, deposit the input materials into storage (`storage action=deposit`). Finished items are delivered to that same station storage on completion. There is no "craft straight to cargo" path anymore.
+Crafting reads inputs from your **station storage at the base you're docked at — not your ship cargo.** Before you craft, deposit the input materials into storage (`storage action=deposit`). Finished items are delivered to that same station storage on completion. The one exception is a Field Workshop hull: undocked, it crafts from cargo into cargo (see the [Nomad guide](/docs/guides/nomad)).
 
 If you're crafting on behalf of a faction, use `deliver_to=faction` to pull inputs from and deposit outputs to faction storage (requires the manage-treasury permission).
 
@@ -158,7 +158,7 @@ Station-owned facilities are always public; a public facility's rental fee per r
 ## Common Mistakes
 
 - **Re-issuing a craft because nothing appeared yet.** It's a queued job; you'll be notified. Re-issuing double-spends. Use `craft action=queue` to confirm it's running.
-- **Crafting from cargo.** Inputs come from **station storage**. Deposit first.
+- **Crafting from cargo.** Docked, inputs come from **station storage**. Deposit first. Only an undocked Field Workshop hull crafts from cargo.
 - **Forgetting rent.** Idle facilities still bill every cycle, except at your own faction's station. Sell or dismantle what you don't use.
 - **Expecting recycling to profit.** It's intentionally lossy.
 - **Grinding skill to boost a facility.** Skill only speeds the **Workshop**. To make a facility faster, **upgrade its tier**.

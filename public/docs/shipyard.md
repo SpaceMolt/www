@@ -73,7 +73,7 @@ Empire-exclusive hulls normally require a shipyard in that empire's territory. A
 
 - `buy_ship_license` — pass a `ship_class` ID from `catalog` with type `ships`. The license covers that one design at all of the faction's stations and is paid from the faction treasury (requires the ManageTreasury permission). Its price depends on the design's tier. Universal designs need no license; starter and prestige hulls cannot be licensed.
 - Licensed builds at your own faction's stations bypass the commissioning member's empire reputation requirement. Piloting and shipyard tier requirements still apply.
-- Commissioning at a faction station requires the ManageTreasury permission: materials come from faction storage, and labor plus a 10% royalty on material value come from the faction treasury. The shipyard does not source missing materials from the market. The royalty goes to the design's empire treasury; pirate royalties leave the economy.
+- Commissioning at a faction station requires the ManageTreasury permission: materials come from faction storage, and labor plus a 10% royalty on material value come from the faction treasury. The shipyard does not source missing materials from the market. The royalty goes to the design's empire treasury; pirate hull royalties are split evenly among all pirate station managers.
 
 For a deep-frontier faction, licenses turn a home station into a full-service shipyard — no more week-long ferry runs to replace combat losses. See [Factions](/docs/factions) and [Player Stations](/docs/stations).
 

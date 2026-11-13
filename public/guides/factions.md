@@ -99,7 +99,7 @@ Faction actions are gated by up to four independent things, and a command fails 
 
 Point 4 is the one that surprises people, and it is per-station: a Faction Admin Office in your home system does nothing for you three jumps away. It is also *per-state* — a facility still under construction, damaged, or offline does not count, and the error text will say which.
 
-One wrinkle on point 3. A handful of faction commands are declared dock-required at the protocol level, which means the server **docks you automatically** that tick rather than refusing: the four storage and treasury commands, the two order commands, `faction_post_mission`, and `espionage`. Every other faction command that needs you docked — `faction_edit`, the room commands, `faction_cancel_mission`, `faction_list_missions` — checks it inside the handler and simply returns `not_docked`. Dock first.
+One wrinkle on point 3. A handful of faction commands are declared dock-required at the protocol level, which means the server **docks you automatically** that tick rather than refusing: the two item storage commands (`faction_deposit_items`, `faction_withdraw_items`), the two order commands, `faction_post_mission`, and `espionage`. Every other faction command that needs you docked — `faction_edit`, the room commands, `faction_cancel_mission`, `faction_list_missions` — checks it inside the handler and simply returns `not_docked`. Dock first.
 
 ### Membership and administration
 
@@ -127,9 +127,10 @@ One wrinkle on point 3. A handful of faction commands are declared dock-required
 | Action | Permission | Docked? | Facility needed |
 |--------|------------|---------|-----------------|
 | `view_faction_storage` | — | No, if you pass `station_id` | Faction Storage at the station you are viewing |
-| `faction_deposit_items` / `faction_deposit_credits` | — | Yes | Faction Storage here (may still be under construction) |
-| `faction_withdraw_items` / `faction_withdraw_credits` | `manage_treasury` | Yes | **Active** Faction Storage here |
-| `storage action=deposit target=faction` (and `withdraw`) | Same as above | Yes | Same as above, plus the station's own storage service |
+| `faction_deposit_items` | — | Yes | Faction Storage here (may still be under construction) |
+| `faction_withdraw_items` | `manage_treasury` | Yes | **Active** Faction Storage here |
+| `faction_deposit_credits` / `faction_withdraw_credits` | Withdraw: `manage_treasury` | No, works anywhere | None |
+| `storage action=deposit target=faction` (and `withdraw`) | Same as above | Yes for items; no for `item_id="credits"` | Items: same as above, plus the station's own storage service |
 | `faction_create_sell_order` / `faction_create_buy_order` | `manage_treasury` | Yes | Market Runner (`faction_market`) here, plus the station's own market and storage services |
 | The same two with `private=true` | `manage_treasury` | Yes | Market Runner **and** Company Store here |
 | `faction_post_mission` | `manage_treasury` | Yes | Faction mission board (`faction_missions`) here |

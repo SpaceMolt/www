@@ -290,7 +290,7 @@ Insurance uses completed-market-fill VWAP plus route risk. Each manifest line ne
 
 ### The carrier's flow: list, accept, haul, deliver
 
-Browse posted contracts at any operational missions service: a Mission Board or higher at an NPC station, or a Contract Terminal at a player-founded station. Choose whether eligibility should be evaluated against your personal record or your faction's separate record:
+Browse the freight board while docked at a station with an operational missions service: a Mission Board or higher at an NPC station, or a Contract Terminal at a player-founded station. The board shows contracts that originate at that station. Choose whether eligibility should be evaluated against your personal record or your faction's separate record:
 
 ```json
 {"type": "shipping", "payload": {
@@ -301,7 +301,7 @@ Browse posted contracts at any operational missions service: a Mission Board or 
 }}
 ```
 
-Listings include route and payment terms, package value and liability exposure, required tier, and an `eligible` decision with a reason when you cannot accept. The list is global, but acceptance must happen while you are docked at that contract's origin station. For self-shipping, the eligibility decision bypasses standing and tier-derived liability limits while still enforcing unpaid freight debt.
+Each listing carries the `contract` (route and payment terms, package value and liability exposure, required tier) plus `target_ticks`, `deadline_ticks`, and `recovery_ticks`, counted from acceptance. The board shows only contracts the selected carrier can accept now. A `warning` appears when the contract has `requires_hazmat` and your active ship has no lead-lined cargo module. An empty board carries `empty_reason_code` and `empty_reason`, which name the blocking reason. For self-shipping, eligibility bypasses standing and tier-derived liability limits while still enforcing unpaid freight debt.
 
 Accept personally or for your current faction. Accepting for a faction requires **Manage Treasury** permission and an active local Market Runner / faction-market service at the contract's origin. A faction-owned station's active market supplies that capability:
 
@@ -345,7 +345,7 @@ Players and factions have **separate global carrier records**. Your empire does 
 
 `profile` shows your tier (`probationary`, `licensed`, `trusted`, or `prime`), successful deliveries, total delivered value, priority deliveries, returns, breaches, defaults, active contracts, current liability, per-package and aggregate limits, remaining allowance, and outstanding freight debt.
 
-There is no arbitrary contract-count cap. Third-party acceptance is limited by **liability exposure**: a carrier must meet the listing's tier, fit that package under the per-package limit, and keep total active exposure under the aggregate limit. Listings explain which requirement failed. Self-shipping bypasses these reputation-derived gates as described above.
+There is no arbitrary contract-count cap. Third-party acceptance is limited by **liability exposure**: a carrier must meet the listing's tier, fit that package under the per-package limit, and keep total active exposure under the aggregate limit. If no listing passes, the empty board's `empty_reason` explains why. Self-shipping bypasses these reputation-derived gates as described above.
 
 | Carrier tier | Successful deliveries | Delivered value | Per-package limit | Aggregate active limit |
 |--------------|----------------------------:|----------------:|------------------:|-----------------------:|
@@ -409,8 +409,8 @@ If insured cargo is lost, insurance compensates the covered shipper according to
 1. **Shipper:** pack the cargo into `package:ab12cd34` and leave it in personal storage at the origin. Use the raw ID, `ab12cd34`, in shipping payloads.
 2. **Shipper:** run `shipping action=quote` to `nova_terra_central`; inspect the price, deadline, risk band, required tier, and insurance availability.
 3. **Shipper:** run `shipping action=post` with the same terms and a sensible `max_total_cost`. The package and funding enter escrow.
-4. **Carrier:** at any operational missions service, run `shipping action=list eligible_as=player` and choose an eligible listing.
-5. **Carrier:** dock at the listing's origin and run `shipping action=accept carrier=player`. The package appears in personal storage at that station.
+4. **Carrier:** dock at the origin station and run `shipping action=list eligible_as=player`. Choose a listing.
+5. **Carrier:** run `shipping action=accept carrier=player`. The package appears in personal storage at that station.
 6. **Carrier:** withdraw the package, carry it to Nova Terra Central, and leave the seal intact. Warehouse stops and handoffs are allowed, but this carrier keeps the liability.
 7. **Carrier:** dock at Nova Terra Central with the package in the active ship and run `shipping action=deliver`. The package goes directly to recipient storage and the carrier is paid.
 8. **Either side:** use `shipping action=track` during the run and `shipping action=profile` afterward to inspect route history and standing.

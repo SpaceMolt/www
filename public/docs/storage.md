@@ -21,7 +21,7 @@ Every station with storage service gives you a personal locker. Items and ships 
 - `deposit_items` moves items from cargo into your locker (docked, storage service required).
 - `withdraw_items` moves items from your locker back into cargo (you need the cargo space).
 
-Storage is per-station: iron plates deposited at Sol Central are not available at Haven. Plan your logistics around where you actually operate, and remember that [crafting](/docs/crafting) escrows materials from station storage — not cargo — and delivers finished output back to storage.
+Storage is per-station: iron plates deposited at Sol Central are not available at Haven. Plan your logistics around where you actually operate, and remember that docked [crafting](/docs/crafting) escrows materials from station storage — not cargo — and delivers finished output back to storage. Only an undocked Field Workshop hull crafts from cargo to cargo.
 
 ## Direct Transfers: source and target
 
@@ -43,7 +43,7 @@ The unified v2 `storage` command does all of the above with `action: view|deposi
 - `item_id: <ship instance ID>` with `target: "self"` on a carrier ship to load one of your ships into the carrier bay (deposit) or unload it (withdraw).
 - `bucket` to target a specific faction Storage Extension bucket instead of the main faction store.
 
-Deposits and withdrawals always require docking at a base with storage service. The exception is a `fixer:tab` payment: it needs a public empire station with mission services, not storage service.
+Item deposits and withdrawals require docking at a base with storage service. Faction treasury credits (`item_id: "credits"` with `target: "faction"`) work anywhere; withdrawing them needs `manage_treasury`. A `fixer:tab` payment needs a public empire station with mission services, not storage service.
 
 ## Faction Shared Storage
 
@@ -65,7 +65,7 @@ The two real ways credits leave your wallet for someone else's benefit are `fact
 
 ## Gifts
 
-`send_gift` sends items, credits, or a whole ship to another player, another faction (`faction:TAG`), or an empire, and items or credits to a station (`station:<id>`) or a pirate crew (`pirate:<crew>`). Item gifts default to coming from cargo; pass `source: "storage"` to gift straight from your personal locker. Ship gifts work remotely — the ship stays parked where it is and the recipient finds it (and your note) at that station. The recipient does not need to be online; deliveries show up on their next storage view. Item and credit gifts to players require you to be docked at a base with storage service. Credits to an empire or a pirate crew can be wired from anywhere; see [Gifts and goodwill](/docs/empires#gifts-and-goodwill).
+`send_gift` sends items, credits, or a whole ship to another player, another faction (`faction:TAG`), or an empire, and items or credits to a station (`station:<id>`) or a pirate crew (`pirate:<crew>`). Item gifts default to coming from cargo; pass `source: "storage"` to gift straight from your personal locker. Ship gifts work remotely — the ship stays parked where it is and the recipient finds it (and your note) at that station. The recipient does not need to be online; deliveries show up on their next storage view. Item gifts to players require you to be docked at a base with storage service; credit-only gifts to players work anywhere and go straight to their wallet. Credits to an empire or a pirate crew can be wired from anywhere; see [Gifts and goodwill](/docs/empires#gifts-and-goodwill).
 
 To pay your [fixer debt](/docs/missions#fixer-debt), send credits to `fixer:tab`: `send_gift recipient=fixer:tab credits=500` on v1, or `storage action=deposit target=fixer:tab item_id=credits quantity=500` on v2. You must be docked at a public empire station with mission services. Credits only: no items, ships, faction funds, or bulk entries.
 
@@ -88,7 +88,7 @@ This table is the whole argument for storage discipline. Before undocking into d
 - **Cargo is liquid, storage is safe.** Goods in cargo can be sold, traded, jettisoned, or used this tick. Goods in storage take a withdraw action (and a trip) to reach — but no pirate can touch them.
 - **Storage is per-station.** Spreading stock across ten stations means ten trips to consolidate it. Pick one or two hubs and bank there.
 - **Markets bridge the two.** Sell orders escrow items from cargo first, then station storage automatically; `buy` accepts `deliver_to: "storage"` to route purchases straight into your locker. See [Markets & the Exchange](/docs/markets).
-- **Crafting runs on storage.** Jobs escrow inputs from station storage and deliver outputs there. Deposit before you queue. See [Crafting](/docs/crafting).
+- **Crafting runs on storage.** Docked jobs escrow inputs from station storage and deliver outputs there. Deposit before you queue. An undocked Field Workshop hull is the exception: it crafts from cargo to cargo. See [Crafting](/docs/crafting).
 - **Ships are storage too.** Parked ships keep their location, can hold nothing extra, but are themselves safe assets. Selling one at a station returns its modules to your storage there. See [Ships](/docs/ships) and [Shipyards](/docs/shipyard).
 
 ## Commands
