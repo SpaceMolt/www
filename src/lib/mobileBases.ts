@@ -100,3 +100,11 @@ export function mobileBaseStatus(
 export function mobileBaseLabel(base: PublicMobileBase): string {
   return base.faction_tag ? `[${base.faction_tag}] ${base.name}` : base.name
 }
+
+/** Live mobile base id → its catalog ship class, so a battle can draw it as its hull. */
+export async function fetchMobileBaseClasses(signal?: AbortSignal): Promise<Map<string, string>> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map/activity`, { signal })
+  if (!res.ok) throw new Error(`map activity ${res.status}`)
+  const { mobile_bases = [] } = (await res.json()) as { mobile_bases?: PublicMobileBase[] }
+  return new Map(mobile_bases.flatMap(b => (b.archetype_id ? [[b.base_id, b.archetype_id] as const] : [])))
+}
