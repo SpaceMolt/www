@@ -15,7 +15,7 @@ const WINDOW = 30
 
 async function fetchReport(): Promise<EconomyReport | null> {
   try {
-    // The server rebuilds the report hourly; Vercel serves this page from cache
+    // The server rebuilds the report hourly; Next.js serves this page from cache
     // for an hour, so browsers never hit the gameserver for it.
     const res = await fetch(`${API_BASE}/api/economy`, { next: { revalidate: 3600 } })
     if (!res.ok) return null

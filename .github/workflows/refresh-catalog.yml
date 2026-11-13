@@ -3,24 +3,20 @@ name: Refresh Catalog
 # The /play catalog is baked at build time: `scripts/fetch-catalog.mjs` runs in
 # the `build` step and pulls the live gameserver catalog into
 # src/data/catalog.json (which is gitignored — never committed). That means the
-# site's catalog is only as fresh as the last Vercel deploy, so after a
+# site's catalog is only as fresh as the last image build, so after a
 # gameserver release the site can serve a days-old catalog until something else
-# happens to redeploy www.
+# happens to rebuild www.
 #
-# This workflow closes that gap by pinging a Vercel Deploy Hook, which triggers a
-# fresh production build (re-running fetch-catalog.mjs against the current
-# gameserver). Before invoking the hook it compares a hash of the deployed
-# catalog with the live one, so a release that does not change the catalog
-# is a cheap no-op. It fires:
+# This workflow closes that gap by starting the Docker image workflow, which
+# builds a fresh image (re-running fetch-catalog.mjs against the current
+# gameserver). sm2 deploys the new image. Before it starts the build it compares
+# a hash of the deployed catalog with the live one, so a release that does not
+# change the catalog is a cheap no-op. It fires:
 #   - on `gameserver-deployed` repository_dispatch — the event-driven path; the
 #     gameserver deploy should send this to www just as it already does to
 #     spacemolt-lib's sync-spec, so the site refreshes right after a release.
 #   - on a schedule — a safety net in case the dispatch is missed.
 #   - manually via workflow_dispatch.
-#
-# Requires a `VERCEL_DEPLOY_HOOK_URL` repo secret (create a Deploy Hook in the
-# Vercel project's Git settings and paste the URL). If it's unset the job no-ops
-# instead of failing.
 
 on:
   repository_dispatch:
@@ -31,8 +27,9 @@ on:
     - cron: '0 */6 * * *'
   workflow_dispatch:
 
-# This workflow only POSTs to an external hook; it never touches the repo.
-permissions: {}
+# Starts docker.yml. github.token can start a workflow_dispatch run.
+permissions:
+  actions: write
 
 # Never let two refresh builds overlap.
 concurrency:
@@ -69,23 +66,8 @@ jobs:
             echo "Catalog refresh needed (deployed=${DEPLOYED:-unknown}, target=${TARGET:-unknown})."
           fi
 
-      - name: Trigger Vercel rebuild
+      - name: Build a new image
         if: steps.version.outputs.refresh == 'true'
         env:
-          HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "$HOOK_URL" ]; then
-            echo "VERCEL_DEPLOY_HOOK_URL is not set — skipping catalog refresh."
-            echo "Add the secret (Vercel project > Settings > Git > Deploy Hooks) to enable it."
-            exit 0
-          fi
-          echo "Triggering Vercel deploy hook to rebuild with a fresh catalog (reason: ${{ github.event_name }})"
-          code=$(curl -sS --connect-timeout 10 --max-time 30 -o /tmp/hook-resp.txt -w '%{http_code}' -X POST "$HOOK_URL")
-          echo "Deploy hook responded HTTP $code"
-          cat /tmp/hook-resp.txt || true
-          echo ""
-          # Vercel returns 201 (job created); accept any 2xx.
-          case "$code" in
-            2*) echo "Rebuild queued." ;;
-            *) echo "Deploy hook failed (HTTP $code)"; exit 1 ;;
-          esac
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run docker.yml --repo ${{ github.repository }} --ref main
