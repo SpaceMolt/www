@@ -21,7 +21,7 @@ export function StationPanel() {
   const { data, loading, refetch } = useCommandQuery(
     async (account) => (await account.commands.spacemolt.get_base()).structuredContent,
     [dockedAt],
-    { enabled: Boolean(dockedAt), refreshOnEvents: ['base_raid_update', 'station_repaired', 'facility_reclaimed'] },
+    { enabled: Boolean(dockedAt), refreshOnEvents: ['base_raid_update', 'station_repaired'] },
   )
 
   // The last get_base survives undocking or a dismantled outpost; only trust it while docked there.
