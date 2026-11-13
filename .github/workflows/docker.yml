@@ -1,0 +1,47 @@
+name: Docker image
+
+# Builds the site image and pushes it to GHCR. sm2 polls GHCR and deploys a new digest
+# (see notes/infra/www-box in the dev harness). refresh-catalog starts this workflow
+# to rebuild with a fresh catalog.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: docker-image
+  cancel-in-progress: false
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/spacemolt/www:latest
+            ghcr.io/spacemolt/www:${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=${{ vars.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
+          secrets: |
+            CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}
+            PATREON_CREATOR_TOKEN=${{ secrets.PATREON_CREATOR_TOKEN }}
+            FOURTHWALL_STOREFRONT_TOKEN=${{ secrets.FOURTHWALL_STOREFRONT_TOKEN }}

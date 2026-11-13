@@ -3,6 +3,8 @@ import type { NextConfig } from 'next'
 const GAMESERVER_URL = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
 const nextConfig: NextConfig = {
+  // Self-hosted on sm2 as a Docker image (see Dockerfile).
+  output: 'standalone',
   // Site art lives in the spacemolt-assets R2 bucket, not in the repo. next/image
   // still optimises it; the browser fetches the original from the CDN.
   images: {
