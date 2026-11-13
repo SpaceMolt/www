@@ -13,6 +13,7 @@ import {
   extractMaintenanceInputs,
   type MaintenanceInput,
 } from './maintenanceTypes'
+import { buildStatus } from './facilityActions'
 import styles from './facilities.module.css'
 
 // `{ type_id: unknown }` uniquely identifies the single-facility-type detail
@@ -95,7 +96,7 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
         <div className={styles.cardMeta}>
           {facility.under_construction && (
             <span className={`${styles.metaItem} ${styles.maintenanceWarning}`}>
-              <AlertTriangle size={10} /> Under construction
+              <AlertTriangle size={10} /> {buildStatus(facility)}
             </span>
           )}
           {facility.maintenance_satisfied === false && (

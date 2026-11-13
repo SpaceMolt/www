@@ -216,9 +216,7 @@ export function CombatPanel() {
   )
 
   const handleReloadAll = () => {
-    // ponytail: the lib types `weapons` as string[], but the server takes {weapon_instance_id, ammo_item_id} entries.
-    const entries = reloadAll as unknown as string[]
-    run('reload', () => mutate((c) => c.spacemolt_battle.reload({ weapons: entries }), { label: 'reload' }), ({ delta: { details } }) =>
+    run('reload', () => mutate((c) => c.spacemolt_battle.reload({ weapons: reloadAll }), { label: 'reload' }), ({ delta: { details } }) =>
       details && 'summary' in details ? (details.message ?? `Reloaded ${details.results.filter((r) => r.success).length} weapons`) : 'Reloaded',
     )
   }

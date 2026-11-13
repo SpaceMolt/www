@@ -11,14 +11,20 @@ export function isOwnListing(
     : listing.seller_name === username
 }
 
-type StatusFields = Pick<OwnedFacilityEntry, 'under_construction' | 'damaged' | 'dismantling' | 'power_throttled' | 'missed_rent_cycles' | 'repair_complete_tick'>
+type StatusFields = Pick<OwnedFacilityEntry, 'under_construction' | 'ticks_until_complete' | 'damaged' | 'dismantling' | 'power_throttled' | 'missed_rent_cycles' | 'repair_complete_tick'>
+
+/** "Under construction", with the ticks left when the server reports them. Empty once built. */
+export function buildStatus({ under_construction, ticks_until_complete: ticks }: Pick<StatusFields, 'under_construction' | 'ticks_until_complete'>): string {
+  if (!under_construction) return ''
+  return ticks ? `Under construction, ${ticks} tick${ticks === 1 ? '' : 's'} left` : 'Under construction'
+}
 
 /** Short warning labels for a cross-station facility row, most urgent first. */
 export function facilityWarnings(f: StatusFields): string[] {
   return [
     f.dismantling && 'Dismantling',
     f.damaged && (f.repair_complete_tick ? 'Repairing' : 'Damaged'),
-    f.under_construction && 'Under construction',
+    buildStatus(f),
     (f.missed_rent_cycles ?? 0) > 0 && `Rent ${f.missed_rent_cycles} cycle${f.missed_rent_cycles === 1 ? '' : 's'} behind`,
     f.power_throttled && 'Power throttled',
   ].filter((w): w is string => Boolean(w))
