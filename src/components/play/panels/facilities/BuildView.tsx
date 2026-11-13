@@ -407,7 +407,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                                 {typeDetail.maintenance_average_burn_per_cycle ? (
                                   <span
                                     className={styles.costValue}
-                                    title={`Listed upkeep (restock target): ${typeDetail.maintenance_per_cycle.map(m => `${m.name} x${m.quantity}`).join(', ')}`}
+                                    title={`Listed upkeep: ${typeDetail.maintenance_per_cycle.map(m => `${m.name} x${m.quantity}`).join(', ')}`}
                                   >
                                     {typeDetail.maintenance_per_cycle.map(m => `${m.name} ~${formatNumber(typeDetail.maintenance_average_burn_per_cycle?.[m.item_id] ?? 0)}`).join(', ')} /cycle avg
                                   </span>

@@ -164,7 +164,7 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
               </span>
               <ul className={styles.maintenanceDetailList}>
                 {maintenance.inputs.map(input => (
-                  <li key={input.item_id} className={styles.maintenanceDetailItem} title={`Listed upkeep ${input.quantity}. Keep this much as a restock target.`}>
+                  <li key={input.item_id} className={styles.maintenanceDetailItem} title={`Listed upkeep ${input.quantity}. Storage needs only each cycle's draw.`}>
                     <span>{input.name}</span>
                     {input.avg != null
                       ? <span className={styles.maintenanceDetailMuted}>uses ~{formatNumber(input.avg)} per cycle</span>

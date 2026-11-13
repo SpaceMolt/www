@@ -23,14 +23,14 @@ export function Row({ label, ok = true, title, children }: { label: string; ok?:
   )
 }
 
-// average_burn_per_cycle is new on the server; until it ships, show the listed amount as a restock target only.
+// average_burn_per_cycle is new on the server; until it ships, show the listed amount without calling it a per-cycle draw.
 type Upkeep = { item_id: string; name?: string; quantity_per_cycle: number; average_burn_per_cycle?: number }
 const chipsOf = (items?: Upkeep[], bad = false) =>
   items?.map((i) => ({
     id: i.item_id,
     name: i.name ?? formatItemId(i.item_id),
     value: i.average_burn_per_cycle != null ? `~${formatNumber(i.average_burn_per_cycle)}` : `listed ×${formatNumber(i.quantity_per_cycle)}`,
-    tip: `Listed upkeep ${formatNumber(i.quantity_per_cycle)}. Keep this much in storage as a restock target.`,
+    tip: `Listed upkeep ${formatNumber(i.quantity_per_cycle)}. Storage needs only each cycle's draw.`,
     bad,
   }))
 
