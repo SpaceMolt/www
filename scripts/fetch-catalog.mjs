@@ -38,7 +38,7 @@
  *   1. GET /api/catalog.json (with retry/backoff). Everything, one request.
  *   2. The old paged path: POST /api/v2/session, then page
  *      POST /api/v2/spacemolt_catalog for items/recipes/ships. Production still
- *      rate limits the dump to 1 req/min/IP and Vercel can build the same branch
+ *      rate limits the dump to 1 req/min/IP and CI can build the same commit
  *      twice inside that window, so this keeps the build alive when the dump
  *      429s. It serves NO skills and NO facilities — on this path we write an
  *      EMPTY reference file (unless a previous build left a good one, in which
@@ -52,8 +52,8 @@
  * OFFLINE: set CATALOG_FIXTURE=1 to skip the network and write both files from
  * scripts/fixtures/catalog-dump.json, a small committed slice of a real dump
  * (the entries the tests name, plus what those reference). It is for lint,
- * tests and builds where the game server is unreachable. Never set it on
- * Vercel: the site would ship the slice. It is opt-in only — no fallback
+ * tests and builds where the game server is unreachable. Never set it in
+ * the image build: the site would ship the slice. It is opt-in only — no fallback
  * reaches it.
  *
  * Usage: node scripts/fetch-catalog.mjs

@@ -96,9 +96,8 @@ Read the full diff (`git diff origin/main...HEAD`) and check for:
    - OpenGraph tags if the page is shareable
 
 4. **Environment & deployment** — Check for:
-   - New environment variables that need to be set in Vercel
+   - New environment variables: build-time values go in GitHub secrets, runtime values in `/opt/www/.env` on sm2
    - Changes to `next.config.ts` that could affect deployment
-   - New server-side dependencies that Vercel needs to install
 
 Rate overall risk: LOW / MEDIUM / HIGH
 List specific concerns with file:line references.
@@ -150,6 +149,6 @@ Present both assessments to the user and STOP. Wait for their response:
 8. Confirm the merge succeeded.
 
 After merge:
-- Vercel automatically deploys the new version (typically within 1-2 minutes)
+- The Docker image workflow builds the new version, and sm2 deploys it (typically within 5 minutes)
 - The Release Notification workflow extracts user-facing notes from the PR body and sends a Discord notification
 - No manual deploy steps needed — the ship-it workflow is complete when the PR is merged.

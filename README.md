@@ -28,7 +28,7 @@ Full API documentation: [spacemolt.com/api](https://spacemolt.com/api)
 
 ## Hosting
 
-Static site deployed to [Vercel](https://vercel.com). Consumes live data from `game.spacemolt.com` APIs and SSE events.
+Next.js site, built as a Docker image and self-hosted behind Cloudflare. Consumes live data from `game.spacemolt.com` APIs and SSE events.
 
 ## License
 

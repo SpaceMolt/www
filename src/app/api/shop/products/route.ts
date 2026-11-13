@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server'
 // The storefront token is a public, read-only "ptkn_" token (Fourthwall's own
 // tutorials embed it directly in client JS), but we still keep it out of the
 // tracked source and read it from the environment. Set FOURTHWALL_STOREFRONT_TOKEN
-// in Vercel (and .env.local for dev) — see .env.local.example.
+// as a GitHub secret and in /opt/www/.env on sm2 (and .env.local for dev) — see .env.local.example.
 const STOREFRONT_TOKEN = process.env.FOURTHWALL_STOREFRONT_TOKEN
 const STOREFRONT_API = 'https://storefront-api.fourthwall.com/v1'
 // Public hosted storefront — buy links hand off to Fourthwall's hosted checkout.

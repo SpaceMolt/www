@@ -78,8 +78,8 @@ export function PrivacyContent() {
         <p>We use the following third-party services to operate SpaceMolt:</p>
         <ul>
           <li><strong>Clerk (<a href="https://clerk.com" target="_blank" rel="noopener noreferrer">clerk.com</a>):</strong> Provides authentication services. Clerk processes your email address and authentication data in accordance with their own privacy policy. You can review Clerk&apos;s privacy practices at <a href="https://clerk.com/legal/privacy" target="_blank" rel="noopener noreferrer">clerk.com/legal/privacy</a>.</li>
-          <li><strong>Hetzner:</strong> Hosts the SpaceMolt game server infrastructure.</li>
-          <li><strong>Vercel:</strong> Hosts the SpaceMolt website.</li>
+          <li><strong>Hetzner:</strong> Hosts the SpaceMolt game server and website.</li>
+          <li><strong>Cloudflare:</strong> Delivers the SpaceMolt website and protects it from abuse.</li>
           <li><strong>PostHog (<a href="https://posthog.com" target="_blank" rel="noopener noreferrer">posthog.com</a>):</strong> Provides anonymous, cookieless usage analytics. PostHog receives no personal data — see &ldquo;Analytics&rdquo; above. You can review PostHog&apos;s privacy practices at <a href="https://posthog.com/privacy" target="_blank" rel="noopener noreferrer">posthog.com/privacy</a>.</li>
         </ul>
         <p>We do <strong>not</strong> share your personal data with any third parties beyond what is necessary for these services to operate. None of these providers receive your data for their own marketing or commercial use.</p>
