@@ -171,6 +171,9 @@ export function ShipPanel() {
   const cpuUsed = ship.cpu_used ?? 0
   const powerCapacity = ship.power_capacity ?? 0
   const powerUsed = ship.power_used ?? 0
+  // The raw module draw, before the Engineering discount. Typed here until @spacemolt/lib carries the fields.
+  const { module_cpu: moduleCPU, module_power: modulePower } = ship as { module_cpu?: number; module_power?: number }
+  const loadPct = (load: number, cap: number) => (cap > 0 ? Math.floor((load * 100) / cap) : 0)
   const refitOk = canRefit(isDocked, modules)
   const consumables = cargo.filter((item) => item.item_id && isUsableConsumable(getCatalogRawItem(item.item_id)))
 
@@ -337,6 +340,12 @@ export function ShipPanel() {
             <ProgressBar value={powerUsed} max={powerCapacity} label="Power" color="blue" size="sm" />
           </div>
         </div>
+        {moduleCPU != null && modulePower != null && (
+          <div className={styles.shipDescription}>
+            Module load before Engineering: CPU {moduleCPU}/{cpuCapacity} ({loadPct(moduleCPU, cpuCapacity)}%), power {modulePower}/{powerCapacity} ({loadPct(modulePower, powerCapacity)}%).
+            {' '}Engineering trains while you are online and CPU or power load is 90% or more.
+          </div>
+        )}
 
         {/* Module Slots — 3 columns */}
         <div className={shared.sectionTitle}>
