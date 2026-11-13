@@ -65,10 +65,6 @@ export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
 
   const rent = summary?.faction_rent ?? facilityData.faction_rent
   const storage = summary?.faction_storage
-  const buildTicks = (id: string) => {
-    const left = summary?.faction_facilities.find((e) => e.facility_id === id && e.status === 'under_construction')?.ticks_until_complete
-    return left != null && <span className={styles.costValue}>{left} ticks to build</span>
-  }
 
   return (
     <>
@@ -128,7 +124,6 @@ export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
                   <PawPrint size={11} /> Herd
                 </button>
               )}
-              {buildTicks(f.facility_id)}
               {canManage && <FacilityManageActions facility={f} scope="faction" onRefresh={refresh} />}
             </FacilityCard>
           ))}
