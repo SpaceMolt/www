@@ -48,6 +48,7 @@ describe('archetypeForShip', () => {
       ['Juvenile Rainbow Leviathan', 'lobster'],
       ['Hoarfrost Leviathan', 'lobster'],
       ['Glitterback Crab', 'lobster'],
+      ['Blanket', 'lobster'],
       ['Cloudwhale', 'whale'],
       ['Pilot-Whale', 'whale'],
       ['[RNCH] Belt-Grazer', 'whale'],

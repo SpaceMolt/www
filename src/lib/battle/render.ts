@@ -11,7 +11,7 @@
 import { damageTypeColor, zoneIndex } from './types'
 import type { AttackLogEntry, ParticipantSnapshot } from './types'
 import type { BattleTimeline, ParticipantMeta } from './timeline'
-import { GLYPH_NOSE_X, strokeGlyphDetail, traceGlyphPath } from './shipGlyphs'
+import { GLYPH_NOSE_X, isBlanket, strokeGlyphDetail, traceGlyphPath } from './shipGlyphs'
 import { shieldRemoved } from './combatTelemetry'
 
 // --- Deterministic pseudo-randomness (stable across frames) ---
@@ -373,7 +373,11 @@ const SCALE_RADIUS = [9, 9, 12, 15.5, 20, 25.5]
  * wildlife stay at the smallest ship size. A ranch brand tag ("[TAG] ") is
  * ignored, as it is for the creature's shape.
  */
-function creatureRadius(name: string): number {
+function creatureRadius(name: string, maxHull: number): number {
+  // Blanket, Overlord Nyx's pet, never stops growing, so it is drawn to scale:
+  // its max hull is a wild adult Rainbow Leviathan's 2200 times its size. It
+  // outgrows every wild leviathan, up to three times their size on screen.
+  if (isBlanket(name)) return Math.min(96, Math.max(9, (32 * maxHull) / 2200))
   name = name.replace(/^\[[^\]]*\]\s*/, '')
   if (!/leviathan|cloudwhale/i.test(name) || /\b(egg|hatchling)\b/i.test(name)) return 9
   if (/\b(juvenile|young|calf)\b/i.test(name)) return 16
@@ -391,7 +395,7 @@ export function shipRadius(meta: ParticipantMeta, pxScale: number): number {
       : meta.kind === 'drone'
         ? 5
         : meta.kind === 'creature'
-          ? creatureRadius(meta.name)
+          ? creatureRadius(meta.name, meta.maxHull)
           : SCALE_RADIUS[Math.max(1, Math.min(5, Math.round(meta.scale)))]
   return base * Math.max(0.6, Math.min(1.8, pxScale / 360))
 }
