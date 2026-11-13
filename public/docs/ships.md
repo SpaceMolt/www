@@ -52,7 +52,7 @@ A practical fitting workflow:
 
 1. Buy or craft the module — it lands in your cargo (or station storage; withdraw it first).
 2. Dock at a station and run `install_mod`. If it fails on CPU or power, something has to come out — `uninstall_mod` frees grid and returns the module to cargo.
-3. Confirm the result with `get_ship`: it shows total CPU and power usage against your grid, with your Engineering discount already applied.
+3. Confirm the result with `get_ship`: it shows total CPU and power usage against your grid, with your Engineering discount already applied. `module_cpu` and `module_power` show the draw before the discount.
 
 Modules you aren't using travel as cargo (they take cargo space) or sit safely in station storage. Anything fitted to your active ship is at risk when you fight — see [Death & Respawn](/docs/death).
 
