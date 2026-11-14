@@ -72,7 +72,7 @@ const MAX_ROUTES = 100
 const CLOCK_SLACK_MS = 2 * 60_000
 
 type Point = { x: number; y: number }
-interface SavedRoute {
+export interface SavedRoute {
   player: string
   from: string
   to: string
@@ -82,12 +82,7 @@ interface SavedRoute {
 }
 
 /** One entry per player and launch system: the newest view of each flight wins. */
-export function rememberRoutes(saved: SavedRoute[], agents: IntelAgent[], now: number): SavedRoute[] {
-  const fresh = agents.flatMap((a) =>
-    a.in_transit?.type === 'pathfinder' && a.in_transit.waypoints?.length
-      ? [{ player: a.id, from: a.in_transit.from, to: a.in_transit.to, points: a.in_transit.waypoints, seen: now }]
-      : [],
-  )
+export function rememberRoutes(saved: SavedRoute[], fresh: SavedRoute[], now: number): SavedRoute[] {
   const kept = saved.filter(
     (r) => now - r.seen < ROUTE_TTL_MS && !fresh.some((f) => f.player === r.player && f.from === r.from),
   )
@@ -127,6 +122,15 @@ export function loadRoutes(): SavedRoute[] {
     return Array.isArray(routes) ? routes.filter(isRoute) : []
   } catch {
     return [] // no storage: trails stay straight
+  }
+}
+
+/** Saves these routes beside the ones in storage. The recon map and the /play galaxy map share them. */
+export function saveRoutes(fresh: SavedRoute[]) {
+  try {
+    localStorage.setItem(ROUTES_KEY, JSON.stringify(rememberRoutes(loadRoutes(), fresh, Date.now())))
+  } catch {
+    // storage full or blocked: the trail is straight after arrival
   }
 }
 
@@ -633,12 +637,13 @@ export function useIntelData({
   )
 
   useEffect(() => {
-    if (!agents.some((a) => a.in_transit?.waypoints?.length)) return
-    try {
-      localStorage.setItem(ROUTES_KEY, JSON.stringify(rememberRoutes(loadRoutes(), agents, Date.now())))
-    } catch {
-      // storage full or blocked: the trail is straight after arrival
-    }
+    const now = Date.now()
+    const flying = agents.flatMap((a) =>
+      a.in_transit?.type === 'pathfinder' && a.in_transit.waypoints?.length
+        ? [{ player: a.id, from: a.in_transit.from, to: a.in_transit.to, points: a.in_transit.waypoints, seen: now }]
+        : [],
+    )
+    if (flying.length) saveRoutes(flying)
   }, [agents])
 
   const trailColors = useMemo(() => {

@@ -20,25 +20,22 @@ describe('groupPrizesBySystem', () => {
 
 describe('pathfinder route memory', () => {
   const pts = [{ x: 0, y: 0 }, { x: 5, y: 9 }]
-  const flying = {
-    id: 'p1',
-    in_transit: { type: 'pathfinder', from: 'sol', to: 'krynn', start_tick: 0, arrival_tick: 0, waypoints: pts },
-  } as unknown as IntelAgent
+  const flying = (seen: number) => ({ player: 'p1', from: 'sol', to: 'krynn', points: pts, seen })
   const move = (at: number, to = 'krynn') =>
     ({ player_id: 'p1', username: 'u', from: 'sol', to, first_visit: false, at: new Date(at).toISOString() })
 
   it('replaces the entry per flight and drops expired ones', () => {
     const old = { player: 'p2', from: 'a', to: 'b', points: pts, seen: 0 }
-    const first = rememberRoutes([old], [flying], 1000)
+    const first = rememberRoutes([old], [flying(1000)], 1000)
     expect(first.map((r) => r.player)).toEqual(['p2', 'p1'])
-    const later = rememberRoutes(first, [flying], 25 * 60 * 60_000)
+    const later = rememberRoutes(first, [flying(25 * 60 * 60_000)], 25 * 60 * 60_000)
     expect(later).toHaveLength(1)
     expect(later[0].seen).toBe(25 * 60 * 60_000)
   })
 
   it('gives the route to the first matching jump after it was seen, and only that one', () => {
     const seen = 10 * 60_000
-    const routes = rememberRoutes([], [flying], seen)
+    const routes = rememberRoutes([], [flying(seen)], seen)
     const before = move(seen - 5 * 60_000)
     const arrival = move(seen + 20_000)
     const repeat = move(seen + 60 * 60_000)

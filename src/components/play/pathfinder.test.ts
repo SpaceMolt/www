@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test'
-import { alongBearing, bearingArg, bearingTo, dropOut, reverseBearing } from './pathfinder'
+import { alongBearing, bearingArg, bearingTo, dropOut, reverseBearing, trackTrail } from './pathfinder'
 
 const origin = { x: 0, y: 0 }
 const system = (id: string, x: number, y: number) => ({ id, name: id, x, y })
@@ -36,5 +36,26 @@ describe('dropOut', () => {
   it('lets a replot from open space land on the launch system', () => {
     expect(dropOut(systems, { x: 500, y: 0 }, 180)?.system.id).toBe('near')
     expect(dropOut([system('home', 0, 0)], { x: 500, y: 0 }, 180)?.system.id).toBe('home')
+  })
+})
+
+describe('trackTrail', () => {
+  const here = { player: 'me', origin: 'sol', originPoint: { x: 1, y: 2 }, systemId: '' }
+  const drift = (x: number, bearing: number) => ({ x, y: 0, bearing })
+
+  it('starts at the launch system, bends on a new bearing, and ends at the drop-out system', () => {
+    const launched = trackTrail(null, null, drift(10, 0), here, 5)
+    expect(launched).toEqual({ player: 'me', from: 'sol', to: '', points: [{ x: 1, y: 2 }], seen: 5 })
+    expect(trackTrail(launched, drift(10, 0), drift(20, 0), here, 6)).toBe(launched)
+    const bent = trackTrail(launched, drift(20, 0), drift(30, 90), here, 7)
+    expect(bent?.points).toEqual([{ x: 1, y: 2 }, { x: 30, y: 0 }])
+    const landed = trackTrail(bent, drift(30, 90), null, { ...here, systemId: 'krynn' }, 8)
+    expect(landed).toEqual({ ...bent!, to: 'krynn' })
+  })
+
+  it('carries on with the saved flight after a reload mid-drift', () => {
+    const saved = { player: 'me', from: 'sol', to: '', points: [{ x: 1, y: 2 }], seen: 1 }
+    expect(trackTrail(saved, null, drift(50, 0), { ...here, origin: '', originPoint: undefined }, 9)?.points).toEqual([{ x: 1, y: 2 }])
+    expect(trackTrail(null, null, drift(50, 0), { ...here, origin: '', originPoint: undefined }, 9)?.points).toEqual([{ x: 50, y: 0 }])
   })
 })
