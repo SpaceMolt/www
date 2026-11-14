@@ -411,6 +411,8 @@ export interface TrailSegment {
   to: string
   /** 0 = newest .. 1 = oldest within the trails window */
   age: number
+  /** A pathfinder route this browser saw in flight: leg origins, before `to` */
+  waypoints?: { x: number; y: number }[]
 }
 
 /** Agent currently mid-jump, rendered as an animated dot on the from→to line — or, for a pathfinder drift, along its leg */

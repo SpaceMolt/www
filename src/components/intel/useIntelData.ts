@@ -63,6 +63,73 @@ function trailColorFor(agentId: string): string {
   return TRAIL_COLORS[Math.abs(hash) % TRAIL_COLORS.length]
 }
 
+// The server forgets a pathfinder route on arrival, so the browser keeps the
+// last one it saw. A movement record then draws the bent route, not a line.
+const ROUTES_KEY = 'recon-pathfinder-routes'
+const ROUTE_TTL_MS = 24 * 60 * 60_000
+const MAX_ROUTES = 100
+/** Server and browser clocks differ a little. */
+const CLOCK_SLACK_MS = 2 * 60_000
+
+type Point = { x: number; y: number }
+interface SavedRoute {
+  player: string
+  from: string
+  to: string
+  points: Point[]
+  /** Browser time the flight was last seen in flight */
+  seen: number
+}
+
+/** One entry per player and launch system: the newest view of each flight wins. */
+export function rememberRoutes(saved: SavedRoute[], agents: IntelAgent[], now: number): SavedRoute[] {
+  const fresh = agents.flatMap((a) =>
+    a.in_transit?.type === 'pathfinder' && a.in_transit.waypoints?.length
+      ? [{ player: a.id, from: a.in_transit.from, to: a.in_transit.to, points: a.in_transit.waypoints, seen: now }]
+      : [],
+  )
+  const kept = saved.filter(
+    (r) => now - r.seen < ROUTE_TTL_MS && !fresh.some((f) => f.player === r.player && f.from === r.from),
+  )
+  return [...kept, ...fresh].slice(-MAX_ROUTES)
+}
+
+/** Each saved route belongs to the first matching jump after it was seen. */
+export function matchRoutes(movements: IntelMovement[], routes: SavedRoute[]): Map<IntelMovement, Point[]> {
+  const matched = new Map<IntelMovement, Point[]>()
+  for (const route of routes) {
+    let best: IntelMovement | undefined
+    let bestAt = Infinity
+    for (const move of movements) {
+      const at = Date.parse(move.at)
+      if (move.player_id !== route.player || move.from !== route.from || move.to !== route.to) continue
+      if (at >= route.seen - CLOCK_SLACK_MS && at < bestAt) {
+        best = move
+        bestAt = at
+      }
+    }
+    if (best) matched.set(best, route.points)
+  }
+  return matched
+}
+
+const isRoute = (r: SavedRoute | null) =>
+  typeof r?.player === 'string' &&
+  typeof r.from === 'string' &&
+  typeof r.to === 'string' &&
+  Number.isFinite(r.seen) &&
+  Array.isArray(r.points) &&
+  r.points.every((p) => Number.isFinite(p?.x) && Number.isFinite(p?.y))
+
+export function loadRoutes(): SavedRoute[] {
+  try {
+    const routes = JSON.parse(localStorage.getItem(ROUTES_KEY) ?? '[]')
+    return Array.isArray(routes) ? routes.filter(isRoute) : []
+  } catch {
+    return [] // no storage: trails stay straight
+  }
+}
+
 export const FACTION_FILTER_ALL = ''
 export const FACTION_FILTER_INDEPENDENT = '__independent__'
 
@@ -565,6 +632,15 @@ export function useIntelData({
     [filteredAgents],
   )
 
+  useEffect(() => {
+    if (!agents.some((a) => a.in_transit?.waypoints?.length)) return
+    try {
+      localStorage.setItem(ROUTES_KEY, JSON.stringify(rememberRoutes(loadRoutes(), agents, Date.now())))
+    } catch {
+      // storage full or blocked: the trail is straight after arrival
+    }
+  }, [agents])
+
   const trailColors = useMemo(() => {
     const map = new Map<string, string>()
     for (const agent of filteredAgents) map.set(agent.id, trailColorFor(agent.id))
@@ -577,6 +653,7 @@ export function useIntelData({
     const windowMs = trailsWindow * 60_000
     const now = Date.now()
     const segments: TrailSegment[] = []
+    const routes = matchRoutes(movements, loadRoutes())
     for (const move of movements) {
       if (!filteredIds.has(move.player_id)) continue
       if (move.from === move.to) continue
@@ -588,6 +665,7 @@ export function useIntelData({
         from: move.from,
         to: move.to,
         age,
+        waypoints: routes.get(move),
       })
     }
     return segments
