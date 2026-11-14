@@ -158,7 +158,7 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
             <>
               {/* Only tourism venues (and servers before the average-draw field) send no averages: they must hold the listed stock. */}
               <span className={styles.maintenanceDetailLabel}>
-                {maintenance.inputs.some(i => i.avg != null)
+                {maintenance.inputs.every(i => i.avg != null)
                   ? 'Deposit at least 1 of each item. It restarts at the next facility cycle.'
                   : 'Stock to hold:'}
               </span>
