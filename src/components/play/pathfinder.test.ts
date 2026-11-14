@@ -58,4 +58,17 @@ describe('trackTrail', () => {
     expect(trackTrail(saved, null, drift(50, 0), { ...here, origin: '', originPoint: undefined }, 9)?.points).toEqual([{ x: 1, y: 2 }])
     expect(trackTrail(null, null, drift(50, 0), { ...here, origin: '', originPoint: undefined }, 9)?.points).toEqual([{ x: 50, y: 0 }])
   })
+
+  it('starts fresh after a reload when the saved flight is not on this course', () => {
+    const old = { player: 'me', from: 'sol', to: '', points: [{ x: 1, y: 2 }], seen: 1 }
+    expect(trackTrail(old, null, drift(50, 90), { ...here, origin: '', originPoint: undefined }, 9))
+      .toEqual({ player: 'me', from: '', to: '', points: [{ x: 50, y: 0 }], seen: 9 })
+  })
+
+  it('drops the trail once the ship is at another system', () => {
+    const landed = { player: 'me', from: 'sol', to: 'krynn', points: [{ x: 1, y: 2 }], seen: 1 }
+    expect(trackTrail(landed, null, null, { ...here, systemId: 'krynn' }, 9)).toBe(landed)
+    expect(trackTrail(landed, null, null, { ...here, systemId: '' }, 9)).toBe(landed)
+    expect(trackTrail(landed, null, null, { ...here, systemId: 'haven' }, 9)).toBeNull()
+  })
 })

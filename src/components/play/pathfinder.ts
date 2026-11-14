@@ -71,8 +71,17 @@ export function trackTrail(
   if (drift) {
     const at = { x: drift.x, y: drift.y }
     if (last && trail) return drift.bearing === last.bearing ? trail : { ...trail, points: [...trail.points, at], seen: now }
-    if (!here.origin && trail && !trail.to) return trail
+    if (!here.origin && trail && !trail.to && isOnLeg(trail.points[trail.points.length - 1], drift)) return trail
     return { player: here.player, from: here.origin, to: '', points: [here.originPoint ?? at], seen: now }
   }
-  return last && trail && !trail.to && here.systemId ? { ...trail, to: here.systemId } : trail
+  if (!trail || !here.systemId) return trail
+  if (trail.to) return trail.to === here.systemId ? trail : null
+  return last ? { ...trail, to: here.systemId } : trail
+}
+
+/** A saved leg origin is this drift's own when the ship is on the ray from it, within two ticks of drift. */
+function isOnLeg(from: Point, drift: Drift) {
+  const [dx, dy] = [Math.cos(drift.bearing * RAD), Math.sin(drift.bearing * RAD)]
+  const [rx, ry] = [drift.x - from.x, drift.y - from.y]
+  return rx * dx + ry * dy >= 0 && Math.abs(rx * dy - ry * dx) <= 2 * PATHFINDER_SPEED
 }

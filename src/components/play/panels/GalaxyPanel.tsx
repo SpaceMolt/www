@@ -398,14 +398,17 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   } else {
     driftRef.current = null
   }
-  // The own drift trail stays on the map after arrival until the ship leaves the drop-out system.
+  // The own drift trail stays on the map after arrival until the ship is at another system.
+  // ponytail: after a reload, a trail up to 24 hours old shows again at its drop-out system.
   const trailRef = useRef<SavedRoute | null>(null)
   const lastDriftRef = useRef<typeof driftRef.current>(null)
   const drift = driftRef.current
   useEffect(() => {
     if (!playerId) return
-    const last = lastDriftRef.current
-    lastDriftRef.current = drift
+    // The other pilot's drift is no leg of this one. A frame with no drift and no system yet keeps
+    // the last drift, so the arrival that follows still ends the trail.
+    const last = trailRef.current?.player === playerId ? lastDriftRef.current : null
+    if (drift || systemId) lastDriftRef.current = drift
     const trail = trailRef.current?.player === playerId
       ? trailRef.current
       : rememberRoutes(loadRoutes(), [], Date.now()).findLast((r) => r.player === playerId) ?? null
