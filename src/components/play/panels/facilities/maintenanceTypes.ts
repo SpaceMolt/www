@@ -14,12 +14,16 @@ export interface MaintenanceInput {
   item_id: string
   name: string
   quantity: number
+  /** Average units drawn per facility cycle. Absent for tourism venues and older servers. */
+  avg?: number
 }
 
 export interface FacilityTypeMaintenanceDetail {
   type_id?: string
   name?: string
   maintenance_per_cycle?: MaintenanceInput[]
+  /** item_id -> average units drawn per facility cycle (fuel keyed as "fuel"). */
+  maintenance_average_burn_per_cycle?: Record<string, number>
 }
 
 /**
@@ -33,6 +37,7 @@ export function extractMaintenanceInputs(
   if (!detail) return []
   const list = detail.maintenance_per_cycle
   if (!Array.isArray(list)) return []
+  const avgs = detail.maintenance_average_burn_per_cycle
   return list
     .filter(
       (entry): entry is MaintenanceInput =>
@@ -42,5 +47,8 @@ export function extractMaintenanceInputs(
         typeof entry.quantity === 'number' &&
         entry.quantity > 0,
     )
-    .map(({ item_id, name, quantity }) => ({ item_id, name, quantity }))
+    .map(({ item_id, name, quantity }) => {
+      const avg = avgs?.[item_id]
+      return typeof avg === 'number' ? { item_id, name, quantity, avg } : { item_id, name, quantity }
+    })
 }

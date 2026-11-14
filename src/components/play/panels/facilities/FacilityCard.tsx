@@ -8,7 +8,7 @@ import { useAccountStore } from '@/lib/spacemolt'
 import { shared } from '../../shared'
 import { BugReportButton } from '../../BugReportButton'
 import { buildFacilityContext } from '../../bugReportContext'
-import { titleCase as formatLabel } from '@/lib/format'
+import { formatNumber, titleCase as formatLabel } from '@/lib/format'
 import {
   extractMaintenanceInputs,
   type MaintenanceInput,
@@ -151,17 +151,24 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
           )}
           {maintenance.status === 'loaded' && maintenance.inputs.length === 0 && (
             <span className={styles.maintenanceDetailMuted}>
-              No per-cycle inputs are listed for this facility type. The facility may need rent or labor instead.
+              No upkeep items are listed for this facility type. The facility may need rent or labor instead.
             </span>
           )}
           {maintenance.status === 'loaded' && maintenance.inputs.length > 0 && (
             <>
-              <span className={styles.maintenanceDetailLabel}>Needs per cycle:</span>
+              {/* Only tourism venues (and servers before the average-draw field) send no averages: they must hold the listed stock. */}
+              <span className={styles.maintenanceDetailLabel}>
+                {maintenance.inputs.every(i => i.avg != null)
+                  ? 'Deposit at least 1 of each item. It restarts at the next facility cycle.'
+                  : 'Stock to hold:'}
+              </span>
               <ul className={styles.maintenanceDetailList}>
                 {maintenance.inputs.map(input => (
-                  <li key={input.item_id} className={styles.maintenanceDetailItem}>
+                  <li key={input.item_id} className={styles.maintenanceDetailItem} title={`Listed upkeep ${input.quantity}. Storage needs only each cycle's draw.`}>
                     <span>{input.name}</span>
-                    <span className={styles.maintenanceDetailQty}>x{input.quantity}</span>
+                    {input.avg != null
+                      ? <span className={styles.maintenanceDetailMuted}>uses ~{formatNumber(input.avg)} per cycle</span>
+                      : <span className={styles.maintenanceDetailQty}>x{input.quantity}</span>}
                   </li>
                 ))}
               </ul>

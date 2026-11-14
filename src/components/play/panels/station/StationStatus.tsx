@@ -9,7 +9,7 @@ import { formatItemId } from '@/data/catalog'
 import { formatDuration, formatNumber, titleCase } from '@/lib/format'
 
 const CONDITION_OK = new Set(['thriving', 'operational'])
-// Station upkeep (power fuel, life support) is billed once per facility cycle.
+// Station upkeep (power fuel, life support) draws a small share of the listed bill each facility cycle.
 const FACILITY_CYCLE_TICKS = 100
 const ratio = (have: number, max: number) => `${formatNumber(have)}/${formatNumber(max)}`
 const lowTone = (fill: number): Tone => (fill < 0.25 ? 'warn' : 'ok')
@@ -23,8 +23,17 @@ export function Row({ label, ok = true, title, children }: { label: string; ok?:
   )
 }
 
-const chipsOf = (items?: { item_id: string; name?: string; quantity_per_cycle: number }[], bad = false) =>
-  items?.map((i) => ({ id: i.item_id, name: i.name ?? formatItemId(i.item_id), value: `×${formatNumber(i.quantity_per_cycle)}`, bad }))
+// average_burn_per_cycle is new on the server; until it ships, show the listed amount without calling it a per-cycle draw.
+// TODO: drop Upkeep once the regenerated @spacemolt/lib types carry average_burn_per_cycle.
+type Upkeep = { item_id: string; name?: string; quantity_per_cycle: number; average_burn_per_cycle?: number }
+const chipsOf = (items?: Upkeep[], bad = false) =>
+  items?.map((i) => ({
+    id: i.item_id,
+    name: i.name ?? formatItemId(i.item_id),
+    value: i.average_burn_per_cycle != null ? `~${formatNumber(i.average_burn_per_cycle)}` : `listed ×${formatNumber(i.quantity_per_cycle)}`,
+    tip: `Listed upkeep ${formatNumber(i.quantity_per_cycle)}. Storage needs only each cycle's draw.`,
+    bad,
+  }))
 
 /** Hull, shield, condition, power, life support, repair bill and construction for the docked base. */
 export function StationStatus({ data }: { data: GetBaseResponse }) {
@@ -35,6 +44,9 @@ export function StationStatus({ data }: { data: GetBaseResponse }) {
   const every = (
     <Tip content={`Station upkeep runs every ${cycleTicks} ticks.`}>every {formatDuration(cycleTicks * tickRate)}</Tip>
   )
+  // Say "average draw" only once the server reports it; until then the chips show the listed amount.
+  const upkeepTitle = (label: string, items?: Upkeep[]) =>
+    items?.every((i) => i.average_burn_per_cycle != null) ? <>{label}, average draw {every}</> : <>{label}, listed upkeep</>
   const eta = (n?: number) => (n != null ? ` · ${formatDuration(n * tickRate)}` : '')
   const tickTip = (n?: number) => (n != null ? `${formatNumber(n)} ticks left` : undefined)
   const hullFill = fillOf(base.hull, base.max_hull)
@@ -89,9 +101,9 @@ export function StationStatus({ data }: { data: GetBaseResponse }) {
 
       <Notes notes={[condition.condition_text]} />
       <Notes warn notes={[power?.remediation, life?.remediation]} />
-      <ItemChips title={<>Power fuel, {every}</>} items={chipsOf(power?.fuel_inputs, drawFill > 1)} />
-      <ItemChips title={<>Life support starved, {every}</>} items={chipsOf(life?.starved, true)} />
-      <ItemChips title={<>Life support upkeep, {every}</>} items={chipsOf(life?.maintenance)} />
+      <ItemChips title={upkeepTitle('Power fuel', power?.fuel_inputs)} items={chipsOf(power?.fuel_inputs, drawFill > 1)} />
+      <ItemChips title={upkeepTitle('Life support starved', life?.starved)} items={chipsOf(life?.starved, true)} />
+      <ItemChips title={upkeepTitle('Life support upkeep', life?.maintenance)} items={chipsOf(life?.maintenance)} />
 
       {repairs && (repairs.damaged_count > 0 || repairs.wrecked) && (
         <div className={fac.section}>

@@ -70,3 +70,17 @@ test('strips extra fields and only returns the canonical shape', () => {
     { item_id: 'steel_plate', name: 'Steel Plate', quantity: 5 },
   ])
 })
+
+test('carries the average draw per cycle when the server sends it', () => {
+  const detail: FacilityTypeMaintenanceDetail = {
+    maintenance_per_cycle: [
+      { item_id: 'steel_plate', name: 'Steel Plate', quantity: 30 },
+      { item_id: 'fuel', name: 'Fuel', quantity: 6 },
+    ],
+    maintenance_average_burn_per_cycle: { steel_plate: 1, fuel: 0.2 },
+  }
+  expect(extractMaintenanceInputs(detail)).toEqual([
+    { item_id: 'steel_plate', name: 'Steel Plate', quantity: 30, avg: 1 },
+    { item_id: 'fuel', name: 'Fuel', quantity: 6, avg: 0.2 },
+  ])
+})

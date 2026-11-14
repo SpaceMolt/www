@@ -13,6 +13,7 @@ import type { Account, FacilityResponse, StorageResponse } from '@spacemolt/lib'
 import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
 import { Credits, Modal, Loading, errorMessage, shared } from '../../shared'
+import { formatNumber } from '@/lib/format'
 import styles from './facilities.module.css'
 import { useFactionPermissions } from '../../hooks/useGates'
 
@@ -47,7 +48,8 @@ type FacilityTypesDiscovery = Extract<FacilityResponse, { categories: unknown }>
 type FacilityTypesFiltered = Extract<FacilityResponse, { types: unknown }>
 // Extract requires the discriminator field to be REQUIRED (not `?`) on the
 // target member — `type_id` is required on the detail variant, `build_materials` is not.
-type FacilityTypeDetail = Extract<FacilityResponse, { type_id: unknown }>
+// maintenance_average_burn_per_cycle is not yet in the generated types. Absent for tourism venues and older servers.
+type FacilityTypeDetail = Extract<FacilityResponse, { type_id: unknown }> & { maintenance_average_burn_per_cycle?: Record<string, number> }
 type ViewStorageResponse = Extract<StorageResponse, { items: unknown }>
 
 interface BuildViewProps {
@@ -402,9 +404,23 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                             {typeDetail.maintenance_per_cycle && typeDetail.maintenance_per_cycle.length > 0 && (
                               <div className={styles.costRow}>
                                 <span className={styles.costLabel}>Upkeep</span>
-                                <span className={styles.costValue}>
-                                  {typeDetail.maintenance_per_cycle.map(m => `${m.name} x${m.quantity}`).join(', ')} /cycle
-                                </span>
+                                {typeDetail.maintenance_average_burn_per_cycle ? (
+                                  <span
+                                    className={styles.costValue}
+                                    title={`Listed upkeep: ${typeDetail.maintenance_per_cycle.map(m => `${m.name} x${m.quantity}`).join(', ')}`}
+                                  >
+                                    {typeDetail.maintenance_per_cycle
+                                      .map(({ item_id, name, quantity }) => {
+                                        const avg = typeDetail.maintenance_average_burn_per_cycle?.[item_id]
+                                        return avg == null ? `${name} x${quantity}` : `${name} ~${formatNumber(avg)}`
+                                      })
+                                      .join(', ')} /cycle avg
+                                  </span>
+                                ) : (
+                                  <span className={styles.costValue}>
+                                    {typeDetail.maintenance_per_cycle.map(m => `${m.name} x${m.quantity}`).join(', ')} stock to hold
+                                  </span>
+                                )}
                               </div>
                             )}
                             {typeDetail.requires_service_name && (

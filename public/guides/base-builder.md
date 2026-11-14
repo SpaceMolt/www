@@ -349,10 +349,12 @@ Stock the magazine before you need it. Haul it in, or produce it on site.
 
 ### Shields
 
-| Facility | Cost | Shield | Upkeep per cycle |
-|----------|------|--------|------------------|
+| Facility | Cost | Shield | Listed upkeep |
+|----------|------|--------|---------------|
 | Shield Projector | 900,000 | +18,000 | 4 power cells + 2 coolant |
 | Shield Bastion | 3,200,000 | +55,000 | 10 power cells + 5 coolant |
+
+A facility burns about 1/30 of its listed upkeep each 100-tick cycle and needs only that cycle's draw in storage. If it runs short, one of each item restarts it.
 
 The Bastion is an upgrade of the Projector, so it costs you both.
 
@@ -374,7 +376,7 @@ If you intend to sit out a siege behind your shields, **overbuild your reactors 
 
 Bulwark Plating is an upgrade of Reinforced Plating. The repair dock is built from scratch.
 
-Armor is trivial to own — a plate or two per cycle. Welding it back on after a fight costs real plate: no plate in storage, and the hole stays open. **Stock armor plate and repair kits before you need them,** because the cheapest time to buy repair materials is when nobody is shooting at you.
+Armor is trivial to own — a listed upkeep of a plate or two, and it burns only a small share of that each cycle. Welding it back on after a fight costs real plate: no plate in storage, and the hole stays open. **Stock armor plate and repair kits before you need them,** because the cheapest time to buy repair materials is when nobody is shooting at you.
 
 The Automated Repair Dock does not save you during a fight — it puts you back together afterwards. A **Damage Control Center** does work under fire: it welds hull back on *during* a battle, out of the station's own stores of armor plate. It is expensive to build, and plate welded on under fire costs roughly six times what the same repair costs anybody willing to wait — that is the trade you are buying.
 
