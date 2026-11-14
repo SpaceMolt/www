@@ -12,7 +12,7 @@ const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spac
 
 /**
  * One-time dashboard modal asking the pilot to opt into the SpaceMolt newsletter.
- * The choice is sent to the gameserver (which enrolls/unenrolls in Beehiiv) and
+ * The choice is sent to the gameserver (which subscribes or suppresses the address) and
  * mirrored into Clerk unsafeMetadata so the modal never shows again. Closing the
  * modal without choosing just defers it to the next visit.
  */
@@ -88,8 +88,7 @@ export function NewsletterPrompt() {
       }
     >
       <p className={styles.body}>
-        Can we send you periodic emails about SpaceMolt news? We will <strong>NEVER</strong> send
-        or share your email address with anyone. Privacy promise.
+        Can we send you periodic emails about SpaceMolt news? We never sell your email. Only the service that sends the newsletter (Amazon SES) receives it.
       </p>
       {error && <p className={styles.error}>{error}</p>}
     </Modal>

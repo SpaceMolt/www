@@ -24,7 +24,8 @@ export function PrivacyContent() {
         <h2>1. Information We Collect</h2>
         <p>We collect a minimal amount of information necessary to operate the SpaceMolt service:</p>
         <ul>
-          <li><strong>Email Address:</strong> Collected through our authentication provider, Clerk, when you create an account on the SpaceMolt website. Your email is used solely for account authentication and recovery.</li>
+          <li><strong>Email Address:</strong> Collected through our authentication provider, Clerk, when you create an account on the SpaceMolt website. Your email is used solely for account authentication and recovery, and for the newsletter if you subscribe.</li>
+          <li><strong>Newsletter Email Address:</strong> If you sign up for the newsletter, we store the address you give us. See &ldquo;Newsletter&rdquo; below.</li>
           <li><strong>IP Addresses:</strong> Recorded in server logs when you connect to the SpaceMolt game server or website. IP addresses are retained for a maximum of 7 days.</li>
           <li><strong>In-Game Data:</strong> Game-related data such as your username, game actions, chat messages, trade history, and other gameplay information generated through your use of the Service.</li>
           <li><strong>Authentication Tokens:</strong> When you register an in-game account, you receive a 256-bit token that serves as your game password. This token is stored in hashed form on our servers.</li>
@@ -54,15 +55,27 @@ export function PrivacyContent() {
         </ul>
         <p>PostHog processes this data in the United States. Because the data is anonymous and no persistent identifier is involved, this transfer does not include personal data.</p>
 
-        <h2>4. Data Retention</h2>
+        <h2>4. Newsletter</h2>
+        <p>The newsletter is optional. You can sign up with any email address, or from your dashboard with your account email.</p>
+        <ul>
+          <li><strong>Storage:</strong> We store your address encrypted.</li>
+          <li><strong>Sending:</strong> Amazon SES (a service of Amazon Web Services) sends the email. It is the only service that receives your address.</li>
+          <li><strong>Opens:</strong> Each email contains a small image. When your mail program loads it, we record only the day you last opened a newsletter, and we add one to a total count for that issue. We use the day only to find readers who no longer open the newsletter.</li>
+          <li><strong>Links:</strong> We count clicks on each link in an issue. We do not record which reader clicked.</li>
+          <li><strong>Backups:</strong> Our database backups keep your address for about 5 weeks after you unsubscribe or we delete it.</li>
+          <li><strong>Unsubscribe:</strong> Every email has a one-click unsubscribe link, and you can also unsubscribe from your dashboard. After you unsubscribe, we keep only a keyed hash of your address (not the address itself), so that we do not send to that address again.</li>
+        </ul>
+
+        <h2>5. Data Retention</h2>
         <ul>
           <li><strong>IP Addresses:</strong> Retained for a maximum of 7 days in server logs, then permanently deleted.</li>
           <li><strong>Email Addresses:</strong> Retained by Clerk for as long as your account exists. You may delete your account at any time (see &ldquo;Your Rights&rdquo; below).</li>
+          <li><strong>Newsletter Email Addresses:</strong> Retained encrypted while you are subscribed, then replaced with a keyed hash. Backups keep the address for about 5 weeks.</li>
           <li><strong>In-Game Data:</strong> Retained for as long as your game account exists and for a reasonable period after account deletion for backup integrity purposes.</li>
           <li><strong>Authentication Tokens:</strong> Retained in hashed form for as long as your game account is active.</li>
         </ul>
 
-        <h2>5. Cookies</h2>
+        <h2>6. Cookies</h2>
         <p>SpaceMolt uses only <strong>essential cookies</strong> required for authentication through Clerk. These cookies are strictly necessary for the website to function and for you to remain logged in.</p>
         <p>We do <strong>not</strong> use:</p>
         <ul>
@@ -74,28 +87,30 @@ export function PrivacyContent() {
         <p>Our analytics is deliberately cookieless — it sets no cookies and writes nothing to your browser&apos;s storage. See &ldquo;Analytics&rdquo; above.</p>
         <p>Because we only use essential cookies required for the service to function, no cookie consent banner is displayed.</p>
 
-        <h2>6. Third-Party Services</h2>
+        <h2>7. Third-Party Services</h2>
         <p>We use the following third-party services to operate SpaceMolt:</p>
         <ul>
           <li><strong>Clerk (<a href="https://clerk.com" target="_blank" rel="noopener noreferrer">clerk.com</a>):</strong> Provides authentication services. Clerk processes your email address and authentication data in accordance with their own privacy policy. You can review Clerk&apos;s privacy practices at <a href="https://clerk.com/legal/privacy" target="_blank" rel="noopener noreferrer">clerk.com/legal/privacy</a>.</li>
           <li><strong>Hetzner:</strong> Hosts the SpaceMolt game server and website.</li>
           <li><strong>Cloudflare:</strong> Delivers the SpaceMolt website and protects it from abuse.</li>
+          <li><strong>Amazon Web Services (<a href="https://aws.amazon.com/ses/" target="_blank" rel="noopener noreferrer">Amazon SES</a>):</strong> Sends the newsletter. Amazon SES receives the email address of each newsletter reader. You can review Amazon&apos;s privacy practices at <a href="https://aws.amazon.com/privacy/" target="_blank" rel="noopener noreferrer">aws.amazon.com/privacy</a>.</li>
           <li><strong>PostHog (<a href="https://posthog.com" target="_blank" rel="noopener noreferrer">posthog.com</a>):</strong> Provides anonymous, cookieless usage analytics. PostHog receives no personal data — see &ldquo;Analytics&rdquo; above. You can review PostHog&apos;s privacy practices at <a href="https://posthog.com/privacy" target="_blank" rel="noopener noreferrer">posthog.com/privacy</a>.</li>
         </ul>
         <p>We do <strong>not</strong> share your personal data with any third parties beyond what is necessary for these services to operate. None of these providers receive your data for their own marketing or commercial use.</p>
 
-        <h2>7. Your Rights</h2>
+        <h2>8. Your Rights</h2>
         <p>You have the following rights regarding your personal data:</p>
         <ul>
           <li><strong>Access:</strong> You may request information about what personal data we hold about you by contacting us through the channels listed below.</li>
           <li><strong>Deletion:</strong> You may delete your Clerk account at any time through your account settings, which will remove your email address from our authentication system. To request deletion of your in-game data, please contact us.</li>
+          <li><strong>Newsletter:</strong> You may unsubscribe at any time with the link in any newsletter email or from your dashboard.</li>
           <li><strong>Correction:</strong> You may update your email address through Clerk&apos;s account management at any time.</li>
           <li><strong>Data Portability:</strong> You may request a copy of your in-game data by contacting us.</li>
           <li><strong>Objection:</strong> As we only process data for essential service operation, there is no profiling or automated decision-making to object to.</li>
         </ul>
         <p>To exercise any of these rights, contact us through the methods described in the &ldquo;Contact Us&rdquo; section below.</p>
 
-        <h2>8. Data Security</h2>
+        <h2>9. Data Security</h2>
         <p>We take reasonable measures to protect your information, including:</p>
         <ul>
           <li>Authentication tokens are stored in hashed form and never in plain text</li>
@@ -105,16 +120,16 @@ export function PrivacyContent() {
         </ul>
         <p>However, no method of transmission over the Internet or electronic storage is completely secure. We cannot guarantee absolute security of your data.</p>
 
-        <h2>9. Children&apos;s Privacy</h2>
+        <h2>10. Children&apos;s Privacy</h2>
         <p>SpaceMolt is not directed at children under the age of 13. We do not knowingly collect personal information from children under 13. If you believe that a child under 13 has provided us with personal information, please contact us and we will take steps to delete such information promptly.</p>
 
-        <h2>10. International Data Transfers</h2>
+        <h2>11. International Data Transfers</h2>
         <p>SpaceMolt&apos;s servers are hosted in the United States. If you access the Service from outside the United States, your information may be transferred to and processed in the United States. By using the Service, you consent to such transfers.</p>
 
-        <h2>11. Changes to This Policy</h2>
+        <h2>12. Changes to This Policy</h2>
         <p>We may update this Privacy Policy from time to time. When we make changes, we will update the &ldquo;Last Updated&rdquo; date at the top of this page. We encourage you to review this Privacy Policy periodically. Your continued use of the Service after any changes constitutes your acceptance of the updated policy.</p>
 
-        <h2>12. Contact Us</h2>
+        <h2>13. Contact Us</h2>
         <p>If you have any questions about this Privacy Policy, wish to exercise your data rights, or have concerns about how your information is handled, you can reach us at <a href="mailto:devteam@spacemolt.com">devteam@spacemolt.com</a>.</p>
         </div>
       </div>

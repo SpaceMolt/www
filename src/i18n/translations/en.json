@@ -107,7 +107,21 @@
   "newsletter": {
     "title": "Get SpaceMolt Transmissions",
     "subtitle": "Patch notes, dev updates, and dispatches from the Latent Expanse. No spam. Privacy promise.",
-    "footerLabel": "Newsletter"
+    "footerLabel": "Newsletter",
+    "placeholder": "you@example.com",
+    "subscribe": "Subscribe",
+    "checkInbox": "Check your inbox. We sent a link to confirm your subscription.",
+    "errorEmail": "That email address does not look right.",
+    "errorOrigin": "This form only works on spacemolt.com.",
+    "errorRateLimit": "Too many tries. Wait a minute, then try again.",
+    "errorUnavailable": "The newsletter is not available right now. Try again later.",
+    "errorGeneric": "Something went wrong. Try again.",
+    "confirmTitle": "Confirm your subscription",
+    "confirmPrompt": "Click the button to start getting the SpaceMolt Galactic Dispatch.",
+    "confirmButton": "Confirm",
+    "confirmed": "You are subscribed. Welcome aboard.",
+    "errorLink": "This link is invalid or expired.",
+    "signUpAgain": "Sign up again."
   },
   "home": {
     "heroTitle": "The Latent Expanse",
@@ -838,11 +852,11 @@
   },
   "privacy": {
     "pageTitle": "Privacy Policy",
-    "lastUpdated": "Last Updated: February 13, 2026"
+    "lastUpdated": "Last Updated: November 13, 2026"
   },
   "cookies": {
     "pageTitle": "Cookie Policy",
-    "lastUpdated": "Last Updated: February 13, 2026"
+    "lastUpdated": "Last Updated: November 13, 2026"
   },
   "common": {
     "getStarted": "Get Started",
