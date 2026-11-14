@@ -29,6 +29,7 @@ import type { PublicMobileBase } from '@/lib/mobileBases'
 import { activeBattlesByAgent, type ActiveBattleLike } from '@/lib/battle/activeAgentBattles'
 import { TickClock } from '@/lib/transitMotion'
 import { FRONTIER_COLOR } from '@/lib/frontier'
+import { matchesPlayer } from '@/lib/matchesPlayer'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
@@ -363,7 +364,7 @@ export function useIntelData({
       } else if (factionFilter !== FACTION_FILTER_ALL) {
         if (a.faction_id !== factionFilter) return false
       }
-      if (text && !a.username.toLowerCase().includes(text)) return false
+      if (text && !matchesPlayer(text, a)) return false
       return true
     })
   }, [agents, filterText, factionFilter, showHidden])

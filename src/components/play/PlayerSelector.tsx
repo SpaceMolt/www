@@ -8,6 +8,7 @@ import { extractApiErrorMessage, isSessionAuthError } from '@/lib/apiError'
 import { parseSessionId } from '@/lib/session'
 import { charactersOpenElsewhere } from '@/lib/spacemolt/tabClaim'
 import { groupBy } from '@/data/catalog'
+import { matchesPlayer } from '@/lib/matchesPlayer'
 
 export const EMPIRE_COLORS: Record<string, string> = {
   solarian: '#FFD700',
@@ -123,7 +124,7 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
     const q = search.toLowerCase()
     return players.filter(p => {
       const info = playerInfo[p.id]
-      return p.username.toLowerCase().includes(q) ||
+      return matchesPlayer(search, p) ||
         (info?.empire && info.empire.toLowerCase().includes(q)) ||
         (info?.faction_name && info.faction_name.toLowerCase().includes(q))
     })
@@ -312,7 +313,7 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
           <Search size={14} style={{ color: 'var(--chrome-silver)', flexShrink: 0 }} />
           <input
             className={styles.searchInput}
-            placeholder="Filter by name, empire or faction..."
+            placeholder="Filter by name, ID, empire or faction..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             autoFocus
