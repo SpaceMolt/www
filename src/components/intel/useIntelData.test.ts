@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { groupPrizesBySystem, matchRoutes, rememberRoutes } from './useIntelData'
+import { groupPrizesBySystem, loadRoutes, matchRoutes, rememberRoutes } from './useIntelData'
 import type { IntelAgent, PrizeRecovery } from '@/lib/intelTypes'
 
 const prize = (p: Partial<PrizeRecovery>) => ({ prize_id: 'p', status: 'in_transit', ...p }) as PrizeRecovery
@@ -48,5 +48,14 @@ describe('pathfinder route memory', () => {
     expect(matched.has(before)).toBe(false)
     expect(matched.has(repeat)).toBe(false)
     expect(matched.has(other)).toBe(false)
+  })
+})
+
+describe('loadRoutes', () => {
+  it('drops corrupt entries and keeps good ones', () => {
+    const good = { player: 'p1', from: 'sol', to: 'krynn', seen: 1, points: [{ x: 0, y: 1 }] }
+    const stored = JSON.stringify([null, 7, { ...good, points: 'x' }, { ...good, seen: 'x' }, good])
+    globalThis.localStorage = { getItem: () => stored } as unknown as Storage
+    expect(loadRoutes()).toEqual([good])
   })
 })

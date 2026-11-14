@@ -113,10 +113,18 @@ export function matchRoutes(movements: IntelMovement[], routes: SavedRoute[]): M
   return matched
 }
 
-function loadRoutes(): SavedRoute[] {
+const isRoute = (r: SavedRoute | null) =>
+  typeof r?.player === 'string' &&
+  typeof r.from === 'string' &&
+  typeof r.to === 'string' &&
+  Number.isFinite(r.seen) &&
+  Array.isArray(r.points) &&
+  r.points.every((p) => Number.isFinite(p?.x) && Number.isFinite(p?.y))
+
+export function loadRoutes(): SavedRoute[] {
   try {
     const routes = JSON.parse(localStorage.getItem(ROUTES_KEY) ?? '[]')
-    return Array.isArray(routes) ? routes : []
+    return Array.isArray(routes) ? routes.filter(isRoute) : []
   } catch {
     return [] // no storage: trails stay straight
   }
