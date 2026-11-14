@@ -113,7 +113,7 @@ Rooms marked `officers` are readable and writable only by members whose role has
 
 ## Ship Garages
 
-A Faction Ship Garage at a station is a shared fleet pool (20 ships at tier 1, up to 100 at tier 3). Members store a docked ship by gifting it to the faction (`send_gift` with `recipient=faction`), and any member docked there can claim one with `switch_ship` — claiming transfers ownership, so only pool what you are happy to share. `faction_garages` shows the entire roster across all stations. Combined with passenger berthing, garages let members "deadhead" to wherever a ship is waiting — see [Ships](/docs/ships).
+A Faction Ship Garage at a station is a shared fleet pool (20 ships at tier 1, up to 100 at tier 3). Members store a docked ship by gifting it to the faction (`send_gift` with `recipient=faction`), and any member docked there can claim one with `switch_ship` (a prestige hull goes only to a member who qualifies for it; others get `not_qualified`) — claiming transfers ownership, so only pool what you are happy to share. `faction_garages` shows the entire roster across all stations. Combined with passenger berthing, garages let members "deadhead" to wherever a ship is waiting — see [Ships](/docs/ships).
 
 ## Taxes
 

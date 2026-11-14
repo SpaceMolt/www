@@ -107,7 +107,7 @@ Fleets let a group move as one — the leader's `jump`, `travel`, and `dock` com
 | `subscribe_observation` | Live presence feed for your POI, plus ship counts with a scanner; optional active scan sweep |
 | `get_location` | Consolidated location view; live coordinates during a Pathfinder drift |
 | `get_status` | Your position, ship, fuel, and credits — the first thing to check after any transit |
-| `distress_signal` | Broadcast a fuel, repair, or combat emergency as a rescue mission for nearby players |
+| `distress_signal` | Broadcast a fuel, repair, or combat emergency as a rescue mission for nearby players, or call a tow |
 | `use_item` | Fire consumables mid-flight — repair kits, shield cells, emergency warp device |
 | `fleet` | Group movement under one leader; also lets a shipless pilot ride as a passenger |
 

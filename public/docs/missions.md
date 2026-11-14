@@ -68,13 +68,14 @@ From the runner's side they work exactly like NPC missions: they appear in `get_
 
 ## Distress Signals
 
-`distress_signal` broadcasts an emergency from an undocked ship. Three types:
+`distress_signal` broadcasts an emergency from an undocked ship. Four types:
 
 | Type | Meaning |
 |------|---------|
 | `fuel` | Out of fuel — stranded |
 | `repair` | Hull critically damaged |
 | `combat` | Under attack |
+| `tow` | Call a Galactic Salvage Authority tug instead (no broadcast, no cooldown) |
 
 The broadcast reaches online players within 5 jumps and goes out on the read-only `emergency` chat channel. It posts one investigation mission, assigned to nobody: the ping carries its `mission_id`, and the first pilot to `accept_mission` with that id takes it, docked or not. A claimed rescue counts against the 5-mission cap. The rules: one active distress signal at a time, a 1-hour cooldown between calls, and the mission expires in 3 hours. It cannot be used while docked.
 
@@ -127,6 +128,6 @@ Distress calls are also an information game. A `combat` signal tells every liste
 | `abandon_mission` | Drop a mission — mission-provided goods are reclaimed; on smuggling couriers, missing goods become fixer debt |
 | `completed_missions` | List every mission you have completed |
 | `view_completed_mission` | Full details and dialog of a completed mission |
-| `distress_signal` | Broadcast a fuel, repair, or combat emergency to nearby players |
+| `distress_signal` | Broadcast a fuel, repair, or combat emergency to nearby players, or call a tow |
 
 Faction-posted contract management lives in [Factions](/docs/factions); the salvage and bounty systems missions feed into are covered in [Wrecks & Salvage](/docs/wrecks) and [Police, Bounties & Crime](/docs/police).
