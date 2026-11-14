@@ -6,7 +6,8 @@ import { fetchStations, type MapSystem, type MapSystemInfo, type RouteStep } fro
 import { fixedStations, splitStationRegistry } from '@/lib/stationPresentation'
 import { FRONTIER_COLOR } from '@/lib/frontier'
 import { useAccountStore, useCurrentTick, useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
-import { alongBearing, bearingTo, dropOut, isSameAim, plotLabel, PATHFINDER_SPEED, type DriveControl } from '../pathfinder'
+import { alongBearing, bearingTo, dropOut, isSameAim, plotLabel, trackTrail, PATHFINDER_SPEED, type DriveControl } from '../pathfinder'
+import { loadRoutes, rememberRoutes, saveRoutes, type SavedRoute } from '@/components/intel/useIntelData'
 import type { TelescopeControl } from '../telescope'
 import { TelescopeButtons } from './TelescopeButtons'
 import type { Point } from './systemMapMath'
@@ -397,6 +398,27 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   } else {
     driftRef.current = null
   }
+  // The own drift trail stays on the map after arrival until the ship is at another system.
+  // ponytail: after a reload, a trail up to 24 hours old shows again at its drop-out system.
+  const trailRef = useRef<SavedRoute | null>(null)
+  const lastDriftRef = useRef<typeof driftRef.current>(null)
+  const drift = driftRef.current
+  useEffect(() => {
+    if (!playerId) return
+    // The other pilot's drift is no leg of this one. A frame with no drift and no system yet keeps
+    // the last drift, so the arrival that follows still ends the trail.
+    const last = trailRef.current?.player === playerId ? lastDriftRef.current : null
+    if (drift || systemId) lastDriftRef.current = drift
+    const trail = trailRef.current?.player === playerId
+      ? trailRef.current
+      : rememberRoutes(loadRoutes(), [], Date.now()).findLast((r) => r.player === playerId) ?? null
+    const origin = drift && !last ? originRef.current : ''
+    const originPoint = stateRef.current.mapData?.systems.find((sys) => sys.id === origin)
+    const next = trackTrail(trail, last, drift, { player: playerId, origin, originPoint, systemId: systemId ?? '' }, Date.now())
+    trailRef.current = next
+    if (next && next !== trail) saveRoutes([next])
+  }, [drift, playerId, systemId])
+
   /** The live position of the ship in GU: on its drift, or at its system. */
   const shipPoint = useCallback((): Point | null => {
     const drift = driftRef.current
@@ -796,6 +818,19 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       }
 
       ctx.save()
+      const trail = trailRef.current
+      const trailEnd = drift ? ship : trail?.to === currentSystemIdRef.current ? s.mapData.systems.find((sys) => sys.id === trail?.to) : undefined
+      if (trail && trailEnd) {
+        ctx.strokeStyle = 'rgba(103, 232, 249, 0.35)'
+        ctx.lineWidth = 2
+        ctx.lineJoin = 'round'
+        ctx.beginPath()
+        for (const point of [...trail.points, trailEnd]) {
+          const screen = worldToScreen(point.x, point.y)
+          ctx.lineTo(screen.x, screen.y)
+        }
+        ctx.stroke()
+      }
       if (drift) {
         drawCourse(drift.bearing, 'rgba(103, 232, 249, 0.55)', [6, 6])
         ctx.save()
