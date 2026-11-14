@@ -138,6 +138,16 @@ export function saveRoutes(fresh: SavedRoute[]) {
 export const FACTION_FILTER_ALL = ''
 export const FACTION_FILTER_INDEPENDENT = '__independent__'
 
+/**
+ * A `?faction=` link may name the faction by tag or name; the filter keys on
+ * its ID. Returns the value unchanged if it is already an ID or matches nothing.
+ */
+export function resolveFaction(agents: IntelAgent[], value: string): string {
+  const v = value.toLowerCase()
+  return agents.find((a) => a.faction_id && a.faction_id !== value &&
+    (a.faction_tag?.toLowerCase() === v || a.faction_name?.toLowerCase() === v))?.faction_id ?? value
+}
+
 export interface FactionOption {
   id: string
   label: string
