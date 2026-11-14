@@ -276,7 +276,7 @@ Transit Lounge (`transit_lounge`, 500,000, 20 seats) through Transit Concourse (
 - **A faction may hold at most one facility of each service type per station.** Storage Extensions (up to 10) and faction shipyard slots are the exceptions.
 - **On your faction's own station, storage and a market come free** — faction storage at the top-tier capacity and unlimited faction listings — so `faction_lockbox`, `market_runner`, and a private fuel bunker are all refused there as redundant. Build the station's own shared tank instead.
 - **Faction shipyard slots** (`faction_shipyard_berth` through `faction_shipyard_complex`) are stackable and each adds one build slot with member priority at a station that already has a shipyard of at least that level. They are the only faction facilities with a declared power and life-support draw.
-- **At NPC stations, faction facilities pay rent from the treasury every cycle**, and unpaid rent eventually means repossession — which locks your faction out of the stock inside its storage there until a new storage facility is built. At your faction's own station your faction and its members pay no rent, but service and infrastructure facilities consume maintenance instead. Outsiders who build there pay rent to your treasury. Read [Player Stations & Facilities](/docs/stations) before you build widely; that page exists because two large factions have already lost access to their vaults this way.
+- **At NPC stations, faction facilities pay rent from the treasury every cycle.** If the treasury cannot pay, the facility stays with the faction but stops working until the arrears are paid: no production, services, or bonuses. Faction storage, Storage Extensions, fuel bunkers, and ship garages keep working, so your stock is always reachable. You cannot transfer or sell a facility while it owes rent. Every member gets a warning at the first missed cycle and then once a day. A faction builds no new arrears while none of its members is active. At your faction's own station your faction and its members pay no rent, but service and infrastructure facilities consume maintenance instead. Outsiders who build there pay rent to your treasury. Read [Player Stations & Facilities](/docs/stations) before you build widely.
 
 ---
 
@@ -377,6 +377,10 @@ The server rechecks ownership, leadership, balances, location, and facility limi
 
 Once a station has working guns, it enters a battle in its own system when one of your members is attacked, and shoots on that member's side. It never backs a member who started the fight, and it fires only at the side that attacked the station or its defenders. The station does not have to be the target, and the member does not have to be at the station's POI. Guns that are offline, unmaintained, or out of rounds do not count, so a neglected station stays out exactly like an unarmed outpost. A wrecked station stays out. Stations also stay out of arena matches, and out of wildlife hunts unless the creature is a leviathan.
 
+When the station itself is in a battle, it calls your members and your mutual allies. Their undocked ships anywhere in the system join on the station's side. Allies with `ally_battle_opt_out=true` stay out, and docked ships stay out.
+
+Pirate raids judge your strength the same way. Raid scouts count your ships and your mutual allies' ships in the station's system, docked or not. A pirate stronghold also remembers where its raid ships died: after it loses several in one system, its raids skip targets there and route around it for a few days. Kill raiders, and the next raid goes somewhere else. Faction mobile bases are not raid targets.
+
 While the station is in a battle, nobody can dock: the attempt fails with `station_under_attack` until the fight ends. Ships already docked can still undock. Plan for this, because it is no longer limited to a raid on the station itself.
 
 See [Player Stations & Facilities](/docs/stations) for the full build-out and the rent rules.
@@ -402,7 +406,8 @@ Each of these is a real error code with one concrete fix.
 | `insufficient_priority` | You tried to assign a role at or above your own priority | Use a lower-priority role, or get promoted; the message prints both numbers |
 | `not_docked` | The command needs you docked | Dock somewhere, then retry |
 | **`no_faction_admin`** | No Faction Admin Office at **this** station — or one is still under construction | `facility action=faction_build facility_type=faction_desk` here (Faction Storage first), or fly to a station that already has one. If it is building, check `facility action=faction_list` |
-| `no_faction_storage` | No faction storage facility here, or it is inactive or damaged | `facility action=faction_build facility_type=faction_lockbox`; if it exists, check `facility action=faction_list` for construction, damage, or repossession |
+| `no_faction_storage` | No faction storage facility here, or it is inactive or damaged | `facility action=faction_build facility_type=faction_lockbox`; if it exists, check `facility action=faction_list` for construction or damage. Unpaid rent does not switch storage off |
+| `rent_arrears` | The facility owes rent, so it cannot be listed for sale or bought | Fund the treasury (or wallet); the next cycle collects the arrears. Then list it again |
 | `no_faction_market` | No Market Runner here, or it is still building | Build `market_runner`; `no_market` instead means the *station* has no market at all |
 | `no_company_store` | `private=true` without a Company Store here | Build `company_store` (needs a Market Runner first) |
 | `no_faction_commons` | No Faction Commons here | Build `faction_quarters` |

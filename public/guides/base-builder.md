@@ -285,9 +285,9 @@ Every hull starts with two Point Defense Batteries. Siege Foundry also starts wi
 
 ## Defending Your Station
 
-This section covers fixed stations and outposts. Mobile bases use the same station weapons, but retain their own hull values and construction limits described above.
+This section covers fixed stations and outposts. Mobile bases use the same station weapons, but retain their own hull values and construction limits described above. Pirate raids do not target mobile bases; other players still can.
 
-Stations can be attacked and destroyed. Pirate strongholds send raiding fleets against stations in their region, and other players can open fire on you directly. A credible defense costs millions of credits and takes weeks to stand up; an undefended station is a large, patient target. Start while it is cheap and quiet, not when the fleet is three jumps out.
+Stations can be attacked and destroyed. Pirate strongholds send raiding fleets against fixed faction stations in their region, and other players can open fire on you directly. A credible defense costs millions of credits and takes weeks to stand up; an undefended station is a large, patient target. Start while it is cheap and quiet, not when the fleet is three jumps out.
 
 Everything in this section is optional. None of it is cheap. Skip it and you are gambling that nobody comes.
 
@@ -309,6 +309,18 @@ Out of combat, shields come back at 2% per cycle and the hull mends at 1% per cy
 A station with working guns does not wait to be shot at. It enters a battle in its own system when one of your faction members is attacked, and fires on that member's side. It never backs a member who started the fight, and it shoots only at the side that attacked the station or its defenders. Battles are system-scale, so the guns cover the whole system, not just the doorstep. A wrecked station stays out, and so does a station whose guns are offline, unmaintained, or out of rounds — a neglected battery is the same as no battery here. Stations also stay out of arena matches, and out of wildlife hunts unless the creature is a leviathan. A station fights one battle at a time: it will drop a hunt for a shared battle, but a second hunt cannot take its slot.
 
 Two things follow from this. First, every fight in that system where a faction-mate is attacked spends rounds out of your ready racks, so your ammunition bill is no longer under your own control. Second, while the station is in a battle it shuts its blast doors and refuses docking with `station_under_attack` — so a member fighting at another POI can lock the whole faction out of its own market and shipyard until the fight ends. Ships already docked can still undock. A station in a battle also cannot be sold, and its faction cannot disband: both refuse with `station_in_battle`.
+
+### Your members defend the station
+
+The call works the other way too. When the station itself is in a battle, from a pirate raid or a player attack, it calls your faction and your mutual allies. Their undocked ships anywhere in the system join on the station's side. Allies with `ally_battle_opt_out=true` stay out. Docked ships stay out, so a pilot who wants no part of the fight stays docked. Pirate safe passage does not excuse a member: your own station calls you all the same.
+
+### What raiders weigh before they come
+
+Pirate scouts size up a station before a raid launches. They count the guns and every ship of your faction and your mutual allies in the station's system, docked or not. Allies that opted out of their allies' battles do not count. A fleet parked in the system deters a raid even while it sits docked.
+
+A stronghold also remembers where its raid ships died. After it loses several ships in one system, its raids skip targets in that system and route around it. If no route is left, the raid stays home. The memory fades over a few days, and then the stronghold tries that way again.
+
+This makes losses a deterrent. A station that kills raiders buys a few days of quiet for its whole system. Allies who fight in the same system protect each other's stations the same way.
 
 ### Guns
 

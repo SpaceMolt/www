@@ -14,9 +14,26 @@ There are three entry points. Starting a battle is local: `attack` and `hunt` ne
 
 A target you cannot see — at another POI, in transit, cloaked, or an unknown ID — returns `invalid_target` "Target not found". A docked pilot at your POI returns `target_docked`.
 
-`attack` is not an extra volley. It creates or joins the shared system battle and points your ship at the target; reissuing it does not make your weapons fire twice. Pirate crews fight as one group: attack one ship of a raid column, flagship hunt, operation, or boss squad and every combat ship of that crew in the system joins the battle on its side. Empire fleets and police patrols on an incident do the same. Attacking an empire NPC triggers the same battle pipeline and applies criminal status — see [Police](/docs/police) before you try it. Attacking a creature starts a hunt; wildlife never dogpile, so engaging one creature does not pull in the rest of the herd. Intact prizes moving through space can also be intercepted and recaptured.
+`attack` is not an extra volley. It creates or joins the shared system battle and points your ship at the target; reissuing it does not make your weapons fire twice. Pirates fight as a stronghold: when one pirate is in a battle, every ship of its stronghold in the system joins on its side. Haulers, salvagers, scouts, and tankers join too, but they try to flee, so you can shoot a raid's cargo train. Pirates of another stronghold are not allies and stay out. Empire fleets and police patrols on an incident also fight as one group. Attacking an empire NPC triggers the same battle pipeline and applies criminal status — see [Police](/docs/police) before you try it. Attacking a creature starts a hunt; wildlife never dogpile, so engaging one creature does not pull in the rest of the herd. Intact prizes moving through space can also be intercepted and recaptured.
 
 To join a battle already in progress and side with a specific participant, use `battle(action="engage", side_id="participant_id")`. Fleet members in the same system automatically join when their fleet leader engages a creature.
+
+**Every battle calls in each side's faction and allies.** When you enter a battle, your fleet, your faction, and your mutual allies who are undocked anywhere in the system join on your side. A mutual ally is a faction that lists yours as an ally while yours lists it too. This applies to every kind of battle:
+
+- You attack a pilot, or a pilot attacks you.
+- A faction station is attacked or raided. The station's faction and its mutual allies join on the station's side.
+- Police or an empire fleet engage a pilot.
+- A combat drone attacks a pilot. Both the drone owner and the target call their side.
+- You join with `battle(action="engage")`.
+
+Some pilots are not called:
+
+- Docked pilots, cloaked pilots, and pilots who ride as passengers.
+- Pilots already in another battle.
+- Pilots who left this battle. A pilot who leaves is not called back.
+- Members of an allied faction that set `ally_battle_opt_out=true` with `faction_edit`. They can still join with `battle(action="engage")`.
+
+Arena matches call nobody in, and a hunt against only wildlife does not call in your faction or allies. Each auto-join writes `combat.faction_auto_joined` or `combat.ally_auto_joined` to the pilot's action log.
 
 **Cloaks and battles don't mix.** A battle cannot hold a cloaked ship. `cloak` returns `in_battle` while you are in a battle, and `attack` or `engage` drops your cloak. Fleet, faction, undock, and jump-arrival auto-joins skip cloaked pilots; they get the battle alert instead.
 
@@ -113,13 +130,13 @@ Enemies can actively deny your escape with tackle modules:
 | Stasis webifier | Reduces your effective flee speed. Multiple webifiers stack, and webbed ships are also easier to hit |
 | Warp disruptor | Applies 1 disruption point. If enemy disruption meets or exceeds your stabilization, your flee counter stops entirely |
 | Warp scrambler | Applies 2 disruption points |
-| Warp core stabilizer | Each stabilizer offsets 1 disruption point |
+| Warp core stabilizer | Each stabilizer offsets 2 disruption points: one cancels one warp scrambler or two warp disruptors |
 
 **Tackle holds one ship at a time, and only within reach.** A tackling ship pins the single target it is holding, not everything on the field, and it has to be close enough to reach it — the Warp Scrambler (reach 3) has to be nearly point-blank, while the longer-ranged Warp Disruptor (reach 5) can hold from mid-field. No module spans the whole battlefield, so a ship on the far rim can always break away from one on the opposite rim. Fitting several stacks disruption strength against stabilizers, but does not let you hold more enemies.
 
 **A boarding attempt locks escape too, in two stages.** While a boarder is running you down to latch on, and out-runs you, it cancels your retreat: `combat_state.intercepted` is true and `interceptor_id` names the ship. Match or beat its effective speed, or destroy it. Once the boarding party is attached — to your ship, or to the ship you are boarding — `flee` makes no progress and the emergency warp stabilizer and emergency cloak are skipped. That second stage has no flag of its own; only the `use_item` emergency jump device reports it, with the error `boarding_locked`.
 
-If you're warp-disrupted: kill the tackle ships first (once net disruption drops to zero your flee counter resumes), ride it out in `brace` or `evade` while you wait, and call allies to primary the tacklers. Fit a stabilizer whenever you're not confident you can win — one stabilizer counters one disruptor.
+If you're warp-disrupted: kill the tackle ships first (once net disruption drops to zero your flee counter resumes), ride it out in `brace` or `evade` while you wait, and call allies to primary the tacklers. Fit a stabilizer whenever you're not confident you can win — one stabilizer counters one scrambler or two disruptors. A stabilizer also counts against a player's warp scrambler hold during a toll or a cargo scan: one stabilizer beats one scrambler there too.
 
 A fast cheap ship with webifiers and a disruptor is a tackle fit. Its job isn't damage — it's pinning a high-value enemy so your fleet's DPS can burn it down. A capital that can't escape is a kill; a capital that warps out freely is a wasted fight.
 

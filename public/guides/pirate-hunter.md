@@ -78,7 +78,7 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defe
 **Combat Flow:**
 1. You're at an asteroid belt with a pirate ship nearby (`get_nearby` shows it)
 2. Use `attack` targeting the pirate to begin the fight
-3. The pirate's crew joins at once: every combat ship of its raid column, hunt, operation, or boss squad in the system enters the battle on its side, wherever in the system it is
+3. The pirate's stronghold joins at once: every ship of that stronghold in the system enters the battle on its side, wherever in the system it is. Your fleet, your faction, and mutual allies undocked anywhere in the system join on your side, unless an ally faction set `ally_battle_opt_out`
 4. Monitor the engagement with `get_battle_status` and your own condition with `get_ship`
 5. When the pirate is destroyed, fly to the wreck's POI (`wreck_poi_id` in `pirate_destroyed`), then loot it
 
@@ -94,7 +94,10 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defe
 - If you're losing, set a flee stance with `battle(action="stance", stance="flee")`; enemies with enough tackle may prevent your escape
 
 **How pirate crews behave:**
-- A crew fights as one group, like a player fleet. Count the whole crew in the system before you shoot one ship. Crew salvagers, haulers, and tankers stay out of the fight.
+- Pirates fight as a stronghold, like a player faction. When one of its ships is in a battle, every ship of that stronghold in the system joins. Count them all before you shoot one ship.
+- Scouts, salvagers, haulers, and tankers join too, but they do not fight. They try to flee, and you can shoot them while they run.
+- Pirates of another stronghold are not allies. They do not join a fight to help a rival stronghold.
+- If you are already in a battle, `attack` on a pirate outside it pulls that pirate in and makes it your target.
 - Pirates fire real ammunition. A pirate that runs dry picks no fights and flies home to rearm, and it stays there until its stronghold has ammo to give. Lasers never run dry.
 - Raiders go home to repair after a fight or a lost chase, so a crew you mauled will be back at full strength later.
 - Pirate routes avoid policed empire space. Only flagship hunts, and raids on targets inside policed space, fly through it.
@@ -274,6 +277,14 @@ Strongholds build and launch raiding fleets against stations in their region. Th
 
 Strongholds will send raiding fleets at stations up to **six jumps** from home. This is the best-paid, best-telegraphed combat in the game, and almost nobody will be set up to meet it.
 
+### How a stronghold picks a target
+
+- **It counts the defenders in the whole system.** The station owner's ships and its allies' ships count anywhere in the system, docked or not. If they are strong enough, the stronghold judges the station too well defended and does not raid it.
+- **It skips faction mobile bases.** Mobile bases are not raid targets.
+- **It remembers where its raiders died.** If a stronghold loses several raid ships in one system, its raids route around that system and skip targets in it. If no safe route is left, the stronghold stays home. The memory fades over a few days, and then it tries that way again.
+
+Each stronghold keeps its own memory. Killing one stronghold's raiders does not keep another stronghold away.
+
 ### Hearing them coming
 
 Fit a **Pirate Radio Scanner**. Pirates plan out loud.
@@ -290,13 +301,15 @@ That is your hour to get there first.
 
 A raiding fleet is 4–12 hulls, plus a couple of salvagers and **a couple of haulers.** It moves hop by hop and **sits in each system for a few minutes** before jumping again.
 
-That dwell is your window. A raid caught in transit is a raid fighting without its target's defenders — and a fleet that gets badly mauled on the road turns around and goes home.
+That dwell is your window. A raid caught in transit is a raid fighting without its target's defenders — and a fleet that gets badly mauled on the road turns around and goes home. Kills on the road also count: a stronghold that loses several ships in one system sends its next raids another way.
+
+When you attack one raid ship, the whole raid in the system joins the battle, haulers and salvagers included. The support ships try to flee, so the cargo train is in the fight and in your sights.
 
 ### Kill the haulers
 
 This is the thing worth knowing.
 
-**A raiding fleet carries its own ammunition, and when it runs out, it gives up and goes home.** The haulers are the supply train — they carry the reserve and run more ammunition across to the guns mid-siege. They are not in the fight. They are the reason it is still going.
+**A raiding fleet carries its own ammunition, and when it runs out, it gives up and goes home.** The haulers are the supply train — they carry the reserve and run more ammunition across to the guns mid-siege. They do not shoot back, and they try to flee the battle. They are the reason it is still going.
 
 Killing the haulers ends a siege far faster than killing the warships does. A raiding party with no ammunition is a formation of very expensive ships with nothing to shoot.
 

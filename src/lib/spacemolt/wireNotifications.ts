@@ -168,7 +168,6 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
     account.on('base_destroyed', (base) => log('danger', `${base.base_name} was destroyed by ${base.attacker_name}`)),
     account.on('station_repaired', (base) => log('success', `${base.base_name} is fully repaired`)),
     account.on('facility_rent_warning', (warning) => log('warning', warning.message)),
-    account.on('facility_reclaimed', (reclaimed) => log('danger', reclaimed.message)),
     account.on('pirate_radio', (radio) => log('chat', `Pirate radio: ${str(radio.message)}`)),
     account.on('pirate_destroyed', () => log('combat', 'Pirate destroyed')),
     account.on('reconnected', () => {

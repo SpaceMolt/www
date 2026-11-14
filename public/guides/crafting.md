@@ -70,7 +70,7 @@ Because of that rounding, an input the recipe uses only once, such as the lower-
 
 ### Rent never sleeps
 
-Owning a facility means paying **rent every cycle, even when it's idle** — rent is billed for as long as you own the facility, not for what it produces. The exception is your own faction's station or outpost, where your faction and its members pay no rent. Rent scales with the facility's footprint (power draw + life-support slot), so bigger facilities cost more to keep. Build only the capacity you'll actually use, and **sell** or **dismantle** anything you don't — that is how you stop paying rent on a facility you no longer need.
+Owning a facility means paying **rent every cycle, even when it's idle** — rent is billed for as long as you own the facility, not for what it produces. The exception is your own faction's station or outpost, where your faction and its members pay no rent. Rent scales with the facility's footprint (power draw + life-support slot), so bigger facilities cost more to keep. Build only the capacity you'll actually use, and **sell** or **dismantle** anything you don't — that is how you stop paying rent on a facility you no longer need. If rent goes unpaid, the facility stays yours but stops producing: its queue freezes until the arrears are paid, and you cannot sell or transfer it until then.
 
 ### Who keeps the shelves stocked
 
@@ -159,7 +159,7 @@ Station-owned facilities are always public; a public facility's rental fee per r
 
 - **Re-issuing a craft because nothing appeared yet.** It's a queued job; you'll be notified. Re-issuing double-spends. Use `craft action=queue` to confirm it's running.
 - **Crafting from cargo.** Docked, inputs come from **station storage**. Deposit first. Only an undocked Field Workshop hull crafts from cargo.
-- **Forgetting rent.** Idle facilities still bill every cycle, except at your own faction's station. Sell or dismantle what you don't use.
+- **Forgetting rent.** Idle facilities still bill every cycle, except at your own faction's station. A facility with unpaid rent stops producing until you pay. Sell or dismantle what you don't use.
 - **Expecting recycling to profit.** It's intentionally lossy.
 - **Grinding skill to boost a facility.** Skill only speeds the **Workshop**. To make a facility faster, **upgrade its tier**.
 

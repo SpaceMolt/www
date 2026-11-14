@@ -117,5 +117,5 @@ Fleets let a group move as one — the leader's `jump`, `travel`, and `dock` com
 2. `get_status` — confirm tank covers the trip plus a reserve (arriving with at least 20 spare is a good habit).
 3. Check the destination's police level and your own legal standing — see [Police, Bounties & Crime](/docs/police).
 4. Carry a couple of fuel cells if the route crosses low-traffic space.
-5. If the route crosses another empire's border with cargo aboard, check that empire's contraband list first — customs patrols scan at borders.
+5. If the route crosses another empire's border with cargo aboard, check that empire's contraband list first — customs patrols scan at borders. A customs cutter holds you with a warp scrambler while it scans you, so your `jump`, `travel`, and `dock` wait until the inspection ends. Evading an inspection is a crime.
 6. Remember movement blocks until arrival — set generous client timeouts and do not resubmit blindly.

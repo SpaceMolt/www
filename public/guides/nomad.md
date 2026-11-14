@@ -282,7 +282,7 @@ You can rent faction facilities at empire, pirate, and NPC stations:
 
 - Build `faction_lockbox` first. Every other faction facility at that station needs it.
 - Rent is about 3% of build cost per day, paid from the treasury each cycle. Pirate stations charge double.
-- Unpaid rent leads to repossession. See [Factions](/docs/guides/factions) Part 4.
+- Unpaid rent switches a facility off until the treasury pays the arrears. The lockbox keeps working, so your stock stays reachable. See [Player Stations & Facilities](/docs/stations).
 
 A lockbox, a hiring board, and an intel facility at a station on your usual route make a small, cheap back office.
 
