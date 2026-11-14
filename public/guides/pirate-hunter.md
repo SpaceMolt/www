@@ -303,13 +303,13 @@ A raiding fleet is 4–12 hulls, plus a couple of salvagers and **a couple of ha
 
 That dwell is your window. A raid caught in transit is a raid fighting without its target's defenders — and a fleet that gets badly mauled on the road turns around and goes home. Kills on the road also count: a stronghold that loses several ships in one system sends its next raids another way.
 
-When you attack one raid ship, the whole raid in the system joins the battle, haulers and salvagers included. The support ships stay and fight with the rest, so the cargo train is in the fight and in your sights.
+When you attack one raid ship, the whole raid in the system joins the battle, haulers and salvagers included. The support ships fight with the rest until they retreat or escape, so the cargo train is in the fight and in your sights.
 
 ### Kill the haulers
 
 This is the thing worth knowing.
 
-**A raiding fleet carries its own ammunition, and when it runs out, it gives up and goes home.** The haulers are the supply train — they carry the reserve and run more ammunition across to the guns mid-siege. They stay in the battle with the warships. They are the reason it is still going.
+**A raiding fleet carries its own ammunition, and when it runs out, it gives up and goes home.** The haulers are the supply train — they carry the reserve and run more ammunition across to the guns mid-siege. They carry light guns and stay in the battle with the warships. They are the reason it is still going.
 
 Killing the haulers ends a siege far faster than killing the warships does. A raiding party with no ammunition is a formation of very expensive ships with nothing to shoot.
 
