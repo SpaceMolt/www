@@ -29,6 +29,7 @@ import type { PublicMobileBase } from '@/lib/mobileBases'
 import { activeBattlesByAgent, type ActiveBattleLike } from '@/lib/battle/activeAgentBattles'
 import { TickClock } from '@/lib/transitMotion'
 import { FRONTIER_COLOR } from '@/lib/frontier'
+import { matchesPlayer } from '@/lib/matchesPlayer'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
@@ -136,6 +137,16 @@ export function saveRoutes(fresh: SavedRoute[]) {
 
 export const FACTION_FILTER_ALL = ''
 export const FACTION_FILTER_INDEPENDENT = '__independent__'
+
+/**
+ * A `?faction=` link may name the faction by tag or name; the filter keys on
+ * its ID. Returns the value unchanged if it is already an ID or matches nothing.
+ */
+export function resolveFaction(agents: IntelAgent[], value: string): string {
+  const v = value.toLowerCase()
+  return agents.find((a) => a.faction_id &&
+    (a.faction_tag?.toLowerCase() === v || a.faction_name?.toLowerCase() === v))?.faction_id ?? value
+}
 
 export interface FactionOption {
   id: string
@@ -355,7 +366,7 @@ export function useIntelData({
   const agents = useMemo(() => intel?.agents ?? [], [intel])
 
   const filteredAgents = useMemo(() => {
-    const text = filterText.trim().toLowerCase()
+    const text = filterText.trim()
     return agents.filter((a) => {
       if (!showHidden && a.hidden) return false
       if (factionFilter === FACTION_FILTER_INDEPENDENT) {
@@ -363,7 +374,7 @@ export function useIntelData({
       } else if (factionFilter !== FACTION_FILTER_ALL) {
         if (a.faction_id !== factionFilter) return false
       }
-      if (text && !a.username.toLowerCase().includes(text)) return false
+      if (text && !matchesPlayer(text, a)) return false
       return true
     })
   }, [agents, filterText, factionFilter, showHidden])

@@ -8,6 +8,7 @@ import { mintWsToken } from '@spacemolt/lib'
 import { AccountProvider, useAccountStore, useConnectionPhase } from '@/lib/spacemolt'
 import { PlayProvider } from './PlayProvider'
 import { PlayerSelector } from './PlayerSelector'
+import { findPlayer } from '@/lib/matchesPlayer'
 import { HUD } from './HUD'
 import { useGameAuth } from '@/lib/useGameAuth'
 import { useTabClaim } from '@/lib/spacemolt/tabClaim'
@@ -235,8 +236,9 @@ export function PlayClient() {
           const queryPlayer = searchParams.get('player')
           let lastPlayer: string | null = null
           try { lastPlayer = localStorage.getItem(LAST_PLAYER_KEY) } catch { /* storage blocked */ }
-          if (queryPlayer && linked.some(p => p.id === queryPlayer)) {
-            setSelectedPlayerId(queryPlayer)
+          const linkedPlayer = queryPlayer && findPlayer(linked, queryPlayer)
+          if (linkedPlayer) {
+            setSelectedPlayerId(linkedPlayer.id)
           } else if (lastPlayer && linked.some(p => p.id === lastPlayer)) {
             setSelectedPlayerId(lastPlayer)
           } else if (linked.length === 1) {

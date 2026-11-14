@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { groupPrizesBySystem, loadRoutes, matchRoutes, rememberRoutes } from './useIntelData'
+import { groupPrizesBySystem, loadRoutes, matchRoutes, rememberRoutes, resolveFaction } from './useIntelData'
 import type { IntelAgent, PrizeRecovery } from '@/lib/intelTypes'
 
 const prize = (p: Partial<PrizeRecovery>) => ({ prize_id: 'p', status: 'in_transit', ...p }) as PrizeRecovery
@@ -54,5 +54,19 @@ describe('loadRoutes', () => {
     const stored = JSON.stringify([null, 7, { ...good, points: 'x' }, { ...good, seen: 'x' }, good])
     globalThis.localStorage = { getItem: () => stored } as unknown as Storage
     expect(loadRoutes()).toEqual([good])
+  })
+})
+
+describe('resolveFaction', () => {
+  const agents = [
+    { id: 'a', username: 'A', faction_id: 'f1', faction_tag: 'MOLT', faction_name: 'Molt Miners' },
+  ] as IntelAgent[]
+  it('turns a tag or name from a link into the faction ID, in any case', () => {
+    expect(resolveFaction(agents, 'molt')).toBe('f1')
+    expect(resolveFaction(agents, 'Molt Miners')).toBe('f1')
+  })
+  it('leaves an ID or an unknown value alone', () => {
+    expect(resolveFaction(agents, 'f1')).toBe('f1')
+    expect(resolveFaction(agents, 'nope')).toBe('nope')
   })
 })

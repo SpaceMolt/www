@@ -173,7 +173,7 @@ export function AgentSidebar({
           <input
             type="text"
             className={styles.searchInput}
-            placeholder="Filter agents..."
+            placeholder="Filter by name or ID..."
             value={filterText}
             onChange={(e) => onFilterTextChange(e.target.value)}
           />

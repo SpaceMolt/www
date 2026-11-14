@@ -5,11 +5,12 @@
 // live agent positions, and movement trails.
 
 import Link from 'next/link'
-import { Suspense, useCallback, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, Radar, RefreshCw } from 'lucide-react'
-import { useQueryState } from 'nuqs'
+import { parseAsBoolean, parseAsInteger, parseAsString, useQueryState } from 'nuqs'
 import { useGameAuth } from '@/lib/useGameAuth'
-import { useIntelData } from '@/components/intel/useIntelData'
+import { resolveFaction, useIntelData } from '@/components/intel/useIntelData'
+import { findPlayer } from '@/lib/matchesPlayer'
 import { IntelMapCanvas, type IntelMapCanvasHandle } from '@/components/intel/IntelMapCanvas'
 import { AgentSidebar } from '@/components/intel/AgentSidebar'
 import { SystemDetailPanel } from '@/components/intel/SystemDetailPanel'
@@ -37,13 +38,15 @@ export default function IntelPage() {
 function IntelContent() {
   const { user, isLoaded, authHeaders } = useGameAuth()
 
+  // Filters live in the URL so a view can be bookmarked or linked from a
+  // player's own tools: ?agent= (ID or name), ?faction= (ID, tag or name), ?q=.
   const [selectedSystem, setSelectedSystem] = useQueryState('system')
-  const [filterText, setFilterText] = useState('')
-  const [factionFilter, setFactionFilter] = useState('')
-  const [showHidden, setShowHidden] = useState(false)
-  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
+  const [filterText, setFilterText] = useQueryState('q', parseAsString.withDefault(''))
+  const [factionFilter, setFactionFilter] = useQueryState('faction', parseAsString.withDefault(''))
+  const [showHidden, setShowHidden] = useQueryState('hidden', parseAsBoolean.withDefault(false))
+  const [selectedAgentId, setSelectedAgentId] = useQueryState('agent')
   // Minutes. 24h is still the default view; the list just reaches further down now.
-  const [trailsWindow, setTrailsWindow] = useState(24 * 60)
+  const [trailsWindow, setTrailsWindow] = useQueryState('trails', parseAsInteger.withDefault(24 * 60))
   const [layers, setLayers] = useState<IntelLayerState>({
     fog: true,
     intel: true,
@@ -86,6 +89,21 @@ function IntelContent() {
     },
     [setSelectedSystem],
   )
+
+  // A ?faction= link may use the tag or name; swap in the ID the dropdown keys on.
+  useEffect(() => {
+    const id = resolveFaction(data.agents, factionFilter)
+    if (id !== factionFilter) setFactionFilter(id)
+  }, [data.agents, factionFilter, setFactionFilter])
+
+  // A ?agent= link opens on that agent, wherever it is now, once agents load.
+  const linkedAgentDone = useRef(false)
+  useEffect(() => {
+    if (linkedAgentDone.current || !selectedAgentId || data.agents.length === 0) return
+    linkedAgentDone.current = true
+    const agent = findPlayer(data.agents, selectedAgentId)
+    if (agent) handleAgentSelect(agent)
+  }, [data.agents, selectedAgentId, handleAgentSelect])
 
   // Searching for a system takes you there and opens it, same as picking an
   // agent does. Zoom is left where the user put it.
