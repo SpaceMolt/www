@@ -496,17 +496,21 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
         ctx.save()
         ctx.lineWidth = 2
         ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
         for (const segment of trailsRef.current) {
           const fromSys = byId.get(segment.from)
           const toSys = byId.get(segment.to)
           if (!fromSys || !toSys) continue
-          const from = worldToScreen(fromSys.x, fromSys.y)
           const to = worldToScreen(toSys.x, toSys.y)
           // Newest segments bright, oldest faint
           ctx.globalAlpha = 0.12 + 0.6 * (1 - segment.age)
           ctx.strokeStyle = segment.color
           ctx.beginPath()
-          ctx.moveTo(from.x, from.y)
+          for (const [index, point] of (segment.waypoints ?? [fromSys]).entries()) {
+            const screen = worldToScreen(point.x, point.y)
+            if (index === 0) ctx.moveTo(screen.x, screen.y)
+            else ctx.lineTo(screen.x, screen.y)
+          }
           ctx.lineTo(to.x, to.y)
           ctx.stroke()
         }
