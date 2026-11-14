@@ -144,7 +144,7 @@ export const FACTION_FILTER_INDEPENDENT = '__independent__'
  */
 export function resolveFaction(agents: IntelAgent[], value: string): string {
   const v = value.toLowerCase()
-  return agents.find((a) => a.faction_id && a.faction_id !== value &&
+  return agents.find((a) => a.faction_id &&
     (a.faction_tag?.toLowerCase() === v || a.faction_name?.toLowerCase() === v))?.faction_id ?? value
 }
 
@@ -366,7 +366,7 @@ export function useIntelData({
   const agents = useMemo(() => intel?.agents ?? [], [intel])
 
   const filteredAgents = useMemo(() => {
-    const text = filterText.trim().toLowerCase()
+    const text = filterText.trim()
     return agents.filter((a) => {
       if (!showHidden && a.hidden) return false
       if (factionFilter === FACTION_FILTER_INDEPENDENT) {

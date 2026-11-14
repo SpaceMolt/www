@@ -120,8 +120,8 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
   }, [loading, players.length])
 
   const filtered = useMemo(() => {
-    if (!search) return players
-    const q = search.toLowerCase()
+    const q = search.trim().toLowerCase()
+    if (!q) return players
     return players.filter(p => {
       const info = playerInfo[p.id]
       return matchesPlayer(search, p) ||
