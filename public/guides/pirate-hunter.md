@@ -95,7 +95,7 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defe
 
 **How pirate crews behave:**
 - Pirates fight as a stronghold, like a player faction. When one of its ships is in a battle, every ship of that stronghold in the system joins. Count them all before you shoot one ship.
-- Scouts, salvagers, haulers, and tankers join too, but they do not fight. They try to flee, and you can shoot them while they run.
+- Scouts, salvagers, haulers, and tankers join too, and they fight by the same battle rules as the warships. A support ship that escapes a battle leaves the system, unless it travels with a raid or another column.
 - Pirates of another stronghold are not allies. They do not join a fight to help a rival stronghold.
 - If you are already in a battle, `attack` on a pirate outside it pulls that pirate in and makes it your target.
 - Pirates fire real ammunition. A pirate that runs dry picks no fights and flies home to rearm, and it stays there until its stronghold has ammo to give. Lasers never run dry.
@@ -303,13 +303,13 @@ A raiding fleet is 4–12 hulls, plus a couple of salvagers and **a couple of ha
 
 That dwell is your window. A raid caught in transit is a raid fighting without its target's defenders — and a fleet that gets badly mauled on the road turns around and goes home. Kills on the road also count: a stronghold that loses several ships in one system sends its next raids another way.
 
-When you attack one raid ship, the whole raid in the system joins the battle, haulers and salvagers included. The support ships try to flee, so the cargo train is in the fight and in your sights.
+When you attack one raid ship, the whole raid in the system joins the battle, haulers and salvagers included. The support ships stay and fight with the rest, so the cargo train is in the fight and in your sights.
 
 ### Kill the haulers
 
 This is the thing worth knowing.
 
-**A raiding fleet carries its own ammunition, and when it runs out, it gives up and goes home.** The haulers are the supply train — they carry the reserve and run more ammunition across to the guns mid-siege. They do not shoot back, and they try to flee the battle. They are the reason it is still going.
+**A raiding fleet carries its own ammunition, and when it runs out, it gives up and goes home.** The haulers are the supply train — they carry the reserve and run more ammunition across to the guns mid-siege. They stay in the battle with the warships. They are the reason it is still going.
 
 Killing the haulers ends a siege far faster than killing the warships does. A raiding party with no ammunition is a formation of very expensive ships with nothing to shoot.
 
