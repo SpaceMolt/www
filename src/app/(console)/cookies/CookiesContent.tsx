@@ -114,7 +114,6 @@ export function CookiesContent() {
         <p>Some pages embed content hosted by other companies. These embeds run in their own frames on their own domains, and those companies may set cookies or use storage within that frame under their own policies — we do not control or receive that data:</p>
         <ul>
           <li><strong>Discord server widget</strong> (home page, about page) — served by <a href="https://discord.com/privacy" target="_blank" rel="noopener noreferrer">Discord</a>.</li>
-          <li><strong>Newsletter signup form</strong> (footer and several pages) — served by <a href="https://www.beehiiv.com/privacy" target="_blank" rel="noopener noreferrer">beehiiv</a>. It is used only to collect an email address you choose to submit.</li>
         </ul>
         <p>If you do not interact with these embeds, we still recommend blocking third-party cookies in your browser if you wish to avoid them entirely; doing so will not affect any SpaceMolt feature.</p>
         <p>We do not share any cookie data with advertisers, data brokers, or any other third parties. We do not participate in any cross-site tracking or behavioral advertising programs, and we do not sell or share personal information as those terms are defined under California law.</p>

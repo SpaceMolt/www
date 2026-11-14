@@ -1,55 +1,86 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { Mail } from 'lucide-react'
+import { useState, type FormEvent } from 'react'
+import { Mail, Loader2, Check } from 'lucide-react'
 import { useTranslation } from '@/i18n'
 import styles from './NewsletterSignup.module.css'
 
-const BEEHIIV_FORM_ID = 'e66dd0da-f0a7-4fcb-86e6-3fb13c7aff70'
-const LOADER_SRC = 'https://subscribe-forms.beehiiv.com/v3/loader.js'
+const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
 type Variant = 'compact' | 'section'
 
+/** POSTs JSON to /api/newsletter/{path} on the gameserver. Returns the HTTP status, or 0 on a network error. */
+export async function postNewsletter(path: 'signup' | 'confirm', body: object): Promise<number> {
+  try {
+    const res = await fetch(`${GAME_SERVER}/api/newsletter/${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    return res.status
+  } catch {
+    return 0
+  }
+}
+
+/** Translation key for a status that both newsletter endpoints share. */
+export function newsletterErrorKey(status: number): string {
+  if (status === 403) return 'newsletter.errorOrigin'
+  if (status === 429) return 'newsletter.errorRateLimit'
+  if (status === 503) return 'newsletter.errorUnavailable'
+  return 'newsletter.errorGeneric'
+}
+
 /**
- * Public, anonymous newsletter signup using the beehiiv hosted subscribe form.
- * The v3 loader inserts the form's iframe adjacent to its own <script> tag, so we
- * append the loader into our own container ref — the form then renders in place.
- *
- * The loader supports multiple instances per page (keyed by form ID) and guards
- * each tag with data-bhv-initialized, so the same embed can appear in the footer,
- * a homepage section, and page-bottom blocks at once. Re-appending on each mount
- * keeps the form working across Next.js client-side navigation.
- *
- * Form fields and styling are configured in the beehiiv dashboard.
+ * Public, anonymous newsletter signup. The gameserver mails a confirm link to
+ * /newsletter/confirm; it gives the same answer for known and unknown addresses.
+ * `website` is a honeypot: people never see it, so they leave it empty.
  */
 export function NewsletterSignup({ variant = 'section' }: { variant?: Variant }) {
   const { t } = useTranslation()
-  const ref = useRef<HTMLDivElement>(null)
+  const [busy, setBusy] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const host = ref.current
-    if (!host) return
-    // Don't stack duplicate scripts if the effect re-runs (e.g. React strict mode).
-    if (host.querySelector('script[data-beehiiv-form]')) return
-    const script = document.createElement('script')
-    script.src = LOADER_SRC
-    script.async = true
-    script.setAttribute('data-beehiiv-form', BEEHIIV_FORM_ID)
-    host.appendChild(script)
-    // The beehiiv loader injects an untitled iframe; title it for screen readers.
-    const observer = new MutationObserver(() => {
-      const frame = host.querySelector('iframe')
-      if (frame && !frame.title) frame.title = 'Newsletter signup form'
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const data = new FormData(e.currentTarget)
+    setBusy(true)
+    setError(null)
+    const status = await postNewsletter('signup', {
+      email: String(data.get('email') ?? '').trim(),
+      website: String(data.get('nl_hp') ?? ''),
     })
-    observer.observe(host, { childList: true, subtree: true })
-    // On unmount, drop the loader script we added so client-side navigation
-    // re-injects cleanly. The injected form iframe is a child of `host`, which
-    // React removes with the component, so no orphaned forms remain.
-    return () => {
-      observer.disconnect()
-      script.remove()
-    }
-  }, [])
+    setBusy(false)
+    if (status === 200) setSent(true)
+    else setError(t(status === 400 ? 'newsletter.errorEmail' : newsletterErrorKey(status)))
+  }
+
+  const form = sent ? (
+    <p className={styles.sent} role="status">
+      <Check size={14} />
+      {t('newsletter.checkInbox')}
+    </p>
+  ) : (
+    <form className={styles.form} onSubmit={submit}>
+      <input
+        className={styles.input}
+        type="email"
+        name="email"
+        required
+        maxLength={254}
+        autoComplete="email"
+        placeholder={t('newsletter.placeholder')}
+        aria-label={t('newsletter.placeholder')}
+      />
+      <input className={styles.honeypot} type="text" name="nl_hp" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+      <button className={styles.button} type="submit" disabled={busy}>
+        {busy ? <Loader2 size={14} className={styles.spin} /> : <Mail size={14} />}
+        {t('newsletter.subscribe')}
+      </button>
+      {error && <p className={styles.error} role="alert">{error}</p>}
+    </form>
+  )
 
   if (variant === 'compact') {
     return (
@@ -58,7 +89,7 @@ export function NewsletterSignup({ variant = 'section' }: { variant?: Variant })
           <Mail size={14} />
           {t('newsletter.footerLabel')}
         </span>
-        <div ref={ref} className={styles.embedHost} />
+        {form}
       </div>
     )
   }
@@ -69,7 +100,7 @@ export function NewsletterSignup({ variant = 'section' }: { variant?: Variant })
         <div className={styles.sectionInner}>
           <h2 className={styles.title}>{t('newsletter.title')}</h2>
           <p className={styles.subtitle}>{t('newsletter.subtitle')}</p>
-          <div ref={ref} className={styles.embedHost} />
+          {form}
         </div>
       </div>
     </section>

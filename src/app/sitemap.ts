@@ -27,6 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     '',
     '/docs',
+    '/newsletter',
     '/docs/getting-started',
     '/docs/guides',
     '/docs/game-clients',

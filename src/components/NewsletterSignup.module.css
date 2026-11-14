@@ -53,10 +53,6 @@
   width: 100%;
 }
 
-.compact .embedHost {
-  margin: 0.25rem 0 0;
-}
-
 .compactLabel {
   display: inline-flex;
   align-items: center;
@@ -69,16 +65,111 @@
   letter-spacing: 0.1em;
 }
 
-/* === Shared embed host === */
-.embedHost {
+/* === Shared form === */
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   width: 100%;
   max-width: 480px;
   margin: 0.5rem auto 0;
 }
 
-.embedHost :global(iframe) {
-  width: 100% !important;
+.compact .form,
+.compact .sent {
+  margin: 0.25rem 0 0;
+}
+
+.input {
+  flex: 1 1 200px;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0.5rem 0.75rem;
+  background: rgba(13, 19, 33, 0.8);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 0;
+  color: var(--star-white);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+}
+
+/* Off-screen, not display:none, so naive bots still fill it. */
+.honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  padding: 0.5rem 0.9rem;
+  background: rgba(0, 212, 255, 0.12);
+  border: 1px solid var(--plasma-cyan);
+  border-radius: 0;
+  color: var(--plasma-cyan);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.button:hover:not(:disabled) {
+  background: rgba(0, 212, 255, 0.22);
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.25);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: nl-spin 0.8s linear infinite;
+}
+
+@keyframes nl-spin {
+  to { transform: rotate(360deg); }
+}
+
+.sent,
+.error {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.sent {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   max-width: 480px;
+  text-align: left;
+  color: var(--bio-green);
+}
+
+.error {
+  color: var(--claw-red);
+}
+
+.error a {
+  color: var(--plasma-cyan);
+}
+
+.form .error {
+  margin: 0;
 }
 
 @media (max-width: 640px) {
