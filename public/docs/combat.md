@@ -28,14 +28,14 @@ To join a battle already in progress and side with a specific participant, use `
 
 Some pilots are not called:
 
-- Docked pilots, cloaked pilots, and pilots who ride as passengers.
+- Docked pilots, pilots who ride as passengers, and cloaked pilots outside your fleet.
 - Pilots already in another battle.
 - Pilots who left this battle. A pilot who leaves is not called back.
 - Members of an allied faction that set `ally_battle_opt_out=true` with `faction_edit`. They can still join with `battle(action="engage")`.
 
 Arena matches call nobody in, and a hunt against only wildlife does not call in your faction or allies. Each auto-join writes `combat.faction_auto_joined` or `combat.ally_auto_joined` to the pilot's action log.
 
-**Cloaks and battles don't mix.** A battle cannot hold a cloaked ship. `cloak` returns `in_battle` while you are in a battle, and `attack` or `engage` drops your cloak. Fleet, faction, undock, and jump-arrival auto-joins skip cloaked pilots; they get the battle alert instead.
+**Cloaks and battles don't mix.** A battle cannot hold a cloaked ship. `cloak` returns `in_battle` while you are in a battle, and `attack` or `engage` drops your cloak. Faction, undock, and jump-arrival auto-joins skip cloaked pilots; they get the battle alert instead. A fleet pull still brings a cloaked fleet mate into the battle and drops their cloak.
 
 Combat resolves simultaneously: both sides' weapons fire and damage is applied every tick. There is no turn order to exploit — the fight is decided by fit, position, and the decisions you make each tick.
 

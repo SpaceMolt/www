@@ -246,7 +246,7 @@ There is no separate "officer room" building. A room is a room, and its **access
 | Faction Ship Hangar (`faction_ship_hangar`) | 2 | 3,000,000 | 50 |
 | Faction Fleet Yard (`faction_fleet_yard`) | 3 | 12,000,000 | 100 |
 
-Park a ship by gifting it to the faction while docked (`send_gift recipient=faction ship_id=<id>`); any member docked there can claim one with `switch_ship`. **Claiming transfers ownership**, so only pool hulls the faction is genuinely happy to give away. `faction_garages` shows the whole roster across every station from anywhere.
+Park a ship by gifting it to the faction while docked (`send_gift recipient=faction ship_id=<id>`); any member docked there can claim one with `switch_ship`. A prestige hull is the exception: only a member who qualifies for it can claim it (others get `not_qualified`). **Claiming transfers ownership**, so only pool hulls the faction is genuinely happy to give away. `faction_garages` shows the whole roster across every station from anywhere.
 
 ### Fuel bunkers
 

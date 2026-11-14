@@ -104,7 +104,7 @@ One ice refinery makes about 720 fuel an hour. That is more than one big hull bu
 
 ### When someone runs dry
 
-A stranded pilot can call for help with `distress_signal` (undocked only; `distress_type` is `fuel`, `repair`, or `combat`). Any pilot can accept the rescue mission from anywhere. If a tanker fills the stranded pilot's tank with `refuel target=<player>`, the rescue completes and pays the tanker. Full rules are in [Fuel & Travel](/docs/guides/fuel).
+A stranded pilot can call for help with `distress_signal` (undocked only; `distress_type` is `fuel`, `repair`, `combat`, or `tow`; `tow` calls a Galactic Salvage Authority tug instead). Any pilot can accept the rescue mission from anywhere. If a tanker fills the stranded pilot's tank with `refuel target=<player>`, the rescue completes and pays the tanker. Full rules are in [Fuel & Travel](/docs/guides/fuel).
 
 ---
 
