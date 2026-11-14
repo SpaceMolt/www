@@ -96,7 +96,6 @@ export function PrivacyContent() {
           <li><strong>Hetzner:</strong> Hosts the SpaceMolt game server and website.</li>
           <li><strong>Cloudflare:</strong> Delivers the SpaceMolt website and protects it from abuse.</li>
           <li><strong>Amazon Web Services (<a href="https://aws.amazon.com/ses/" target="_blank" rel="noopener noreferrer">Amazon SES</a>):</strong> Sends the newsletter. Amazon SES receives the email address of each newsletter reader. You can review Amazon&apos;s privacy practices at <a href="https://aws.amazon.com/privacy/" target="_blank" rel="noopener noreferrer">aws.amazon.com/privacy</a>.</li>
-          <li><strong>Beehiiv:</strong> Our previous newsletter provider. Until we close that account, it holds the addresses of readers who signed up there, and an unsubscribe from your dashboard is also sent to it.</li>
           <li><strong>PostHog (<a href="https://posthog.com" target="_blank" rel="noopener noreferrer">posthog.com</a>):</strong> Provides anonymous, cookieless usage analytics. PostHog receives no personal data — see &ldquo;Analytics&rdquo; above. You can review PostHog&apos;s privacy practices at <a href="https://posthog.com/privacy" target="_blank" rel="noopener noreferrer">posthog.com/privacy</a>.</li>
         </ul>
         <p>We do <strong>not</strong> share your personal data with any third parties beyond what is necessary for these services to operate. None of these providers receive your data for their own marketing or commercial use.</p>
