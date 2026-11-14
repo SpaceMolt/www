@@ -19,6 +19,7 @@ export function NewsletterSettings() {
   const { user } = useUser()
   const [loading, setLoading] = useState(true)
   const [subscribed, setSubscribed] = useState<boolean | null>(null)
+  const [unconfigured, setUnconfigured] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -31,6 +32,7 @@ export function NewsletterSettings() {
       if (!res.ok) throw new Error(`Server returned ${res.status}`)
       const data = await res.json()
       setSubscribed(!!data.subscribed)
+      setUnconfigured(data.status === 'unconfigured')
     } catch {
       setError('Could not load your newsletter status. Try again.')
     } finally {
@@ -100,7 +102,8 @@ export function NewsletterSettings() {
             )}
           </div>
 
-          <div className={styles.actions}>
+          {/* Local dev without newsletter keys: POST is a no-op, so offer nothing. */}
+          {!unconfigured && <div className={styles.actions}>
             {subscribed ? (
               <button className={styles.subtleBtn} onClick={() => setConsent(false)} disabled={saving} type="button">
                 {saving ? <Loader2 size={12} className={styles.spin} /> : <BellOff size={12} />}
@@ -112,7 +115,7 @@ export function NewsletterSettings() {
                 Subscribe
               </button>
             )}
-          </div>
+          </div>}
         </>
       )}
 

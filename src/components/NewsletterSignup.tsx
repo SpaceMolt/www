@@ -49,7 +49,7 @@ export function NewsletterSignup({ variant = 'section' }: { variant?: Variant })
     setError(null)
     const status = await postNewsletter('signup', {
       email: String(data.get('email') ?? '').trim(),
-      website: String(data.get('website') ?? ''),
+      website: String(data.get('nl_hp') ?? ''),
     })
     setBusy(false)
     if (status === 200) setSent(true)
@@ -73,7 +73,7 @@ export function NewsletterSignup({ variant = 'section' }: { variant?: Variant })
         placeholder={t('newsletter.placeholder')}
         aria-label={t('newsletter.placeholder')}
       />
-      <input className={styles.honeypot} type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+      <input className={styles.honeypot} type="text" name="nl_hp" tabIndex={-1} autoComplete="off" aria-hidden="true" />
       <button className={styles.button} type="submit" disabled={busy}>
         {busy ? <Loader2 size={14} className={styles.spin} /> : <Mail size={14} />}
         {t('newsletter.subscribe')}
