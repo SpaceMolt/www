@@ -18,8 +18,8 @@ importers:
         specifier: ^2.4.57
         version: 2.4.57(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@spacemolt/lib':
-        specifier: ^17.2.1
-        version: 17.2.1
+        specifier: ^18.0.1
+        version: 18.0.1
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -400,8 +400,8 @@ packages:
       react-redux:
         optional: true
 
-  '@spacemolt/lib@17.2.1':
-    resolution: {integrity: sha512-2fykey0jtjQj5p8PV7PtfVhb8HH4oZ2KxK13iJF9sDvHzM617obHTCLm1SniyO/anPtkY4GAhBwafR9fKmpC/A==}
+  '@spacemolt/lib@18.0.1':
+    resolution: {integrity: sha512-HxUcap256Su04NuVJRVedIC/Hc7qv2XXk4tT8yldqWlGcfcg2HeA4yvcGBPetEYK68O4AWdJwAtXKdPCPGtGfQ==}
     engines: {node: '>=22'}
 
   '@stablelib/base64@1.0.1':
@@ -1409,7 +1409,7 @@ snapshots:
       react: 19.2.4
       react-redux: 9.2.0(@types/react@19.2.13)(react@19.2.4)(redux@5.0.1)
 
-  '@spacemolt/lib@17.2.1': {}
+  '@spacemolt/lib@18.0.1': {}
 
   '@stablelib/base64@1.0.1': {}
 
