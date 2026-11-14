@@ -269,7 +269,7 @@ Each hull has **four production slots** and a **100,000-unit shared fuel tank**.
 
 Use `faction action=move_mobile_base x=3 y=-1` for movement inside the current system. Each AU costs 5,000 fuel and takes 1,080 ticks: three hours at the default tick rate. Coordinates must stay within 10 AU of the system center.
 
-Use `faction action=jump_mobile_base id=<neighbor_system>` for an adjacent-system jump. The commander needs **ManageBases** and personal knowledge of the destination. The base must be stationary, outside combat, and fully restored in hull and shields.
+Use `faction action=jump_mobile_base id=<neighbor_system>` for an adjacent-system jump. The commander needs **ManageBases**. Any adjacent system is a valid destination. A frontier destination must be charted by you or your faction. The base must be stationary, outside combat, and fully restored in hull and shields.
 
 A jump takes **90 preparation ticks plus 540 transit ticks**: 105 minutes at the default tick rate. Preparation reserves the jump resource from onboard faction storage. Departure consumes it. During preparation, `faction action=cancel_mobile_base_jump` cancels the jump and refunds the resource. Combat during preparation also cancels the jump.
 
