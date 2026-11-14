@@ -14,7 +14,7 @@
   "dependencies": {
     "@clerk/nextjs": "^6.39.8",
     "@clerk/themes": "^2.4.57",
-    "@spacemolt/lib": "^17.2.1",
+    "@spacemolt/lib": "^18.0.1",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.563.0",
     "next": "^16.4.2",
