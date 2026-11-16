@@ -56,6 +56,7 @@ export function DocsMarkdown({
           h2: ({ children }) => <Heading level={2}>{children}</Heading>,
           h3: ({ children }) => <Heading level={3}>{children}</Heading>,
           h4: ({ children }) => <Heading level={4}>{children}</Heading>,
+          img: ({ node: _node, ...props }) => <img loading="lazy" {...props} />,
           table: ({ children }) => (
             <div className="table-scroll" tabIndex={0} role="region" aria-label="Table">
               <table>{children}</table>
