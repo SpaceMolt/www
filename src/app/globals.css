@@ -1074,6 +1074,15 @@ footer {
   margin-bottom: 0;
 }
 
+.docs-markdown img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(0, 212, 255, 0.14);
+  border-radius: 6px;
+}
+
 .console-panel {
   position: relative;
   background: rgba(13, 19, 33, 0.6);
