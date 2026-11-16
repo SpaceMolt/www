@@ -121,7 +121,7 @@ Stateless characters owe no personal income or property tax. Their purchases sti
 
 ## How property tax works
 
-The assessed property value includes the hull and fitted modules of every owned ship, including stored ships. Cargo and loose stored items are outside this value.
+The assessed property value includes the hull and fitted modules of every owned ship, including stored ships. Cargo and loose stored items are outside this value. Every starter ship and its fitted modules add 0 to this value, and `assessed_property_by_ship` shows each starter ship at 0.
 
 Hull values use the current ship-class valuation, with the configured price as a fallback. Module values use estimated crafting material costs; uncraftable modules contribute zero. These values do not track what you paid.
 

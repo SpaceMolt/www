@@ -26,7 +26,7 @@ Empires assess active citizens on a weekly cycle. Fully inactive characters rece
 
 Deductible market purchases and carried market losses offset market income only. Unused deductions carry into the next period. Mission rewards and other income categories remain taxable.
 
-**Property tax** is assessed weekly against your `assessed_property_value`: hull plus fitted modules across every ship you own (the same valuation used by insurance and salvage). Each empire you hold citizenship in bills its full rate independently — there are no mutual-deduction credits on property. Brackets are possible here too.
+**Property tax** is assessed weekly against your `assessed_property_value`: hull plus fitted modules across every ship you own (the same valuation used by insurance and salvage). Starter ships and their fitted modules count as 0 for property tax only. Insurance and salvage values do not change. Each empire you hold citizenship in bills its full rate independently — there are no mutual-deduction credits on property. Brackets are possible here too.
 
 **Sales tax** is charged at buy time, at the rate of the empire whose station you're buying at.
 
