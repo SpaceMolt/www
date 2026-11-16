@@ -609,6 +609,8 @@ export function useIntelData({
 
   const exploredSet = useMemo(() => new Set(scoped?.explored_systems ?? []), [scoped])
 
+  const knownGates = useMemo(() => joinGates(scoped?.gates ?? [], gates), [scoped, gates])
+
   const intelSet = useMemo(
     () => new Set(Object.keys(scoped?.faction_intel?.systems ?? {})),
     [scoped],
@@ -718,7 +720,7 @@ export function useIntelData({
     trails,
     transits,
     knownWormholes: scoped?.known_wormholes ?? [],
-    gates: joinGates(scoped?.gates ?? [], gates),
+    gates: knownGates,
     mobileBases: scoped?.mobile_bases ?? [],
     trailColors,
     factionOptions,

@@ -12,7 +12,9 @@ export interface MapGateLink {
 }
 
 const GATE_COLOR = '#fb923c'
-const GATE_OFFLINE_COLOR = 'rgba(251, 146, 60, 0.4)'
+const GATE_OFFLINE_COLOR = 'rgba(251, 146, 60, 0.6)'
+// Dotted, so an offline gate does not read as a dashed wormhole.
+const GATE_OFFLINE_DASH = [2, 5]
 
 const isSamePair = (a: MapGate, b: MapGate) =>
   (a.from_system === b.from_system && a.to_system === b.to_system) ||
@@ -29,7 +31,7 @@ export const gatesFromLinks = (systems: { system_id: string; gate_connections?: 
   )
 
 /**
- * Draws gate lanes: solid when the gate is online, dim and dashed when it is
+ * Draws gate lanes: solid when the gate is online, dim and dotted when it is
  * offline. `at` gives a system's screen position, or undefined when the system
  * is not on the map.
  */
@@ -45,7 +47,7 @@ export function drawGateLanes(
     const to = at(gate.to_system)
     if (!from || !to) continue
     ctx.strokeStyle = gate.online ? GATE_COLOR : GATE_OFFLINE_COLOR
-    ctx.setLineDash(gate.online ? [] : [4, 4])
+    ctx.setLineDash(gate.online ? [] : GATE_OFFLINE_DASH)
     ctx.beginPath()
     ctx.moveTo(from.x, from.y)
     ctx.lineTo(to.x, to.y)

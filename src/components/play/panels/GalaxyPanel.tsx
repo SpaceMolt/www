@@ -112,6 +112,7 @@ export interface PlannedRoute {
 
 interface MapData {
   systems: MapSystemData[]
+  systemsById: Map<string, MapSystemData>
   gates: MapGate[]
 }
 
@@ -940,7 +941,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       }
 
       drawGateLanes(ctx, s.mapData.gates, (id) => {
-        const system = s.mapData?.systems.find((sys) => sys.id === id)
+        const system = s.mapData?.systemsById.get(id)
         return system && worldToScreen(system.x, system.y)
       })
 
@@ -1434,12 +1435,11 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     const publicSystems = map.data.systems
       .map(toMapSystemData)
       .filter((sys): sys is MapSystemData => sys !== null)
-    const systems = publicSystems.concat(
-      frontierSystems.filter(({ id }) => !publicSystems.some((sys) => sys.id === id)),
-    )
+    const publicIds = new Set(publicSystems.map(({ id }) => id))
+    const systems = publicSystems.concat(frontierSystems.filter(({ id }) => !publicIds.has(id)))
     // get_map follows this pilot's arrivals, so its gate state is fresher than the cached /api/map.
     const { gates = [] } = map.data.map as { gates?: MapGate[] }
-    s.mapData = { systems, gates: joinGates(frontierGates, gates) }
+    s.mapData = { systems, systemsById: new Map(systems.map((sys) => [sys.id, sys])), gates: joinGates(frontierGates, gates) }
     applyStationFlags()
 
     const currentId = currentSystemIdRef.current
