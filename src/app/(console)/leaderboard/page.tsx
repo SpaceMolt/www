@@ -74,6 +74,7 @@ interface LeaderboardData {
     storage_value: FactionRankEntry[]
     ships_destroyed: FactionRankEntry[]
     damage_dealt: FactionRankEntry[]
+    pirates_destroyed: FactionRankEntry[]
     ore_mined: FactionRankEntry[]
     items_crafted: FactionRankEntry[]
     missions_completed: FactionRankEntry[]
@@ -340,6 +341,12 @@ const FACTION_CATEGORY_GROUPS: CategoryGroup[] = [
         labelKey: 'leaderboard.damageDealt',
         format: 'number',
         description: 'Cumulative damage dealt by all faction members across all combat encounters.',
+      },
+      {
+        key: 'pirates_destroyed',
+        labelKey: 'leaderboard.piratesDestroyed',
+        format: 'number',
+        description: 'Total pirate NPC ships destroyed by all faction members combined.',
       },
     ],
   },
