@@ -6,6 +6,7 @@
 // topology, fog-of-war sets, agent positions, and trails.
 
 import { useEffect, useRef, useCallback, useImperativeHandle, useMemo, forwardRef } from 'react'
+import { drawGateLanes, type MapGate } from '@/lib/gateLanes'
 import type {
   IntelAgent,
   IntelLayerState,
@@ -175,6 +176,8 @@ interface IntelMapCanvasProps {
   trails: TrailSegment[]
   transits: TransitMarker[]
   wormholes: KnownWormhole[]
+  /** Player-built jump gates. Public knowledge — never hidden by fog. */
+  gates: MapGate[]
   /** Faction mobile bases and the mobile capital. Public knowledge — never hidden by fog. */
   mobileBases: PublicMobileBase[]
   /** Server tick estimate; read every frame so in-flight agents advance smoothly */
@@ -210,6 +213,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       trails,
       transits,
       wormholes,
+      gates,
       mobileBases,
       tickClock,
       selectedSystemId,
@@ -273,6 +277,8 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
     transitsRef.current = transits
     const wormholesRef = useRef(wormholes)
     wormholesRef.current = wormholes
+    const gatesRef = useRef(gates)
+    gatesRef.current = gates
     const mobileBasesRef = useRef(mobileBases)
     mobileBasesRef.current = mobileBases
     const trailFocus = useMemo(() => buildTrailFocus(trails, transits), [trails, transits])
@@ -763,6 +769,11 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
             ctx.stroke()
           }
         }
+
+        drawGateLanes(ctx, gatesRef.current, (id) => {
+          const system = byId.get(id)
+          return system && worldToScreen(system.x, system.y)
+        })
 
         // Known wormholes: dashed entry -> exit links. They are one-way, so a
         // chevron at the midpoint points at the exit.

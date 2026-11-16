@@ -188,6 +188,7 @@ function IntelContent() {
           trails={data.trails}
           transits={data.transits}
           wormholes={data.knownWormholes}
+          gates={data.gates}
           mobileBases={data.mobileBases}
           tickClock={data.tickClock}
           selectedSystemId={selectedSystem}

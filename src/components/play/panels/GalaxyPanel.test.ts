@@ -21,4 +21,12 @@ describe('toFrontierSystems', () => {
       { id: 'f1', name: 'A', x: 1, y: 2, empire_color: '#f472b6', frontier_tier: 2, connections: ['sol'] },
     ])
   })
+
+  it('leaves gates out of the lanes', () => {
+    const base = { name: 'A', description: '', position: { x: 1, y: 2 }, visited_at: '', visited: true, poi_count: 1 }
+    const [system] = toFrontierSystems([
+      { ...base, system_id: 'f1', frontier_tier: 1, connections: ['f2', 'sol'], gate_connections: [{ system_id: 'sol', online: true }] },
+    ])
+    expect(system.connections).toEqual(['f2'])
+  })
 })

@@ -6,6 +6,7 @@
 //   GET /api/intel-map/movements      — recent jump history for trail rendering
 // plus the public GET /api/map galaxy topology.
 
+import type { MapGate } from './gateLanes'
 import type { PublicMobileBase } from './mobileBases'
 
 // ── Public galaxy topology (GET /api/map) ──────────────────────────────
@@ -21,13 +22,14 @@ export interface IntelMapSystem {
   is_stronghold?: boolean
   /** Non-cloaked players in the system right now — the public map counts these too. */
   online?: number
-  /** Set on frontier systems only. */
+  /** Set on frontier systems only, private or made public by a gate. */
   frontier_tier?: number
   connections: string[]
 }
 
 export interface PublicMapResponse {
   systems: IntelMapSystem[]
+  gates?: MapGate[]
 }
 
 // ── Stations (GET /api/stations) ───────────────────────────────────────

@@ -25,6 +25,7 @@ import type {
   TransitMarker,
 } from '@/lib/intelTypes'
 import { fixedStations, stationsVisibleInRecon } from '@/lib/stationPresentation'
+import type { MapGate } from '@/lib/gateLanes'
 import type { PublicMobileBase } from '@/lib/mobileBases'
 import { activeBattlesByAgent, type ActiveBattleLike } from '@/lib/battle/activeAgentBattles'
 import { TickClock } from '@/lib/transitMotion'
@@ -187,6 +188,8 @@ export interface UseIntelDataResult {
   trails: TrailSegment[]
   transits: TransitMarker[]
   knownWormholes: KnownWormhole[]
+  /** Player-built jump gates on the public map. */
+  gates: MapGate[]
   mobileBases: PublicMobileBase[]
   trailColors: Map<string, string>
   factionOptions: FactionOption[]
@@ -221,6 +224,7 @@ export function useIntelData({
   trailsWindow,
 }: UseIntelDataOptions): UseIntelDataResult {
   const [publicSystems, setPublicSystems] = useState<IntelMapSystem[]>([])
+  const [gates, setGates] = useState<MapGate[]>([])
   const [stations, setStations] = useState<PublicStation[]>([])
   const [intel, setIntel] = useState<IntelMapResponse | null>(null)
   // Faction-scoped snapshot; null when no faction filter is active.
@@ -228,7 +232,7 @@ export function useIntelData({
   // The full snapshot, so a faction filter fogs these systems instead of removing them.
   const systems = useMemo(
     () => [
-      ...publicSystems,
+      ...publicSystems.map((system) => (system.frontier_tier ? { ...system, empire_color: FRONTIER_COLOR } : system)),
       ...(intel?.frontier_systems ?? []).map((system) => ({ ...system, empire_color: FRONTIER_COLOR })),
     ],
     [publicSystems, intel?.frontier_systems],
@@ -270,6 +274,7 @@ export function useIntelData({
     if (!res.ok) throw new Error(`map fetch failed (${res.status})`)
     const data: PublicMapResponse = await res.json()
     setPublicSystems(data.systems || [])
+    setGates(data.gates ?? [])
   }, [])
 
   // Every base in the galaxy — empire capitals, pirate dens, and the stations
@@ -713,6 +718,7 @@ export function useIntelData({
     trails,
     transits,
     knownWormholes: scoped?.known_wormholes ?? [],
+    gates,
     mobileBases: scoped?.mobile_bases ?? [],
     trailColors,
     factionOptions,

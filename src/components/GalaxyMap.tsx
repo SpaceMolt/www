@@ -23,6 +23,8 @@ import { configureHiDPICanvas, logicalCanvasSize } from './canvasResolution'
 import { fixedStations, stationsVisibleOnPublicMap } from '@/lib/stationPresentation'
 import { mobileBaseLabel, mobileBaseStatus, type PublicMobileBase } from '@/lib/mobileBases'
 import { layoutMobileBaseMarkers, mobileBaseColor, mobileBaseMarkerAt } from './mobileBaseMarkers'
+import { drawGateLanes, type MapGate } from '@/lib/gateLanes'
+import { FRONTIER_COLOR } from '@/lib/frontier'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -43,10 +45,13 @@ interface SystemData {
   battle_id?: string
   online: number
   connections: string[]
+  /** Set on frontier a gate has made public. */
+  frontier_tier?: number
 }
 
 interface MapData {
   systems: SystemData[]
+  gates?: MapGate[]
 }
 
 interface POIData {
@@ -908,6 +913,11 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         }
       }
       ctx.stroke()
+
+      drawGateLanes(ctx, s.mapData.gates ?? [], (id) => {
+        const system = s.systemsById.get(id)
+        return system && worldToScreen(system.x, system.y)
+      })
 
       // Draw travel paths (above connections, below nodes)
       drawTravelPaths(ctx)
@@ -2107,6 +2117,9 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           fetch(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map/activity`),
         ])
         const data: MapData = await mapResponse.json()
+        for (const system of data.systems) {
+          if (system.frontier_tier) system.empire_color = FRONTIER_COLOR
+        }
 
         // Faction outposts are local holdings, not galaxy-scale landmarks.
         try {

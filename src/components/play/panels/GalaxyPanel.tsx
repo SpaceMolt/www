@@ -5,6 +5,7 @@ import { Compass, Home, Crosshair } from 'lucide-react'
 import { fetchStations, type MapSystem, type MapSystemInfo, type RouteStep } from '@spacemolt/lib'
 import { fixedStations, splitStationRegistry } from '@/lib/stationPresentation'
 import { FRONTIER_COLOR } from '@/lib/frontier'
+import { drawGateLanes, gatesFromLinks, joinGates, type MapGate, type MapGateLink } from '@/lib/gateLanes'
 import { useAccountStore, useCurrentTick, useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
 import { alongBearing, bearingTo, dropOut, isSameAim, plotLabel, trackTrail, PATHFINDER_SPEED, type DriveControl } from '../pathfinder'
 import { loadRoutes, rememberRoutes, saveRoutes, type SavedRoute } from '@/components/intel/useIntelData'
@@ -46,16 +47,35 @@ function toMapSystemData(raw: MapSystem): MapSystemData | null {
     is_home: booleanField(raw.is_home),
     is_stronghold: booleanField(raw.is_stronghold),
     connections: stringArrayField(raw.connections),
+    ...frontierFields(numberField((raw as { frontier_tier?: unknown }).frontier_tier)),
   }
 }
 
-const NO_SYSTEMS: MapSystemData[] = []
+/** A gate makes frontier public; /api/map then lists it with its tier. */
+const frontierFields = (frontier_tier: number) => (frontier_tier > 0 ? { empire_color: FRONTIER_COLOR, frontier_tier } : {})
 
-/** Keeps the get_map entries that /api/map leaves out. */
-export function toFrontierSystems(systems: (MapSystemInfo & { frontier_tier?: number })[]): MapSystemData[] {
-  return systems.flatMap(({ system_id, name, position, connections, frontier_tier }) =>
+const NO_SYSTEMS: MapSystemData[] = []
+const NO_GATES: MapGate[] = []
+
+/** A get_map entry, with the fields the typed spec in @spacemolt/lib does not carry yet. */
+type GetMapSystem = MapSystemInfo & { frontier_tier?: number; gate_connections?: MapGateLink[] }
+
+/**
+ * Keeps the frontier get_map entries, which /api/map leaves out while they are
+ * private. Gates are drawn apart, so they leave the lane list.
+ */
+export function toFrontierSystems(systems: GetMapSystem[]): MapSystemData[] {
+  return systems.flatMap(({ system_id, name, position, connections, frontier_tier, gate_connections = [] }) =>
     frontier_tier
-      ? [{ id: system_id, name, x: position.x, y: position.y, empire_color: FRONTIER_COLOR, frontier_tier, connections }]
+      ? [{
+          id: system_id,
+          name,
+          x: position.x,
+          y: position.y,
+          empire_color: FRONTIER_COLOR,
+          frontier_tier,
+          connections: connections.filter((id) => !gate_connections.some((gate) => gate.system_id === id)),
+        }]
       : [],
   )
 }
@@ -92,6 +112,7 @@ export interface PlannedRoute {
 
 interface MapData {
   systems: MapSystemData[]
+  gates: MapGate[]
 }
 
 export interface GalaxyPanelHandle {
@@ -327,9 +348,13 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
 
   // Refetched on each arrival, so a newly charted system joins the map.
   // Keyed by pilot, so a character switch never shows the last pilot's charts.
-  const [frontier, setFrontier] = useState<{ playerId?: string; systems: MapSystemData[] }>({ systems: NO_SYSTEMS })
+  const [frontier, setFrontier] = useState<{ playerId?: string; systems: MapSystemData[]; gates: MapGate[] }>({
+    systems: NO_SYSTEMS,
+    gates: NO_GATES,
+  })
   const playerId = player?.id
   const frontierSystems = frontier.playerId === playerId ? frontier.systems : NO_SYSTEMS
+  const frontierGates = frontier.playerId === playerId ? frontier.gates : NO_GATES
   const systemId = location?.system_id
   useEffect(() => {
     if (!playerId) return
@@ -337,7 +362,8 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     store.account.commands.spacemolt.get_map().then(
       ({ structuredContent }) => {
         if (!cancelled && structuredContent && 'systems' in structuredContent) {
-          setFrontier({ playerId, systems: toFrontierSystems(structuredContent.systems) })
+          const systems: GetMapSystem[] = structuredContent.systems
+          setFrontier({ playerId, systems: toFrontierSystems(systems), gates: gatesFromLinks(systems) })
         }
       },
       () => {},
@@ -913,6 +939,11 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         }
       }
 
+      drawGateLanes(ctx, s.mapData.gates, (id) => {
+        const system = s.mapData?.systems.find((sys) => sys.id === id)
+        return system && worldToScreen(system.x, system.y)
+      })
+
       // Draw planned route overlay (between connections and nodes)
       drawPlannedRoute(ctx)
 
@@ -1400,11 +1431,15 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   useEffect(() => {
     if (!map.data) return
     const s = stateRef.current
-    const systems = map.data.systems
+    const publicSystems = map.data.systems
       .map(toMapSystemData)
       .filter((sys): sys is MapSystemData => sys !== null)
-      .concat(frontierSystems)
-    s.mapData = { systems }
+    const systems = publicSystems.concat(
+      frontierSystems.filter(({ id }) => !publicSystems.some((sys) => sys.id === id)),
+    )
+    // get_map follows this pilot's arrivals, so its gate state is fresher than the cached /api/map.
+    const { gates = [] } = map.data.map as { gates?: MapGate[] }
+    s.mapData = { systems, gates: joinGates(frontierGates, gates) }
     applyStationFlags()
 
     const currentId = currentSystemIdRef.current
@@ -1418,7 +1453,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
 
     if (loadingRef.current) loadingRef.current.style.display = 'none'
     render()
-  }, [map.data, frontierSystems, applyStationFlags, snapToSystem, render])
+  }, [map.data, frontierSystems, frontierGates, applyStationFlags, snapToSystem, render])
 
   useEffect(() => {
     if (map.error && loadingRef.current) {
