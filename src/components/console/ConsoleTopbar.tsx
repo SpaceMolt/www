@@ -9,11 +9,12 @@ import {
   MessageCircle,
   Heart,
   Rocket,
+  LogIn,
   Play,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react'
-import { SignedIn, SignedOut } from '@clerk/nextjs'
+import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs'
 import { useTranslation } from '@/i18n'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { DISCORD_URL, PATREON_URL, ASSETS_URL } from '@/lib/links'
@@ -127,9 +128,16 @@ export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, navCollapse
           <Heart size={13} aria-hidden />
           <span className={styles.btnLabel}>{t('console.patreon')}</span>
         </a>
-        {/* aria-label on the anchor: the label span is display:none below 400px,
-            which takes it out of the accessibility tree with it. */}
         <SignedOut>
+          {/* Borrows the tier-3 chrome (neutral, cyan hover) from the pane toggle. */}
+          <SignInButton mode="modal">
+            <button type="button" className={`${styles.paneToggle} ${styles.signInBtn}`} aria-label={t('nav.signIn')}>
+              <LogIn size={13} aria-hidden />
+              <span className={styles.btnLabel}>{t('nav.signIn')}</span>
+            </button>
+          </SignInButton>
+          {/* aria-label on the anchor: the label span is display:none below 400px,
+              which takes it out of the accessibility tree with it. */}
           <Link href="/docs/getting-started" className={styles.ctaBtn} aria-label={t('nav.getStarted')}>
             <Rocket size={14} aria-hidden />
             <span className={styles.ctaLabel}>{t('nav.getStarted')}</span>

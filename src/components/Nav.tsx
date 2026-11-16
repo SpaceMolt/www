@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { Heart, MessageCircle } from 'lucide-react'
-import { SignedIn, SignedOut } from '@clerk/nextjs'
+import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs'
 import { useTranslation } from '@/i18n'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { consoleNavGroups } from '@/components/console/consoleNav'
@@ -182,6 +182,13 @@ export function Nav() {
           <li>
             <LanguageSelector />
           </li>
+          <SignedOut>
+            <li>
+              <SignInButton mode="modal">
+                <button type="button">{t('nav.signIn')}</button>
+              </SignInButton>
+            </li>
+          </SignedOut>
           <li>
             <SignedOut>
               <Link href="/docs/getting-started" className="highlight">{t('nav.getStarted')}</Link>
@@ -207,6 +214,9 @@ export function Nav() {
         <div className="mobile-menu-cta">
           <SignedOut>
             <Link href="/docs/getting-started" className="highlight" onClick={closeMobileMenu}>{t('nav.getStarted')}</Link>
+            <SignInButton mode="modal">
+              <button type="button" className="mobile-menu-link" onClick={closeMobileMenu}>{t('nav.signIn')}</button>
+            </SignInButton>
           </SignedOut>
           <SignedIn>
             <Link href="/dashboard" className="highlight" onClick={closeMobileMenu}>{t('nav.dashboard')}</Link>

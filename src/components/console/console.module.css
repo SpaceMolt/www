@@ -910,6 +910,13 @@
   }
 }
 
+/* Sign In drops its word before the other labels: at 901-925px it pushed the CTA off-screen. */
+@media (max-width: 1000px) {
+  .signInBtn .btnLabel {
+    display: none;
+  }
+}
+
 /* Below ~700px the topbar can no longer fit menu + brand + telemetry + actions
    without clipping the buttons, and the live pane already shows the same
    connection state — so the readouts go rather than the controls. */
@@ -926,11 +933,12 @@
 }
 
 /* Phone widths: shed the cluster in priority order rather than letting it clip.
-   Patreon goes first (lower frequency, weaker icon recognition at 13px); Discord
-   and the CTA survive to the narrowest screens. Anything that drops is still one
-   tap away in the nav drawer's Community group. */
+   Patreon goes first, then Discord when Sign In needs its slot; Sign In and the
+   CTA survive to the narrowest screens. Anything that drops is still one tap away
+   in the nav drawer's Community group. */
 @media (max-width: 560px) {
-  .socialPatreon {
+  .socialPatreon,
+  .topbarActions:has(.signInBtn) .socialDiscord {
     display: none;
   }
 }
