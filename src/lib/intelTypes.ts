@@ -190,6 +190,8 @@ export interface IntelMapResponse {
   mobile_bases?: PublicMobileBase[]
   /** Frontier systems the fleet has charted; /api/map leaves them out. */
   frontier_systems?: IntelMapSystem[]
+  /** Gates whose two ends are public or charted by the fleet, private frontier included. */
+  gates?: MapGate[]
 }
 
 // ── System detail (GET /api/intel-map/system/{id}) ─────────────────────

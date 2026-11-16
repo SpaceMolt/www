@@ -25,7 +25,7 @@ import type {
   TransitMarker,
 } from '@/lib/intelTypes'
 import { fixedStations, stationsVisibleInRecon } from '@/lib/stationPresentation'
-import type { MapGate } from '@/lib/gateLanes'
+import { joinGates, type MapGate } from '@/lib/gateLanes'
 import type { PublicMobileBase } from '@/lib/mobileBases'
 import { activeBattlesByAgent, type ActiveBattleLike } from '@/lib/battle/activeAgentBattles'
 import { TickClock } from '@/lib/transitMotion'
@@ -188,7 +188,7 @@ export interface UseIntelDataResult {
   trails: TrailSegment[]
   transits: TransitMarker[]
   knownWormholes: KnownWormhole[]
-  /** Player-built jump gates on the public map. */
+  /** Player-built jump gates the fleet knows, and those on the public map. */
   gates: MapGate[]
   mobileBases: PublicMobileBase[]
   trailColors: Map<string, string>
@@ -718,7 +718,7 @@ export function useIntelData({
     trails,
     transits,
     knownWormholes: scoped?.known_wormholes ?? [],
-    gates,
+    gates: joinGates(scoped?.gates ?? [], gates),
     mobileBases: scoped?.mobile_bases ?? [],
     trailColors,
     factionOptions,
