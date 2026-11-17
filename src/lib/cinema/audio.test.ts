@@ -35,6 +35,9 @@ class FakeContext {
   constructor() { FakeContext.instances.push(this) }
   createDynamicsCompressor() { return Object.assign(new FakeNode(), { threshold: new FakeParam(), ratio: new FakeParam() }) }
   createGain() { return Object.assign(new FakeNode(), { gain: new FakeParam() }) }
+  sampleRate = 100
+  createConvolver() { return Object.assign(new FakeNode(), { buffer: null as unknown }) }
+  createBuffer(channels: number, length: number) { const data = Array.from({ length: channels }, () => new Float32Array(length)); return { getChannelData: (c: number) => data[c] } }
   createStereoPanner() { return Object.assign(new FakeNode(), { pan: new FakeParam() }) }
   createBufferSource() { const s = new FakeSource(); this.sources.push(s); return s }
   decodeAudioData(data: ArrayBuffer) { return Promise.resolve(data) }
@@ -107,6 +110,7 @@ describe('cinema audio', () => {
     expect(cueSound(weapon({ audioPhase: 'charge', duration: .8 }))![3]).toBe(.8)
     expect(cueSound(weapon({ secondaryKind: 'retaliation' }))![0]).toBe('em')
     expect(cueSound(weapon({ weaponFamily: 'plasma' }))![0]).toBe('thermal')
+    expect(cueSound(weapon({ weaponFamily: 'torpedo' }))![3]).toBe(.6)
   })
 
   it('caps voices at 24 and lets a loss replace a launch', async () => {
@@ -122,6 +126,23 @@ describe('cinema audio', () => {
     expect(ctx.sources.every(s => s.stopped)).toBe(true)
     audio.dispose()
     expect(ctx.closes).toBe(1)
+  })
+
+  it('never drops the escape jump under a full voice cap', async () => {
+    const { audio, ctx } = await started()
+    for (let i = 0; i < 24; i++) audio.cue(weapon())
+    audio.cue({ ...weapon(), kind: 'escape' })
+    expect(ctx.sources.length).toBe(25)
+    audio.dispose()
+  })
+
+  it('keeps a mid-fight arrival short and quiet, so it does not sound like the escape', () => {
+    const [sound, gain, , cut] = cueSound({ ...weapon(), kind: 'arrival' })!
+    const [, escapeGain] = cueSound({ ...weapon(), kind: 'escape' })!
+    expect(sound).toBe('jump_exit')
+    expect(gain).toBeLessThan(escapeGain / 2)
+    expect(cut).toBeGreaterThan(0)
+    expect(cut).toBeLessThanOrEqual(1.5)
   })
 
   it('stays silent while muted and survives a missing AudioContext', async () => {

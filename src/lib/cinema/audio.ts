@@ -20,7 +20,7 @@ const EXPLOSIVE = ['missile', 'torpedo', 'plasma', 'mine', 'smartbomb', 'flak']
 // [sound, gain, playback rate]
 const EVENT_SOUNDS: Readonly<Record<string, readonly [string, number, number]>> = {
   contact: ['em', .35, 1.3], death: ['explosion_big', 1, 1], knockout: ['explosion', .8, .9],
-  boarding: ['dock', .6, 1], capture: ['alert', .5, 1], arrival: ['jump_exit', .6, 1], escape: ['jump_exit', .8, 1],
+  boarding: ['dock', .6, 1], capture: ['alert', .5, 1], arrival: ['jump_exit', .3, 1.2], escape: ['jump_exit', .8, 1],
   repair: ['mining_loop', .3, 1.2], disable: ['em', .5, .8], cloak: ['launch', .5, .7], drain: ['em', .4, .6],
 }
 
@@ -43,7 +43,7 @@ export const CINEMA_AUDIO_CREDITS: readonly { title: string; by: string; url: st
 export function cueSound(cue: CinemaAudioCue): readonly [string, number, number, number] | null {
   if (cue.kind !== 'weapon') {
     const event = EVENT_SOUNDS[cue.kind]
-    return event ? [...event, cue.kind === 'repair' ? 1.1 : 0] : null
+    return event ? [...event, cue.kind === 'repair' ? 1.1 : cue.kind === 'arrival' ? 1.2 : 0] : null
   }
   if (cue.audioPhase === 'contact' || cue.secondaryKind === 'retaliation' || /galvanic hull grid/i.test(cue.weaponName ?? '')) return [...EVENT_SOUNDS.contact, 0]
   const family = cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName, cue.damageType)
@@ -51,7 +51,8 @@ export function cueSound(cue: CinemaAudioCue): readonly [string, number, number,
   if (cue.audioPhase === 'charge') return ['jump_spool', .35, 1.4, bounded(cue.duration, .1, 3, .4)]
   if (cue.audioPhase === 'shield-impact') return ['shield_hit', .45 * boost, 1, 0]
   if (cue.audioPhase === 'impact') return EXPLOSIVE.includes(family) ? ['explosion', .5 * boost, 1.2, 0] : ['hull_hit', .5 * boost, 1, 0]
-  return [WEAPON_SOUNDS[family], .35 * boost, 1, 0]
+  // The rocket samples end in a buzzing motor tail; keep only the launch.
+  return [WEAPON_SOUNDS[family], .35 * boost, 1, WEAPON_SOUNDS[family] === 'missile' ? .6 : 0]
 }
 const bounded = (value: number, low: number, high: number, fallback = low) => Number.isFinite(value) ? Math.max(low, Math.min(high, value)) : fallback
 
@@ -75,6 +76,16 @@ export class CinemaAudio {
     const master = this.master = ctx.createGain()
     master.gain.value = 0
     master.connect(compressor)
+    // A wide hall send: a 2.4 s decaying-noise impulse, no extra file to load.
+    const reverb = ctx.createConvolver(), wet = ctx.createGain()
+    const tail = ctx.createBuffer(2, Math.floor(ctx.sampleRate * 2.4), ctx.sampleRate)
+    for (let c = 0; c < 2; c++) {
+      const data = tail.getChannelData(c)
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length) ** 3
+    }
+    reverb.buffer = tail
+    wet.gain.value = .35
+    master.connect(reverb).connect(wet).connect(compressor)
     for (const [name, count] of Object.entries(VARIANTS)) {
       for (let i = 1; i <= count; i++) {
         const file = count > 1 ? `${name}_${i}` : name
@@ -125,7 +136,7 @@ export class CinemaAudio {
     const variants = sound && this.buffers.get(sound[0])
     if (!sound || !variants?.length) return
     const [, peak, rate, cut] = sound
-    const priority = cue.kind === 'death' || cue.kind === 'knockout' || cue.kind === 'capture' ? 2 : cue.audioPhase === 'impact' || cue.audioPhase === 'shield-impact' ? 1 : 0
+    const priority = ['death', 'knockout', 'capture', 'escape'].includes(cue.kind) ? 2 : cue.audioPhase === 'impact' || cue.audioPhase === 'shield-impact' ? 1 : 0
     if (this.voices.size >= 24) {
       // Hits may replace launches; only decisive events may replace a loss.
       const replaced = [...this.voices].find(([, p]) => priority === 2 || p < priority)?.[0]

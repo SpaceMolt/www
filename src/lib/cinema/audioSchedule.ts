@@ -1,6 +1,7 @@
 import type { CinemaCue } from './types'
 import { cueRange } from './playback'
 import { resolveWeaponFamily } from './weapons'
+import { ESCAPE_SPOOL } from './motion'
 
 export interface CinemaAudioCue extends CinemaCue {
   audioPhase?: 'charge' | 'release' | 'impact' | 'shield-impact' | 'contact'
@@ -21,7 +22,11 @@ export function buildAudioSchedule(cues: readonly CinemaCue[]): CinemaAudioCue[]
     : cue.intensity
   for (const cue of cues) {
     if (cue.parentId) continue
-    if (cue.kind !== 'weapon') { schedule.push({ ...cue, audioActorId: cue.to ?? cue.from }); continue }
+    if (cue.kind !== 'weapon') {
+      // The escaping ship spools first; its jump sound belongs to the streak.
+      schedule.push({ ...cue, time: cue.kind === 'escape' ? cue.time + ESCAPE_SPOOL : cue.time, audioActorId: cue.to ?? cue.from })
+      continue
+    }
     const impactTime = cue.time + Math.max(.015, cue.duration)
     const family = cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName, cue.damageType)
     const event = (phase: NonNullable<CinemaAudioCue['audioPhase']>, time: number, audioActorId = cue.from): CinemaAudioCue =>
