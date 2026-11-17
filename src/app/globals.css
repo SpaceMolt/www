@@ -868,6 +868,15 @@ footer {
     box-shadow: var(--glow-orange);
   }
 
+  /* Lower specificity than .mobile-menu-link:hover so the hover tint still applies. */
+  button.mobile-menu-link {
+    width: 100%;
+    margin-top: 0.5rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+  }
+
   .footer-top {
     gap: 2rem 1.5rem;
   }
