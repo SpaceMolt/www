@@ -18,7 +18,10 @@ function pageHarness() {
     }
     return slots[i].value
   }
+  // The page keeps its filters in the URL; history entries let a test press back.
+  const history = ['']
   const hooks = {
+    Suspense: ({ children }: any) => children,
     useState(initial: any) {
       const i = cursor++
       if (!(i in slots)) slots[i] = typeof initial === 'function' ? initial() : initial
@@ -42,12 +45,17 @@ function pageHarness() {
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } })
   const exports: any = {}
   runInNewContext(outputText, {
-    exports, process: { env: {} }, document: {},
+    exports, process: { env: {} }, document: {}, URLSearchParams,
     setTimeout: (fn: () => void) => { timers.add(fn); return fn },
     clearTimeout: (fn: () => void) => timers.delete(fn),
     require: (id: string) => {
       if (id === 'react') return hooks
       if (id === 'react/jsx-runtime') return { jsx: (type: any, props: any) => ({ type, props }), jsxs: (type: any, props: any) => ({ type, props }) }
+      if (id === 'next/navigation') return {
+        usePathname: () => '/battles',
+        useSearchParams: () => memo(() => new URLSearchParams(history.at(-1)), [history.at(-1)]),
+        useRouter: () => ({ push: (href: string) => { history.push(href.split('?')[1] ?? ''); dirty = true } }),
+      }
       if (id === '@/i18n') return { useTranslation: () => ({ t: (key: string) => key }) }
       if (id === '@/lib/useVisiblePoll') return { useVisiblePoll: (fn: () => void) => { poll = fn } }
       if (id === '@/lib/battle/listRequest') return { createListRequest: (value: any) => { callbacks = value; return request } }
@@ -55,7 +63,7 @@ function pageHarness() {
       return { default: {} }
     },
   })
-  const render = () => { do { dirty = false; cursor = 0; tree = exports.default(); effects.splice(0).forEach(fn => fn()) } while (dirty) }
+  const render = () => { do { dirty = false; cursor = 0; tree = exports.default(); while (typeof tree?.type === 'function') tree = tree.type(tree.props); effects.splice(0).forEach(fn => fn()) } while (dirty) }
   const find = (predicate: (node: any) => boolean, node = tree): any => {
     if (!node || typeof node !== 'object') return
     if (predicate(node)) return node
@@ -69,6 +77,7 @@ function pageHarness() {
     wait() { const pending = [...timers]; timers.clear(); pending.forEach(fn => fn()); render() },
     submit() { const form = find(n => n.type === 'form'); expect(form).toBeDefined(); let prevented = false; form.props.onSubmit({ preventDefault() { prevented = true } }); expect(prevented).toBe(true); render() },
     poll() { poll(); render() },
+    back() { history.pop(); render() },
   }
 }
 
@@ -88,6 +97,10 @@ test('battle search waits for submission, and polling keeps the submitted query'
   h.click('battles.filterCompleted')
   expect(h.calls.at(-1)?.searchParams.get('search')).toBe('Vex')
   expect(h.calls.at(-1)?.searchParams.get('status')).toBe('completed')
+  h.back()
+  expect(h.calls.at(-1)?.searchParams.get('status')).toBe('all')
+  expect(h.calls.at(-1)?.searchParams.get('search')).toBe('Vex')
+  h.click('battles.filterCompleted')
   h.submit()
   expect(h.calls.at(-1)?.searchParams.get('search')).toBe('Vex Caldera')
   const count = h.calls.length
