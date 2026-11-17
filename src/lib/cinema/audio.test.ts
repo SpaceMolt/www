@@ -95,7 +95,7 @@ describe('cinema audio', () => {
     expect(FakeContext.instances.length).toBe(0)
     audio.setPlaying(true)
     const music = FakeMusic.instances[0]
-    expect(music.src).toMatch(/^https:\/\/assets\.spacemolt\.com\/cinema\/music\/combat(_[234])?\.mp3$/)
+    expect(music.src).toMatch(/^https:\/\/assets\.spacemolt\.com\/cinema\/music\/combat(_[25])?\.mp3$/)
     expect(music.loop).toBe(true)
     expect(music.paused).toBe(false)
     audio.setMuted(true)

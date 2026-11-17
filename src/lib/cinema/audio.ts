@@ -5,7 +5,7 @@ import { resolveWeaponFamily, type CinemaWeaponFamily } from './weapons'
 // music lives on the asset CDN (no CORS there, so it plays through an <audio> element).
 const SFX_URL = '/cinema/sfx/'
 const MUSIC_URL = 'https://assets.spacemolt.com/cinema/music/'
-const MUSIC = ['combat', 'combat_2', 'combat_3', 'combat_4']
+const MUSIC = ['combat', 'combat_2', 'combat_5']
 const VARIANTS: Readonly<Record<string, number>> = {
   energy: 3, kinetic: 3, missile: 3, thermal: 2, em: 2, shield_hit: 2, hull_hit: 3, explosion: 4,
   explosion_big: 1, dock: 1, launch: 1, jump_exit: 1, jump_spool: 1, alert: 1, mining_loop: 1,
@@ -26,7 +26,7 @@ const EVENT_SOUNDS: Readonly<Record<string, readonly [string, number, number]>> 
 
 /** Sources of every sound the cinema plays, shown by the player's Credits button. */
 export const CINEMA_AUDIO_CREDITS: readonly { title: string; by: string; url: string; license: string }[] = [
-  { title: 'Enemy Infiltration, Invasion, Invaders from Beyond!, Security Breach', by: 'Eric Matyas', url: 'https://soundimage.org', license: 'CC BY 4.0' },
+  { title: 'Enemy Infiltration, Invasion, World of Automatons', by: 'Eric Matyas', url: 'https://soundimage.org', license: 'CC BY 4.0' },
   { title: 'Effects from the #GameAudioGDC 2026 Bundle: InMotionAudio, Epic Stock Media, The Noisery, David Dumais Audio, Federico Soler, Ivo Vicic, Alexander Kopeikin, 344 Audio, Cinematic Sound Design', by: 'Sonniss', url: 'https://sonniss.com/gameaudiogdc', license: 'Royalty-free' },
   { title: 'FX_Player_Lazer_Shot_5', by: 'JakeAMT', url: 'https://freesound.org/people/JakeAMT/sounds/681965/', license: 'CC0' },
   { title: 'Scifi_Gun_Blast', by: 'tradeachest', url: 'https://freesound.org/people/tradeachest/sounds/730564/', license: 'CC0' },
