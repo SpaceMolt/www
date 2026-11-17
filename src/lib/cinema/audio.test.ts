@@ -110,6 +110,7 @@ describe('cinema audio', () => {
     expect(cueSound(weapon({ audioPhase: 'charge', duration: .8 }))![3]).toBe(.8)
     expect(cueSound(weapon({ secondaryKind: 'retaliation' }))![0]).toBe('em')
     expect(cueSound(weapon({ weaponFamily: 'plasma' }))![0]).toBe('thermal')
+    expect(cueSound(weapon({ weaponFamily: 'torpedo' }))![3]).toBe(.6)
   })
 
   it('caps voices at 24 and lets a loss replace a launch', async () => {

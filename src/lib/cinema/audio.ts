@@ -51,7 +51,8 @@ export function cueSound(cue: CinemaAudioCue): readonly [string, number, number,
   if (cue.audioPhase === 'charge') return ['jump_spool', .35, 1.4, bounded(cue.duration, .1, 3, .4)]
   if (cue.audioPhase === 'shield-impact') return ['shield_hit', .45 * boost, 1, 0]
   if (cue.audioPhase === 'impact') return EXPLOSIVE.includes(family) ? ['explosion', .5 * boost, 1.2, 0] : ['hull_hit', .5 * boost, 1, 0]
-  return [WEAPON_SOUNDS[family], .35 * boost, 1, 0]
+  // The rocket samples end in a buzzing motor tail; keep only the launch.
+  return [WEAPON_SOUNDS[family], .35 * boost, 1, WEAPON_SOUNDS[family] === 'missile' ? .6 : 0]
 }
 const bounded = (value: number, low: number, high: number, fallback = low) => Number.isFinite(value) ? Math.max(low, Math.min(high, value)) : fallback
 
