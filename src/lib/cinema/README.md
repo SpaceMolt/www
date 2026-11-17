@@ -15,9 +15,9 @@ Interrupted records without a real conclusion cannot be filmed.
 The same eligibility function governs both the tactical-page link and direct
 cinema URLs. Completed does not automatically mean worth filming:
 
-- Confirmed wildlife/creature encounters are excluded. A creature snapshot or
-  terminal participant is sufficient, including mixed battles. Unknown historical
-  kinds are not guessed into this exclusion.
+- Wildlife encounters are filmed. Creatures get procedural body plans picked from
+  the species name (`archetypeForShip`), swim instead of burning engines, and
+  flee by swimming off rather than jumping.
 - Records without damage, connected offensive force, a loss, a capture, or observed boarding contact are
   excluded. A logged latch, assault or plunder can qualify without hull damage.
   Rejected boarding orders, miss-only disengagements and empty/idle records get no film.

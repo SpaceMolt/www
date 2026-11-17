@@ -8,7 +8,10 @@ export interface CinemaAudioCue extends CinemaCue {
   audioActorId?: string
 }
 
-export function buildAudioSchedule(cues: readonly CinemaCue[]): CinemaAudioCue[] {
+/** Seconds of drive wind-up heard before an escaping ship jumps. */
+const JUMP_WINDUP = 1.5
+
+export function buildAudioSchedule(cues: readonly CinemaCue[], creatures: ReadonlySet<string> = new Set()): CinemaAudioCue[] {
   const schedule: CinemaAudioCue[] = []
   const losses = new Map<string, CinemaCue[]>()
   for (const cue of cues) if (cue.to && (cue.kind === 'death' || cue.kind === 'knockout')) {
@@ -23,8 +26,12 @@ export function buildAudioSchedule(cues: readonly CinemaCue[]): CinemaAudioCue[]
   for (const cue of cues) {
     if (cue.parentId) continue
     if (cue.kind !== 'weapon') {
+      // Creatures swim away; they have no jump drive to hear.
+      if (cue.kind === 'escape' && creatures.has(cue.to ?? '')) continue
       // The escaping ship spools first; its jump sound belongs to the streak.
-      schedule.push({ ...cue, time: cue.kind === 'escape' ? cue.time + ESCAPE_SPOOL : cue.time, audioActorId: cue.to ?? cue.from })
+      const time = cue.kind === 'escape' ? cue.time + ESCAPE_SPOOL : cue.time
+      if (cue.kind === 'escape') schedule.push({ ...cue, id: `${cue.id}:audio:charge`, time: time - JUMP_WINDUP, duration: JUMP_WINDUP, audioPhase: 'charge', audioActorId: cue.to ?? cue.from })
+      schedule.push({ ...cue, time, audioActorId: cue.to ?? cue.from })
       continue
     }
     const impactTime = cue.time + Math.max(.015, cue.duration)

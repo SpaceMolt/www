@@ -5,6 +5,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { buildEmpireHull } from './ship-empires'
 import { buildStationHull } from './ship-stations'
 import { buildSpecialHull } from './ship-recipes'
+import { buildCreatureBody } from './ship-creatures'
 import { buildFittedHardware } from './ship-hardware'
 import type { CinemaHardware } from './hardware'
 import { createWeaponRig, tagWeaponGeometry, applyWeaponRig, createWeaponShadowMaterials } from './ship-weapons'
@@ -336,16 +337,8 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
     buildStationHull(appearance, context)
     fitHardware()
   } else if (family === 'creature') {
-    materials.hull.roughness = .68
-    materials.hull.metalness = .1
-    for (let i = 0; i < 9; i++) {
-      const x = -.4 + i * .092, radius = Math.sin((i + 1) / 11 * Math.PI) * .145
-      const geometry = new THREE.IcosahedronGeometry(radius, hero ? 1 : 0)
-      geometry.scale(1.1, .76, 1)
-      add(geometry, i % 3 === 0 ? 'armor' : 'hull', x, Math.sin(i * .7) * .018)
-      for (const side of [-1, 1]) add(new THREE.ConeGeometry(.027, .15, 4), 'armor', x, .025, side * radius, new THREE.Euler(side * .9, 0, .5))
-    }
-    for (const side of [-1, 1]) add(new THREE.IcosahedronGeometry(.016, 1), 'windows', .36, .07, side * .068)
+    group.userData.swim = { value: 0 }
+    buildCreatureBody(appearance.body, seed, context, materials, group.userData.swim)
   } else {
     const small = family === 'fighter' || family === 'scout' || family === 'drone'
     const alien = empire === 'voidborn'

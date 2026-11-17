@@ -9,10 +9,24 @@ export interface WeaponProjectile { position: Vector3; direction: Vector3; size:
 export interface WeaponVisualFrame { lines: WeaponLine[]; glows: WeaponGlow[]; rings: WeaponRing[]; projectiles: WeaponProjectile[] }
 const clamp = (value: number) => Math.max(0,Math.min(1,value))
 
+/** Seconds a missed shot keeps flying past its target. */
+export const MISS_FLIGHT=4
 /** Bounded, deterministic choreography. Misses use the caller's off-hull endpoint. */
 export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vector3, sourceSize: number, targetSize: number, reduced = false, collateralOrigin?: Vector3): WeaponVisualFrame {
   const frame: WeaponVisualFrame = {lines:[],glows:[],rings:[],projectiles:[]}
   const travel=Math.max(.015,cue.duration), impact=age-travel
+  if(cue.hit===false && !cue.parentId && age>=travel){
+    // Space has nothing to stop a miss: its arrival frame keeps coasting at the same speed.
+    if(impact>MISS_FLIGHT)return frame
+    const arrival=weaponVisual(cue,travel-1e-3,from,to,sourceSize,targetSize,reduced)
+    const drift=to.clone().sub(from).multiplyScalar(impact/travel)
+    // Muzzle flashes and beam roots stay on the gun; only the shot leaves.
+    arrival.glows=arrival.glows.filter(glow=>!glow.position.equals(from))
+    arrival.lines=arrival.lines.filter(line=>!line.from.equals(from))
+    for(const item of [...arrival.glows,...arrival.rings,...arrival.projectiles])item.position.add(drift)
+    for(const item of arrival.lines){item.from.add(drift);item.to.add(drift)}
+    return arrival
+  }
   if(age<0 || impact>1.2)return frame
   const family=cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName,cue.damageType)
   const color=getWeaponColor(family,cue.damageType)

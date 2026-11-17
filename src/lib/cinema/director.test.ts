@@ -90,9 +90,9 @@ describe('completed-record gate', () => {
     expect(getCinemaEligibility(summary(), entries, 'complete')).toBe('unavailable')
     expect(() => compile(entries)).toThrow('complete, reconciled')
   })
-  it('excludes positively identified creatures without treating NPCs or missing classes as creatures', () => {
-    expect(getCinemaEligibility(summary({ category: 'wildlife' }), [row(100), terminal(101)], 'complete')).toBe('unsupported')
-    expect(getCinemaEligibility(summary(), [row(100, { snapshots: [snap('a'), snap('b', 2, { kind: 'creature' })] }), terminal(101)], 'complete')).toBe('unsupported')
+  it('films wildlife encounters and creature participants like any other combat', () => {
+    expect(getCinemaEligibility(summary({ category: 'wildlife' }), [row(100), terminal(101)], 'complete')).toBe('ready')
+    expect(getCinemaEligibility(summary(), [row(100, { snapshots: [snap('a'), snap('b', 2, { kind: 'creature' })] }), terminal(101)], 'complete')).toBe('ready')
     expect(getCinemaEligibility(summary(), [row(100, { snapshots: [snap('a'), snap('b', 2, { kind: 'station', ship_class: '' })] }), terminal(101)], 'complete')).toBe('ready')
   })
   it('rejects empty encounters and mutual retreat but keeps one-sided ambushes and single escapes', () => {
@@ -600,6 +600,20 @@ it('follows the live escaping actor instead of a protagonist destroyed in an ear
   expect(setup.subject).toBe('b:0')
   expect(setup.target).toBeUndefined()
   expect(film.ships.find(ship=>ship.id===setup.subject)!.end).toBeGreaterThan(setup.start)
+})
+
+it('holds one shot while an escaping creature swims out of frame', () => {
+  const entries=Array.from({length:8},(_,index)=>row(100+index,{
+    snapshots:index<7?[snap('a'),snap('b',2,{kind:'creature'})]:[snap('a')],
+    attacks:index<6?[attack('a','b')]:[],
+    flee:index===6?[{player_id:'b',escaped:true,flee_counter:3,flee_required:3}]:[],
+  }))
+  entries[7]=terminal(107,{snapshots:[snap('a')]})
+  const film=compile(entries)
+  const escape=film.cues.find(cue=>cue.kind==='escape')!
+  const covering=film.shots.filter(shot=>shot.end>escape.time-1 && shot.start<escape.time+3)
+  expect(covering).toHaveLength(1)
+  expect(covering[0].subject).toBe(escape.to)
 })
 
 it('preserves recorded stance transitions independently of zone progress through the edit', () => {

@@ -18,7 +18,7 @@ export function cinemaHash(value: string): number {
   return hash >>> 0
 }
 
-export type CinemaEligibility = 'loading' | 'active' | 'finalizing' | 'unavailable' | 'interrupted' | 'unsupported' | 'uneventful' | 'retreated' | 'ready'
+export type CinemaEligibility = 'loading' | 'active' | 'finalizing' | 'unavailable' | 'interrupted' | 'uneventful' | 'retreated' | 'ready'
 
 /** Reconciliation is established by the shared paginated loader, never inferred from a terminal row alone. */
 export function getCinemaEligibility(
@@ -37,9 +37,6 @@ export function getCinemaEligibility(
   if (summary?.status === 'active' || phase === 'live') return 'active'
   if (phase !== 'complete' || summary?.status !== 'completed' || !terminal) return 'finalizing'
   if (!entries.length || entries.some(entry => entry.battle_id !== summary.battle_id)) return 'unavailable'
-  if (summary.category === 'wildlife' || terminal.category === 'wildlife' ||
-      terminal.participants.some(actor => actor.kind === 'creature') ||
-      entries.some(entry => entry.snapshots.some(actor => actor.kind === 'creature'))) return 'unsupported'
   // Terminal aggregate names and totals cannot establish drawable appearances.
   // Event-only historical records remain usable when an event identifies one.
   const hasActors = (terminal.captures?.length ?? 0) > 0 || entries.some(entry =>
@@ -321,8 +318,10 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
       selected.push(beat)
     }
   }
-  const lastConsequence = consequences.at(-1)?.time ?? coreEnd
-  const aftermathStart = Math.min(film.duration, Math.max(coreEnd, lastConsequence + .8))
+  // An escaping creature swims off in one held shot, so it gets longer before the cut.
+  const swimsOff = (cue?: CinemaCue) => cue?.kind === 'escape' && byId.get(cue.to ?? '')?.kind === 'creature'
+  const lastConsequence = consequences.at(-1)
+  const aftermathStart = Math.min(film.duration, Math.max(coreEnd, (lastConsequence?.time ?? coreEnd) + (swimsOff(lastConsequence) ? 4 : .8)))
   const sequenceEnds = selected.map((beat,index) => {
     const next = selected[index+1]
     return next ? film.segments.find(segment => segment.tick === next.event?.tick)!.start : aftermathStart
@@ -374,7 +373,7 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
         focusIds,actionTime:beat.time})
     } else {
       const impactStart = Math.max(pairReady,beat.time-1.4)
-      const reactionStart = Math.min(end,beat.time+.6)
+      const reactionStart = swimsOff(beat.event) ? end : Math.min(end,beat.time+.6)
       const available = (id:string|undefined) => {
         const ship=byId.get(id??'')
         return ship && ship.start<=pairReady && ship.end>=impactStart

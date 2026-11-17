@@ -2,6 +2,9 @@ export interface FormationSlot {
   lateral: number
   depth: number
   elevation: number
+  /** Small stable yaw and roll offsets so a fleet never reads as a ruled line. */
+  heading?: number
+  roll?: number
   /** A shared fleet translation preserves row clearance inside its angular sector. */
   sectorOffset?: number
 }
@@ -50,7 +53,16 @@ export function buildFleetFormation(members: readonly FormationMember[], fleetCo
     .sort((a, b) => (role[a.family ?? ''] ?? 2) - (role[b.family ?? ''] ?? 2) || a.size - b.size || a.playerId.localeCompare(b.playerId))
   const spacing = fleetMotionSpacing(mobile)
   const depth = Math.max(130, ...mobile.map(member => member.size * 1.25 + 55))
-  const slots = new Map(mobile.map((member, lane) => [member.playerId, balancedFormationSlot(lane, mobile.length, spacing, depth)]))
+  const slots = new Map<string, FormationSlot>(mobile.map((member, lane) => {
+    const slot = balancedFormationSlot(lane, mobile.length, spacing, depth)
+    // Bounded inside the clearance the slot already reserves. A single-layer
+    // fleet (under 16 ships) has no wing above it, so it can take more height.
+    let h = 2166136261
+    for (const char of member.playerId) h = Math.imul(h ^ char.charCodeAt(0), 16777619)
+    const jitter = (k: number) => ((Math.imul(h, 2654435761 + k * 40503) >>> 0) / 4294967296 - .5) * 2
+    return [member.playerId, { lateral: slot.lateral + jitter(1) * spacing * .04, depth: slot.depth + jitter(2) * depth * .05,
+      elevation: slot.elevation + jitter(3) * spacing * (mobile.length < 16 ? .35 : .1), heading: jitter(4) * .15, roll: jitter(5) * .1 }] as const
+  }))
   const stations = [...pilots.values()].filter(member => member.kind === 'station').sort((a, b) => a.playerId.localeCompare(b.playerId))
   const stationSpacing = fleetMotionSpacing(stations)
   stations.forEach((member, lane) => slots.set(member.playerId, { lateral: (lane - (stations.length - 1) / 2) * stationSpacing,

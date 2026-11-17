@@ -14,18 +14,20 @@ import { cueRange, cueLifetime, weaponImpactAge } from './playback'
 import { sampleCinemaHealth } from './director'
 import { buildCinemaCascades, sampleCinemaCascade } from './cascades'
 import { buildFleetFormation } from './formation'
-import { sampleShipMotion, fleetMotionSpacing, ESCAPE_SPOOL, type ShipMotionOptions } from './motion'
+import { sampleShipMotion, fleetMotionSpacing, ESCAPE_SPOOL, jumpsAway, type ShipMotionOptions } from './motion'
+import { archetypeForShip } from '../battle/shipGlyphs'
 import { createBoardingMotionSampler } from './boarding-motion'
 import { type CameraBody, type StoryCameraOptions } from './camera'
 import { buildShotPlan, samplePlannedCamera, type ShotPlan } from './shot-planner'
 import { addHullMarkings } from './hull-markings'
 import { buildCameraTakes } from './camera-takes'
 import { cinemaRenderSettings, initialCinemaQuality } from './quality'
-import { weaponVisual } from './weaponVisuals'
+import { MISS_FLIGHT, weaponVisual } from './weaponVisuals'
 import { boardingVisual } from './boardingVisuals'
 import { getWeaponColor, resolveWeaponFamily } from './weapons'
 import { createShip } from './ships'
 import { createShipWreckage, WRECK_BREAKUP_DELAY } from './ship-wreckage'
+import { creatureColors } from './ship-creatures'
 import { bakeShipTemplateGeometry } from './ship-template'
 import { aimWeaponMount, canAimWeaponMount, weaponMuzzleLocal, assignWeaponCues, type WeaponRig } from './ship-weapons'
 import { updateRetrothrusters } from './ship-thrusters'
@@ -246,6 +248,11 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const actors = film.ships.map((ship): Actor => {
     const known = ship.kind==='station' ? resolveStationAppearance(ship.playerId) : appearances[ship.shipClass]
     const appearance = ['station', 'creature', 'drone'].includes(ship.kind) ? { ...(known ?? resolveAppearance(ship.shipClass)), family: ship.kind as ShipAppearance['family'] } : known ?? resolveAppearance(ship.shipClass)
+    if (ship.kind === 'creature') {
+      appearance.body = archetypeForShip('creature', undefined, undefined, 1, ship.name)
+      // Whales and leviathans are medium hulls; other wildlife stays small.
+      if (appearance.body === 'whale' || appearance.body === 'lobster') appearance.length = resolveAppearance('', undefined, 3).length
+    }
     const size = cinemaHullWorldSize(appearance)
     const seed = hash(ship.id)
     const side = sides.indexOf(ship.sideIndex)
@@ -296,7 +303,10 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   // Only the bounded detailed cast owns wreck geometry; each actor is one draw
   // regardless of how many original hull components survive its breakup.
   const wrecks = actors.filter(actor=>actor.model && actor.ship.fate==='destroyed').map(actor=>{
-    const wreck=createShipWreckage(actor.model!,actor.seed)
+    // A carcass comes apart in more chunks that drift wider, then fades out.
+    const creature=actor.ship.kind==='creature'
+    const wreck=createShipWreckage(actor.model!,actor.seed,creature?{pieces:4,spread:4}:{})
+    if(creature)wreck.mesh.material.transparent=true
     wreck.mesh.scale.setScalar(actor.size);scene.add(wreck.mesh)
     cleanups.push(()=>wreck.dispose())
     return {actor,wreck}
@@ -305,7 +315,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const cueMount = new Map<string, number>(), suppressedGuns = new Set<string>()
   // Distant actors remain real participants, rendered with a bounded number of draw calls.
   const distantGroups = new Map<string,{mesh:THREE.InstancedMesh;count:number}>()
-  const distantKey = (actor: Actor) => `${actor.appearance.empire}:${actor.appearance.hullEmpire}:${actor.appearance.family}:${actor.appearance.recipe ?? 'standard'}`
+  const distantKey = (actor: Actor) => `${actor.appearance.empire}:${actor.appearance.hullEmpire}:${actor.appearance.family}:${actor.appearance.recipe ?? actor.appearance.body ?? 'standard'}`
   for (const key of new Set(actors.filter(actor=>!actor.model).map(distantKey))) {
     const members = actors.filter(actor=>!actor.model && distantKey(actor)===key)
     const example = members[0]
@@ -399,9 +409,9 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   let requestedQuality: CinemaQuality = options.quality ?? 'auto'
   let actualQuality = requestedQuality === 'auto' ? initialCinemaQuality(canvas.clientWidth || window.innerWidth) : requestedQuality
   let raf = 0, last = performance.now(), reportAt = 0, sampleFrames = 0, sampleElapsed = 0, qualityAge = 0
-  const audioCues = buildAudioSchedule(film.cues)
+  const audioCues = buildAudioSchedule(film.cues, new Set(film.ships.filter(ship => ship.kind === 'creature').map(ship => ship.id)))
   const cuesById = new Map(film.cues.map(cue=>[cue.id,cue]))
-  const effectWindow = film.cues.reduce((max, cue) => Math.max(max, cue.duration + 2), 7)
+  const effectWindow = film.cues.reduce((max, cue) => Math.max(max, cue.duration + MISS_FLIGHT + .1), 7)
   let shotPlan: ShotPlan | undefined
   let shotPlanKey = ''
   const cameraTakes = buildCameraTakes(film.story?.sequences ?? [], film.shots)
@@ -431,12 +441,12 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const cascadeCollateral = new Set(film.cues.filter(cue=>cue.hit===true && cue.parentId &&
     ['aoe','ammo_splash','chain'].includes(cue.secondaryKind??'') &&
     cascadeGroups.has(`${cue.parentId}:${cue.secondaryKind==='chain'?'chain':'area'}`)).map(cue=>cue.id))
-  const isVisible = (actor: Actor, t: number) => t >= actor.ship.start && (t <= actor.ship.end || !['escaped', 'withdrawn'].includes(actor.ship.fate) || t < actor.ship.end + (actor.ship.fate === 'escaped' ? ESCAPE_SPOOL + .4 : 2.5))
+  const isVisible = (actor: Actor, t: number) => t >= actor.ship.start && (t <= actor.ship.end || !['escaped', 'withdrawn'].includes(actor.ship.fate) || t < actor.ship.end + (jumpsAway(actor.ship) ? ESCAPE_SPOOL + .4 : actor.ship.kind === 'creature' ? 5 : 2.5))
   const cameraBodyAt = (id: string | undefined, at: number): CameraBody | undefined => {
     const actor=id ? byId.get(id) : undefined
     if (!actor) return undefined
     // The camera holds the jump point, so an escaping ship visibly streaks away.
-    const motion=motionAt(actor,actor.ship.fate==='escaped' ? Math.min(at,actor.ship.end+ESCAPE_SPOOL) : at)
+    const motion=motionAt(actor,actor.ship.fate==='escaped' ? Math.min(at,actor.ship.end+(jumpsAway(actor.ship) ? ESCAPE_SPOOL : 0)) : at)
     return {id:actor.ship.id,size:actor.size,position:new THREE.Vector3(motion.x,motion.y,motion.z),
       ...(actor.contactBounds ? {contactHull:{min:actor.contactBounds.min,max:actor.contactBounds.max,yaw:motion.yaw,bank:reduced?0:motion.bank}} : {})}
   }
@@ -573,6 +583,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         actor.model.position.copy(actor.position)
         actor.model.rotation.set(reduced ? 0 : actor.bank, actor.rotation, 0, 'YXZ')
         updateRetrothrusters(actor.model,actor.retroThrust*(1-cloak*.95))
+        if (actor.model.userData.swim) actor.model.userData.swim.value = reduced ? 0 : time
         for (const { material, intensity } of actor.engineMaterials) { if (material instanceof THREE.MeshStandardMaterial) material.emissiveIntensity = actor.thrust * (2.4 + Math.sin(time * 8 + actor.seed) * .3) * (1-cloak*.95); else { material.transparent = true; material.opacity = actor.thrust * intensity * (.7 + Math.sin(time * 8 + actor.seed) * .06) * (1-cloak*.95) } }
       } else if (visible && !(actor.ship.fate === 'destroyed' && time > actor.ship.end + .32)) {
         dummy.position.copy(actor.position); dummy.rotation.set(reduced ? 0 : actor.bank, actor.rotation, 0, 'YXZ'); dummy.scale.setScalar(actor.size); dummy.updateMatrix()
@@ -595,6 +606,8 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         if (before<actor.ship.start || now>actor.ship.end) continue
         const head=motionAt(actor,now), tail=motionAt(actor,before)
         if (head.thrust < .4 || tail.thrust < .4) continue
+        // A hard turn swings the nozzle sideways; a trail through it draws a bent wire.
+        if (Math.abs(Math.atan2(Math.sin(head.yaw-tail.yaw),Math.cos(head.yaw-tail.yaw))) > .3) break
         pointA.set(head.x-Math.cos(head.yaw)*actor.size*.51,head.y,head.z+Math.sin(head.yaw)*actor.size*.51)
         pointB.set(tail.x-Math.cos(tail.yaw)*actor.size*.51,tail.y,tail.z+Math.sin(tail.yaw)*actor.size*.51)
         direction.copy(pointB).sub(pointA)
@@ -806,7 +819,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
           if (cue.hullDamage && impactAge < .1) addFlash(pointB, to.size * .4, 0xfff0d8, 1 - impactAge / .1)
           if (cue.hullDamage && impactAge < .7) addFlash(pointB, to.size * .22, heat.setHex(color).lerp(tint.setHex(0xff4010), .5).getHex(), (1 - impactAge / .7) * .7)
           // A stopped volley lights the shield, never a penetrating hull explosion.
-          if (((cue.shieldDamage ?? 0) > 0 || damage === 0) && !(time >= to.ship.end && ['destroyed', 'knocked_out'].includes(to.ship.fate))) {
+          if (((cue.shieldDamage ?? 0) > 0 || (damage === 0 && to.ship.kind !== 'creature')) && !(time >= to.ship.end && ['destroyed', 'knocked_out'].includes(to.ship.fate))) {
             if (shieldCount < shields.length) {
               const shield = shields[shieldCount++]; shield.visible = true; shield.position.copy(to.position); shield.rotation.y = to.rotation
               shield.scale.set(to.size * 0.6, to.size * 0.32, to.size * 0.43)
@@ -822,7 +835,8 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         }
       } else if (cue.kind === 'death' || cue.kind === 'knockout' || cue.kind === 'capture') {
         const death = cue.kind === 'death', radius = destination.size
-        const effectColor = death ? 0xffa058 : cue.kind === 'capture' ? 0x8cf1cd : 0x8acbff
+        const creatureColor = destination.ship.kind === 'creature' ? creatureColors(destination.appearance.body) : undefined
+        const effectColor = creatureColor && death ? creatureColor[1] : death ? 0xffa058 : cue.kind === 'capture' ? 0x8cf1cd : 0x8acbff
         const knockout = cue.kind === 'knockout'
         // Knockouts leave an intact unpowered hull; destruction breaks into fragments.
         if (age < 3.8) {
@@ -873,7 +887,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
             dummy.rotation.set(r() * 6 + age, r() * 6 + age * .4, r() * 6)
             const fragment = radius * (.018 + r() * .055) * Math.max(.3, 1 - age / 10)
             dummy.scale.set(fragment * (j % 3 === 0 ? 2.8 : 1), fragment * .45, fragment); dummy.updateMatrix()
-            sparks.setMatrixAt(sparkCount, dummy.matrix); sparks.setColorAt(sparkCount++, tint.setHex(age < 1.3 ? 0xffc280 : age < 2.6 ? 0xd75625 : 0x42464d))
+            sparks.setMatrixAt(sparkCount, dummy.matrix); sparks.setColorAt(sparkCount++, creatureColor ? tint.setHex(creatureColor[j % 3]).multiplyScalar(Math.max(0, 1 - age / 4) * (j % 3 === 1 ? 1.6 : 1)) : tint.setHex(age < 1.3 ? 0xffc280 : age < 2.6 ? 0xd75625 : 0x42464d))
           }
         }
         if (cue.id === pulseCue?.id && !reduced) { pulseLight.position.copy(destination.position); pulseLight.color.setHex(effectColor); pulseLight.intensity = radius * radius * 12 * Math.exp(-age * 3); pulseLight.distance = radius * 7 }
@@ -905,7 +919,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         }
       } else if (cue.kind === 'cloak' && age < cue.duration) {
         if(shieldCount<shields.length){const shield=shields[shieldCount++];shield.visible=true;shield.position.copy(destination.position);shield.rotation.y=destination.rotation;shield.scale.set(destination.size*.6,destination.size*.32,destination.size*.43);shield.material.uniforms.opacity.value=Math.sin(age/cue.duration*Math.PI)*(reduced?.1:.45);shield.material.uniforms.time.value=age*.4;shield.material.uniforms.color.value.setHex(0x8999b8)}
-      } else if (cue.kind === 'escape' && age < ESCAPE_SPOOL + 1.2) {
+      } else if (cue.kind === 'escape' && jumpsAway(destination.ship) && age < ESCAPE_SPOOL + 1.2) {
         // As in the game: the jump drive spools with a growing glow, then the hull
         // streaks away and leaves a flash and a ring at the departure point.
         if (age < ESCAPE_SPOOL) addFlash(destination.position, destination.size * (.6 + age), 0x80d8ff, age / ESCAPE_SPOOL * .55)
@@ -920,7 +934,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
             ring.scale.setScalar(destination.size * (.4 + Math.sqrt(t) * 2.4)); ring.material.color.setHex(0xa8e4ff); ring.material.opacity = Math.pow(1 - t, 2)
           }
         }
-      } else if (cue.kind === 'arrival' && age < 1.7) {
+      } else if (cue.kind === 'arrival' && destination.ship.kind !== 'creature' && age < 1.7) {
         addFlash(destination.position, destination.size * (1.3 + age), 0x80d8ff, Math.exp(-age * 3) * 0.35)
         if (age < .3) addFlash(destination.position, destination.size * .5, 0xffffff, 1 - age / .3)
       } else if (cue.kind === 'burn' && age < cue.duration) {
@@ -929,6 +943,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     }
     for(const {actor,wreck} of wrecks){
       wreck.sample(time-actor.ship.end-WRECK_BREAKUP_DELAY,reduced)
+      if(actor.ship.kind==='creature')wreck.mesh.material.opacity=1-THREE.MathUtils.smoothstep(time-actor.ship.end,1,4)
       wreck.mesh.position.copy(actor.position)
       wreck.mesh.rotation.set(reduced?0:actor.bank,actor.rotation,0,'YXZ')
     }

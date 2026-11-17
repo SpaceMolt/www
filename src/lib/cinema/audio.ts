@@ -41,6 +41,7 @@ export const CINEMA_AUDIO_CREDITS: readonly { title: string; by: string; url: st
 
 /** [sound, gain, rate, seconds to cut at (0 = whole sample)] for one scheduled cue. */
 export function cueSound(cue: CinemaAudioCue): readonly [string, number, number, number] | null {
+  if (cue.audioPhase === 'charge') return ['jump_spool', .35, 1.4, bounded(cue.duration, .1, 3, .4)]
   if (cue.kind !== 'weapon') {
     const event = EVENT_SOUNDS[cue.kind]
     return event ? [...event, cue.kind === 'repair' ? 1.1 : cue.kind === 'arrival' ? 1.2 : 0] : null
@@ -48,7 +49,6 @@ export function cueSound(cue: CinemaAudioCue): readonly [string, number, number,
   if (cue.audioPhase === 'contact' || cue.secondaryKind === 'retaliation' || /galvanic hull grid/i.test(cue.weaponName ?? '')) return [...EVENT_SOUNDS.contact, 0]
   const family = cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName, cue.damageType)
   const boost = cue.critical ? 1.15 : 1
-  if (cue.audioPhase === 'charge') return ['jump_spool', .35, 1.4, bounded(cue.duration, .1, 3, .4)]
   if (cue.audioPhase === 'shield-impact') return ['shield_hit', .45 * boost, 1, 0]
   if (cue.audioPhase === 'impact') return EXPLOSIVE.includes(family) ? ['explosion', .5 * boost, 1.2, 0] : ['hull_hit', .5 * boost, 1, 0]
   // The rocket samples end in a buzzing motor tail; keep only the launch.
