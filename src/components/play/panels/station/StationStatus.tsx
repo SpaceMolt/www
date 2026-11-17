@@ -131,12 +131,7 @@ export function StationStatus({ data }: { data: GetBaseResponse }) {
           ) : null}
           <ItemChips
             title="Materials in faction storage"
-            items={repairs.materials?.map((m) => ({
-              id: m.item_id,
-              name: m.name ?? formatItemId(m.item_id),
-              value: ratio(m.quantity_in_storage, m.quantity_required),
-              bad: Boolean(m.quantity_missing),
-            }))}
+            items={materialChips(repairs.materials)}
           />
         </div>
       )}

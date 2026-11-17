@@ -51,7 +51,6 @@ export function StationPirateRecovery({ pirate }: { pirate: NonNullable<GetBaseR
 /** Prices, access rules, contraband and visitor appeal for the docked base. */
 export function StationTerms({ data }: { data: GetBaseResponse }) {
   const { base, services } = data
-  const contraband = base.contraband_items ?? []
   return (
     <>
       <StatList>
@@ -66,7 +65,7 @@ export function StationTerms({ data }: { data: GetBaseResponse }) {
         {base.repair_price_per_hull != null && <Stat label="Repair">{formatNumber(base.repair_price_per_hull)} cr/hull</Stat>}
         {base.market_fee_bps != null && <Stat label="Market fee">{base.market_fee_bps / 100}%</Stat>}
         <Stat label="Docking">{base.public_access ? 'Public' : 'Restricted'}</Stat>
-        {(base.pirate_rep_required ?? 0) > 0 && <Stat label="Pirate rep needed">{formatNumber(base.pirate_rep_required ?? 0)}</Stat>}
+        {base.pirate_rep_required ? <Stat label="Pirate rep needed">{formatNumber(base.pirate_rep_required)}</Stat> : null}
         {base.faction_id && <Stat label="Outsider facilities">{base.allow_outsider_facilities ? 'Allowed' : 'Not allowed'}</Stat>}
         <Stat label="Contraband rules">{titleCase(base.contraband_mode)}</Stat>
         {data.dining_points != null && <Stat label="Dining appeal">{formatNumber(data.dining_points)}</Stat>}
@@ -77,7 +76,7 @@ export function StationTerms({ data }: { data: GetBaseResponse }) {
         title="Services"
         items={services.map((s) => ({ id: s, name: titleCase(s), value: base.service_access?.[s] ? titleCase(base.service_access[s]) : '' }))}
       />
-      <ItemChips title="Contraband here" items={contraband.map((id) => ({ id, name: formatItemId(id), value: '' }))} />
+      <ItemChips title="Contraband here" items={base.contraband_items?.map((id) => ({ id, name: formatItemId(id), value: '' }))} />
     </>
   )
 }

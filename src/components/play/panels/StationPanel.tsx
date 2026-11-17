@@ -43,12 +43,10 @@ export function StationPanel() {
     >
       {dockedAt && loading && !base && <Loading message="Loading station..." />}
       {base && data && (
-        <Section title="Status" icon={<Activity size={12} />} defaultOpen>
-          <StationStatus data={data} />
-        </Section>
-      )}
-      {base && data && (
         <>
+          <Section title="Status" icon={<Activity size={12} />} defaultOpen>
+            <StationStatus data={data} />
+          </Section>
           {/* Each of these exists at only a few stations, so its section appears only when get_base sends it. */}
           {data.sovereign_mint && (
             <Section title="Sovereign Mint" icon={<Coins size={12} />} defaultOpen>
