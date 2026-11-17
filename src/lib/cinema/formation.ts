@@ -1,3 +1,4 @@
+import { cinemaHash } from './director'
 export interface FormationSlot {
   lateral: number
   depth: number
@@ -57,8 +58,7 @@ export function buildFleetFormation(members: readonly FormationMember[], fleetCo
     const slot = balancedFormationSlot(lane, mobile.length, spacing, depth)
     // Bounded inside the clearance the slot already reserves. A single-layer
     // fleet (under 16 ships) has no wing above it, so it can take more height.
-    let h = 2166136261
-    for (const char of member.playerId) h = Math.imul(h ^ char.charCodeAt(0), 16777619)
+    const h = cinemaHash(member.playerId)
     const jitter = (k: number) => ((Math.imul(h, 2654435761 + k * 40503) >>> 0) / 4294967296 - .5) * 2
     return [member.playerId, { lateral: slot.lateral + jitter(1) * spacing * .04, depth: slot.depth + jitter(2) * depth * .05,
       elevation: slot.elevation + jitter(3) * spacing * (mobile.length < 16 ? .35 : .1), heading: jitter(4) * .15, roll: jitter(5) * .1 }] as const
