@@ -2,7 +2,7 @@
 
 import type { GetBaseResponse } from '@spacemolt/lib'
 import { ItemChips, Notes, Stat, StatList, type Chip } from '../../shared'
-import { formatItemId } from '@/data/catalog'
+import { formatItemId, groupBy } from '@/data/catalog'
 import { useCatalog } from '@/lib/spacemolt'
 import { formatNumber, titleCase } from '@/lib/format'
 
@@ -86,11 +86,11 @@ export function StationFacilities({ ids }: { ids: string[] }) {
   const { data: catalog } = useCatalog()
   const def = (id: string) => catalog?.facility(id)
   const counts = ids.reduce((m, id) => m.set(id, (m.get(id) ?? 0) + 1), new Map<string, number>())
-  const groups = Object.entries(Object.groupBy([...counts], ([id]) => def(id)?.category ?? 'other'))
+  const groups = Object.entries(groupBy([...counts], ([id]) => def(id)?.category ?? 'other'))
     .sort(([a], [b]) => a.localeCompare(b))
   return (
     <>
-      {groups.map(([category, entries = []]) => (
+      {groups.map(([category, entries]) => (
         <ItemChips
           key={category}
           title={`${titleCase(category)} (${entries.length})`}
