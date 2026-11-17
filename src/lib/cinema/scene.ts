@@ -943,7 +943,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     }
     for(const {actor,wreck} of wrecks){
       wreck.sample(time-actor.ship.end-WRECK_BREAKUP_DELAY,reduced)
-      if(actor.ship.kind==='creature')wreck.mesh.material.opacity=1-THREE.MathUtils.smoothstep(time-actor.ship.end,1,4)
+      if(actor.ship.kind==='creature')wreck.mesh.visible&&=(wreck.mesh.material.opacity=1-THREE.MathUtils.smoothstep(time-actor.ship.end,1,4))>0
       wreck.mesh.position.copy(actor.position)
       wreck.mesh.rotation.set(reduced?0:actor.bank,actor.rotation,0,'YXZ')
     }
