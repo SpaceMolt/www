@@ -1,4 +1,5 @@
 /** Compact public catalog projection. This module never imports the catalog bundle. */
+import type { GlyphArchetype } from '../battle/shipGlyphs'
 export type ShipFamily = 'fighter' | 'warship' | 'capital' | 'carrier' | 'industrial' | 'scout' | 'support' | 'drone' | 'station' | 'creature'
 export type ShipEmpire = 'solarian' | 'voidborn' | 'crimson' | 'nebula' | 'outerrim' | 'pirate' | 'neutral'
 export type ShipRecipe = 'shard' | 'prayer' | 'worship' | 'congregation' | 'comet' | 'concordia' | 'liquidity_event' | 'midas'
@@ -9,6 +10,8 @@ export interface ShipAppearance {
   hullEmpire: ShipEmpire
   /** Named exceptions whose public lore calls for a distinct construction. */
   recipe?: ShipRecipe
+  /** Creature body plan picked from the species name. */
+  body?: GlyphArchetype
   /** Suggested cinematic world length; geometry itself is normalized to one. */
   length: number
   beam: number

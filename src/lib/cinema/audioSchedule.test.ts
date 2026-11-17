@@ -2,13 +2,22 @@ import { describe, expect, it } from 'bun:test'
 import { audioCueRange, buildAudioSchedule } from './audioSchedule'
 import type { CinemaCue } from './types'
 import { ESCAPE_SPOOL } from './motion'
+import { cueSound } from './audio'
 
 const weapon: CinemaCue = { id: 'gun', time: 10, duration: 2.8, tick: 4, kind: 'weapon', from: 'a', to: 'b', hit: true, hullDamage: 12, shieldDamage: 0, intensity: .7, weaponFamily: 'missile' }
 
 describe('cinema audio choreography', () => {
   it('plays the escape jump when the ship streaks away, not when it starts to spool', () => {
-    const [escape] = buildAudioSchedule([{ id: 'run', time: 22.4, duration: 2.2, tick: 9, kind: 'escape', to: 'a', intensity: 1 }])
+    const [spool, escape] = buildAudioSchedule([{ id: 'run', time: 22.4, duration: 2.2, tick: 9, kind: 'escape', to: 'a', intensity: 1 }])
     expect(escape.time).toBeCloseTo(22.4 + ESCAPE_SPOOL)
+    // The drive winds up first and ends as the jump fires.
+    expect(cueSound(spool)?.[0]).toBe('jump_spool')
+    expect(spool.time + spool.duration).toBeCloseTo(escape.time)
+    expect(spool.audioActorId).toBe('a')
+  })
+
+  it('lets an escaping creature swim off in silence', () => {
+    expect(buildAudioSchedule([{ id: 'run', time: 22.4, duration: 2.2, tick: 9, kind: 'escape', to: 'a', intensity: 1 }], new Set(['a']))).toEqual([])
   })
 
   it('places a long missile flight release and hull impact at their visible events, panned to each endpoint', () => {

@@ -176,3 +176,14 @@ test('named recipes and stations retain substantial real shells within a fixed g
     } finally {wreck.dispose();disposeShip(ship)}
   }
 })
+
+test('a creature carcass breaks into more chunks that scatter farther than a hull',()=>{
+  const body=createShip({...resolveAppearance('',undefined,2,'',1,'creature'),body:'whale'},5,'hero')
+  const hull=createShipWreckage(body,5),carcass=createShipWreckage(body,5,{pieces:4,spread:4})
+  try {
+    expect(carcass.fragments.length).toBeGreaterThanOrEqual(4)
+    expect(carcass.fragments.length).toBeGreaterThan(hull.fragments.length)
+    const reach=(wreck:typeof hull)=>Math.max(...wreck.fragments.map(fragment=>sampleWreckFragment(fragment,5).offset.length()))
+    expect(reach(carcass)).toBeGreaterThan(reach(hull)*3)
+  } finally {hull.dispose();carcass.dispose();disposeShip(body)}
+})

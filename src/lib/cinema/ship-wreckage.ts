@@ -69,7 +69,8 @@ function clip(vertices: Vertex[], axis: 'x'|'y'|'z', cut: number, greater: boole
 /** One independently owned mesh per destroyed detailed actor. The only inputs
  * are tagged construction parts already present in its rendered material batches.
  * No geometry or material is shared with, mutated on, or retained from the ship. */
-export function createShipWreckage(source: THREE.Group, seed: number): ShipWreckage {
+/** `pieces` cuts each major section into that many chunks; `spread` scales how far they fly. */
+export function createShipWreckage(source: THREE.Group, seed: number, {pieces=2,spread=1}={}): ShipWreckage {
   const parts=new Map<number,SourcePart>(),point=new THREE.Vector3(),a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3()
   source.traverse(object=>{
     if(!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial))return
@@ -115,19 +116,19 @@ export function createShipWreckage(source: THREE.Group, seed: number): ShipWreck
     const length=extent[axis],minimum=anchor.bounds.min[axis]
     // Split long hulls, nacelles, ring segments and wings along their own major
     // axis. This prevents even a single-piece recipe surviving as an intact ship.
-    const ranges=length>.4 ? [[-Infinity,minimum+length*.44],[minimum+length*.51,Infinity]] : [[-Infinity,Infinity]]
+    const ranges=length>.4 ? Array.from({length:pieces},(_,i)=>[i?minimum+length*(i/pieces+.01):-Infinity,i<pieces-1?minimum+length*((i+1)/pieces-.06):Infinity]) : [[-Infinity,Infinity]]
     for(const [low,high] of ranges) {
       if(fragments.length>=WRECK_MAX_FRAGMENTS)break
       const bounds=anchor.bounds.clone()
       bounds.min[axis]=Math.max(bounds.min[axis],low);bounds.max[axis]=Math.min(bounds.max[axis],high)
       const pivot=bounds.getCenter(new THREE.Vector3())
-      const drift=pivot.clone().add(new THREE.Vector3((rng()-.5)*.18,(rng()-.5)*.3,(rng()-.5)*.24)).normalize().multiplyScalar(.55+rng()*.4)
+      const drift=pivot.clone().add(new THREE.Vector3((rng()-.5)*.18,(rng()-.5)*.3,(rng()-.5)*.24)).normalize().multiplyScalar((.55+rng()*.4)*spread)
       const spinAxis=new THREE.Vector3(rng()-.5,rng()-.5,rng()-.5).normalize(),spin=(rng()-.5)*1.9
       const start=positions.length/3
       const surfaces:WreckFragment['surfaces']=[]
       // Reserve room for each remaining cluster; a detailed bridge cannot crowd
       // out the far half of a hull. All primary shells are ahead of tiny details.
-      const fragmentBudget=Math.floor(WRECK_MAX_VERTICES/Math.max(1,anchors.reduce((sum,part)=>sum+(part.bounds.getSize(point).length()>.4?2:1),0)))
+      const fragmentBudget=Math.floor(WRECK_MAX_VERTICES/Math.max(1,anchors.reduce((sum,part)=>sum+(part.bounds.getSize(point).length()>.4?pieces:1),0)))
       for(const part of components) {
         const vertices:Vertex[]=[]
         const attribute=part.geometry.getAttribute('position'),normal=part.geometry.getAttribute('normal'),paint=part.material.vertexColors?part.geometry.getAttribute('color'):undefined

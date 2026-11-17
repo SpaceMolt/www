@@ -17,6 +17,15 @@ describe('weapon choreography',()=>{
       for(const glow of frame.glows){expect([...glow.position.toArray(),glow.radius,glow.opacity].every(Number.isFinite)).toBe(true);expect(glow.opacity).toBeGreaterThanOrEqual(0);expect(glow.opacity).toBeLessThanOrEqual(1)}
     }
   })
+  test('a miss keeps flying far past the target at the same speed',()=>{
+    const range=from.distanceTo(to)
+    for(const family of ['laser','autocannon','plasma','missile','torpedo','railgun'] as CinemaWeaponFamily[]){
+      const shot={...cue,weaponFamily:family,hit:false,duration:1}
+      const reach=(age:number)=>{const f=weaponVisual(shot,age,from,to,80,120);return Math.max(0,...[...f.lines.map(l=>l.to),...f.projectiles.map(p=>p.position)].map(v=>v.distanceTo(from)))}
+      expect(reach(1)).toBeLessThan(range*1.15)
+      expect(reach(4)).toBeGreaterThan(range*3)
+    }
+  })
   test('missiles fly straight while torpedoes launch fewer heavier bodies',()=>{
     const missiles=weaponVisual({...cue,weaponFamily:'missile'},1,from,to,80,120)
     const torpedo=weaponVisual({...cue,weaponFamily:'torpedo'},1,from,to,80,120)
@@ -28,7 +37,12 @@ describe('weapon choreography',()=>{
     for(const missile of close.projectiles)expect(missile.position.distanceTo(to)).toBeLessThan(.1)
   })
   test('missed shots never produce impact explosions or collateral effects',()=>{
-    for(const family of families){const frame=weaponVisual({...cue,hit:false,weaponFamily:family},2.3,from,to,80,120);expect(frame.glows).toHaveLength(0);expect(frame.rings).toHaveLength(0);expect(frame.lines).toHaveLength(0)}
+    // A miss only coasts on: nothing new appears after the arrival frame.
+    for(const family of families){
+      const shot={...cue,hit:false,weaponFamily:family}
+      const frame=weaponVisual(shot,2.3,from,to,80,120), arrival=weaponVisual(shot,1.999,from,to,80,120)
+      expect(frame.glows.length).toBeLessThanOrEqual(arrival.glows.length);expect(frame.rings.length).toBeLessThanOrEqual(arrival.rings.length)
+    }
   })
   test('chain and splash use the recorded parent impact rather than the firing ship',()=>{
     const origin=new Vector3(170,5,12)

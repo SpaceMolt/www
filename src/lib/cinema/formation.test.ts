@@ -17,6 +17,14 @@ describe('cinematic fleet formation', () => {
     expect(forward.get('ship:3:0')).toEqual(forward.get('ship:3:1'))
   })
 
+  it('staggers ships off a perfect line with small, stable height, heading and roll offsets', () => {
+    const slots = [...buildFleetFormation(Array.from({ length: 12 }, (_, index) => member(index))).values()]
+    expect(new Set(slots.map(slot => Math.round(slot.elevation))).size).toBeGreaterThan(6)
+    expect(new Set(slots.map(slot => slot.depth)).size).toBeGreaterThan(6)
+    for (const slot of slots) { expect(Math.abs(slot.heading!)).toBeLessThan(.2); expect(Math.abs(slot.roll!)).toBeLessThan(.15) }
+    expect(slots.some(slot => Math.abs(slot.heading!) > .03 && Math.abs(slot.roll!) > .02)).toBe(true)
+  })
+
   it('places support and industrial roles behind combat escorts without using tier as size', () => {
     const members = Array.from({ length: 40 }, (_, index) => member(index, { family: index < 20 ? 'fighter' : 'support' }))
     const slots = buildFleetFormation(members)

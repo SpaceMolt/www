@@ -167,6 +167,34 @@ describe('cinematic ship geometry', () => {
   })
 })
 
+describe('creature bodies', () => {
+  const bodies = ['whale', 'jelly', 'lobster', 'bug', 'ray', 'eel', 'creature'] as const
+  test('every body plan is a distinct, finite, engineless organism that swims', () => {
+    const signatures = bodies.map(body => {
+      const group = createShip({ ...resolveAppearance('', undefined, 2, '', 1, 'creature'), body }, 5)
+      const size = new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3())
+      expect(size.x).toBeGreaterThan(.35)
+      expect(size.length()).toBeLessThan(2)
+      expect(group.children.some(child => child.userData.engine || child.userData.retrothruster)).toBe(false)
+      expect(group.children.length).toBeLessThanOrEqual(7)
+      for (const object of group.children) {
+        const geometry = (object as THREE.Mesh).geometry
+        expect(Array.from(geometry.getAttribute('position').array).every(Number.isFinite)).toBe(true)
+        expect(Array.from(geometry.getAttribute('normal').array).every(Number.isFinite)).toBe(true)
+      }
+      // One shared clock drives the swim deformation of every creature material.
+      const skin = (group.getObjectByName('hull') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>).material
+      const shader = { ...THREE.ShaderLib.standard, uniforms: THREE.UniformsUtils.clone(THREE.ShaderLib.standard.uniforms) }
+      skin.onBeforeCompile(shader, {} as THREE.WebGLRenderer)
+      expect(shader.uniforms.cinemaSwim).toBe(group.userData.swim)
+      const signature = size.toArray().map(value => value.toFixed(3)).join(',')
+      dispose(group)
+      return signature
+    })
+    expect(new Set(signatures).size).toBe(bodies.length)
+  })
+})
+
 describe('public appearance projection', () => {
   test('public catalog faction IDs preserve five empire palettes and pirate salvage identity', () => {
     const empires = ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim', 'pirate'] as const

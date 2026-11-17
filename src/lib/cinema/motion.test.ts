@@ -152,6 +152,18 @@ describe('cinema ship choreography', () => {
     for (const frame of [at, first, second, third]) expect(frame.retroThrust).toBe(0)
   })
 
+  it('gives creatures no engines and lets an escaping creature swim off instead of jumping', () => {
+    const creature = ship({ kind: 'creature', fate: 'escaped', end: 20, motion: [{ time: 0, position: 0 }, { time: 10, position: 1, stance: 'flee' }] })
+    for (const time of [5, 15, 20, 20.9, 23]) {
+      expect(sampleShipMotion(creature, time, options).thrust).toBe(0)
+      expect(sampleShipMotion(creature, time, options).retroThrust).toBe(0)
+    }
+    const at = sampleShipMotion(creature, 20, options)
+    // It visibly swims away: many body lengths within a few seconds.
+    expect(distance(at, sampleShipMotion(creature, 22.5, options))).toBeGreaterThan(options.size * 8)
+    expect(distance(at, sampleShipMotion(creature, 24, options))).toBeGreaterThan(options.size * 20)
+  })
+
   it('leaves stations fixed regardless of zone updates, time, or fate', () => {
     const station = ship({ kind: 'station', fate: 'destroyed', end: 10, motion: [{ time: 0, position: 0 }, { time: 8, position: 1 }] })
     const position = sampleShipMotion(station, 0, options)
