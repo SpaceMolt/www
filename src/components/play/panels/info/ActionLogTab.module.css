@@ -1,0 +1,127 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.grow {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.count {
+  flex: 1;
+  color: var(--hull-grey);
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 6.5rem 6.5rem minmax(6rem, 10rem) 1fr;
+  gap: 0.5rem;
+  align-items: start;
+  width: 100%;
+  padding: 0.3rem 0.45rem;
+  text-align: left;
+  font: inherit;
+  color: var(--chrome-silver);
+  background: none;
+  border: none;
+}
+
+.head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--deep-void);
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--hull-grey);
+}
+
+.sortBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.sortBtn:hover {
+  color: var(--plasma-cyan);
+}
+
+.entry {
+  background: rgba(61, 90, 108, 0.08);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.entry:hover,
+.entry[aria-expanded='true'] {
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.time {
+  color: var(--hull-grey);
+  white-space: nowrap;
+}
+
+.event {
+  overflow-wrap: anywhere;
+  color: var(--star-white);
+}
+
+.summary {
+  line-height: 1.3;
+}
+
+.data {
+  margin: 0.15rem 0 0.3rem;
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  color: var(--star-white);
+  background: rgba(10, 14, 23, 0.8);
+  border-left: 2px solid var(--plasma-cyan);
+  border-radius: 3px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Narrow screens: time + category on one line, event + summary below. */
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: auto 1fr;
+  }
+  .head span:last-child {
+    display: none;
+  }
+  .event,
+  .summary {
+    grid-column: 1 / -1;
+  }
+}
