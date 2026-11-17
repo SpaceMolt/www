@@ -84,7 +84,8 @@ export function StationTerms({ data }: { data: GetBaseResponse }) {
 /** Installed facility definitions, grouped by category, duplicates counted. */
 export function StationFacilities({ ids }: { ids: string[] }) {
   const { data: catalog } = useCatalog()
-  const def = (id: string) => catalog?.facility(id)
+  if (!catalog) return null
+  const def = (id: string) => catalog.facility(id)
   const counts = ids.reduce((m, id) => m.set(id, (m.get(id) ?? 0) + 1), new Map<string, number>())
   const groups = Object.entries(groupBy([...counts], ([id]) => def(id)?.category ?? 'other'))
     .sort(([a], [b]) => a.localeCompare(b))
@@ -93,7 +94,7 @@ export function StationFacilities({ ids }: { ids: string[] }) {
       {groups.map(([category, entries]) => (
         <ItemChips
           key={category}
-          title={`${titleCase(category)} (${entries.length})`}
+          title={`${titleCase(category)} (${entries.reduce((sum, [, n]) => sum + n, 0)})`}
           items={entries
             .map(([id, n]) => ({ id, name: def(id)?.name ?? formatItemId(id), value: n > 1 ? `×${n}` : '', tip: def(id)?.description }))
             .sort((a, b) => a.name.localeCompare(b.name))}

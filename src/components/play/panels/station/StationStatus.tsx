@@ -154,9 +154,9 @@ export function StationStatus({ data }: { data: GetBaseResponse }) {
               </Stat>
             ))}
           </StatList>
-          {building.map((b) => (
+          {building.map((b, i) => (
             <ItemChips
-              key={`${b.definition_id}-${b.status}-materials`}
+              key={`${b.definition_id}-${i}-materials`}
               title={`Materials for ${b.name}`}
               items={materialChips(b.materials)}
             />
