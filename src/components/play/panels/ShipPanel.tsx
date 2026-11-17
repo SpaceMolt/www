@@ -26,7 +26,7 @@ import { useShip, useModules, useCargo, useLocationState, usePendingAction, useC
 import type { GameState } from '@spacemolt/lib'
 import { usePlay } from '../PlayProvider'
 import { ProgressBar } from '../ProgressBar'
-import { Panel, PanelWithTabs, Modal, ConfirmAction, ItemSelectList, QtyButtons, errorMessage, shared, useStorageMove } from '../shared'
+import { PanelWithTabs, Modal, ConfirmAction, ItemSelectList, QtyButtons, errorMessage, shared, useStorageMove } from '../shared'
 import { normalizeCargo, selectAll, selectedItems, type SelectableItem, type Selection } from '../shared/itemSelection'
 import { ItemName } from '../ItemTooltip'
 import { getItem as getCatalogRawItem, isModule } from '@/data/catalog'
@@ -37,6 +37,7 @@ import { canRefit, isUsableConsumable, usesQuantity, useItemResultText } from '.
 import { usePersonalStorage } from './trading/StorageView'
 import { useFactionPermissions, useStationServices } from '../hooks/useGates'
 import { BuilderView } from './ship/BuilderView'
+import { FleetView } from './ship/FleetView'
 
 type ModuleEntry = NonNullable<GameState['modules']>[number]
 
@@ -146,13 +147,8 @@ export function ShipPanel() {
     [mutate, uiStore]
   )
 
-  if (!ship) {
-    return (
-      <Panel title="Ship" icon={<Rocket size={16} />}>
-        <div className={shared.emptyState}>No ship data available</div>
-      </Panel>
-    )
-  }
+  // No ship (disembarked, or riding as a passenger): offer the ships owned here to switch into.
+  if (!ship) return <FleetView />
 
   // Sort modules into slot columns
   const weaponMods = modules.filter((m) => m.type === 'weapon')
