@@ -25,7 +25,6 @@ export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vec
   const line=(a:Vector3,b:Vector3,width:number,tint=color)=>frame.lines.push({from:a.clone(),to:b.clone(),width:width*strength,color:tint})
   const ring=(position:Vector3,radius:number,opacity:number,tint=color)=>frame.rings.push({position:position.clone(),radius,color:tint,opacity:clamp(opacity)*(reduced?.35:1)})
   const along=(progress:number)=>from.clone().lerp(to,clamp(progress))
-  const arc=(progress:number,index:number,height:number)=>along(progress).addScaledVector(side,Math.sin(progress*Math.PI)*(index-1)*height*.65).add(new Vector3(0,Math.sin(progress*Math.PI)*height,0))
 
   if(cue.secondaryKind==='retaliation' || /galvanic hull grid/i.test(cue.weaponName ?? '')){
     // Contact defenses flare on the hull; they do not grow a ranged gun mount.
@@ -49,6 +48,7 @@ export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vec
     return frame
   }
 
+  if(age<.12 && !['mine','smartbomb'].includes(family))glow(from,unit*6,1-age/.12,0xfff4e0)
   if(age<travel){
     const p=clamp(age/travel)
     if(family==='missile'||family==='torpedo'){
@@ -57,11 +57,10 @@ export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vec
         const progress=clamp((p-i*.055)/(1-i*.055))
         if(p<i*.055)continue
         const flight=heavy?progress*progress:progress
-        const height=Math.min(distance*.18,sourceSize*(heavy?.45:1.1))
-        const head=arc(flight,i,height), tail=arc(Math.max(0,flight-.09),i,height)
-        const tangent=head.clone().sub(tail)
-        if(tangent.lengthSq()<.0001)tangent.copy(direction)
-        frame.projectiles.push({position:head,direction:tangent.normalize(),size:unit*(heavy?2.6:1.2),color:0xb9c3cc})
+        // Space has no lift: each missile flies straight from its own launch rail.
+        const rail=from.clone().addScaledVector(side,(i-1)*Math.min(distance*.05,sourceSize*.2))
+        const head=rail.clone().lerp(to,flight), tail=rail.clone().lerp(to,Math.max(0,flight-.09))
+        frame.projectiles.push({position:head,direction:to.clone().sub(rail).normalize(),size:unit*(heavy?2.6:1.2),color:0xb9c3cc})
         line(tail,head,unit*(heavy?.55:.22),0xffb05e)
         glow(head,unit*(heavy?7:4),.85,0xffbc72)
       }
@@ -86,7 +85,7 @@ export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vec
     }else if(family==='mine'){
       // These records log deployed packets and attributed burn damage, not
       // persistent mine entities. Keep the charge inside this attack's life.
-      const head=arc(p,1,sourceSize*.25)
+      const head=along(p)
       frame.projectiles.push({position:head,direction:direction.clone().normalize(),size:unit*2,color:0xc18248})
       glow(head,unit*(3+p*6),.35+p*.4)
       ring(head,unit*(3+p*5),.45)

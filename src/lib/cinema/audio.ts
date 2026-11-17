@@ -20,7 +20,7 @@ const EXPLOSIVE = ['missile', 'torpedo', 'plasma', 'mine', 'smartbomb', 'flak']
 // [sound, gain, playback rate]
 const EVENT_SOUNDS: Readonly<Record<string, readonly [string, number, number]>> = {
   contact: ['em', .35, 1.3], death: ['explosion_big', 1, 1], knockout: ['explosion', .8, .9],
-  boarding: ['dock', .6, 1], capture: ['alert', .5, 1], arrival: ['jump_exit', .6, 1], escape: ['launch', .7, 1],
+  boarding: ['dock', .6, 1], capture: ['alert', .5, 1], arrival: ['jump_exit', .6, 1], escape: ['jump_exit', .8, 1],
   repair: ['mining_loop', .3, 1.2], disable: ['em', .5, .8], cloak: ['launch', .5, .7], drain: ['em', .4, .6],
 }
 

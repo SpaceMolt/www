@@ -17,12 +17,13 @@ describe('weapon choreography',()=>{
       for(const glow of frame.glows){expect([...glow.position.toArray(),glow.radius,glow.opacity].every(Number.isFinite)).toBe(true);expect(glow.opacity).toBeGreaterThanOrEqual(0);expect(glow.opacity).toBeLessThanOrEqual(1)}
     }
   })
-  test('missiles curve through space while torpedoes launch fewer heavier bodies',()=>{
+  test('missiles fly straight while torpedoes launch fewer heavier bodies',()=>{
     const missiles=weaponVisual({...cue,weaponFamily:'missile'},1,from,to,80,120)
     const torpedo=weaponVisual({...cue,weaponFamily:'torpedo'},1,from,to,80,120)
     expect(missiles.projectiles).toHaveLength(3);expect(torpedo.projectiles).toHaveLength(1)
     expect(torpedo.projectiles[0].size).toBeGreaterThan(missiles.projectiles[0].size)
-    expect(missiles.projectiles[0].position.y).toBeGreaterThan(from.clone().lerp(to,.5).y)
+    // Every missile stays on the straight line from its rail to the target.
+    for(const missile of missiles.projectiles)expect(missile.direction.angleTo(to.clone().sub(missile.position))).toBeLessThan(1e-6)
     const close=weaponVisual({...cue,weaponFamily:'missile'},1.99999,from,to,80,120)
     for(const missile of close.projectiles)expect(missile.position.distanceTo(to)).toBeLessThan(.1)
   })
