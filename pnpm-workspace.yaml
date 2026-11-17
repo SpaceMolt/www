@@ -11,3 +11,6 @@ allowBuilds:
 
 overrides:
   dompurify: ^3.4.17
+
+minimumReleaseAgeExclude:
+  - '@spacemolt/lib@18.1.3'
