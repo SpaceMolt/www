@@ -1,11 +1,12 @@
 'use client'
 
-import { Landmark, Activity, Settings2, Flag, RefreshCw } from 'lucide-react'
+import { Landmark, Activity, Settings2, Flag, RefreshCw, ShoppingCart } from 'lucide-react'
 import { useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
 import { Panel, Loading, Section, shared } from '../shared'
 import { FoundingSection } from './station/FoundingSection'
 import { StationStatus } from './station/StationStatus'
 import { StationAdmin } from './station/StationAdmin'
+import { StationDemand } from './station/StationDemand'
 import { useFactionPermissions } from '../hooks/useGates'
 
 /**
@@ -44,6 +45,11 @@ export function StationPanel() {
       {base && data && (
         <Section title="Status" icon={<Activity size={12} />} defaultOpen>
           <StationStatus data={data} />
+        </Section>
+      )}
+      {base && data?.services.includes('market') && (
+        <Section title="Market Interest" icon={<ShoppingCart size={12} />} defaultOpen>
+          <StationDemand baseId={base.id} />
         </Section>
       )}
       {ownsBase && (

@@ -158,6 +158,18 @@ export function StationStatus({ data }: { data: GetBaseResponse }) {
               </Stat>
             ))}
           </StatList>
+          {building.filter((b) => b.materials?.some((m) => m.quantity_missing)).map((b) => (
+            <ItemChips
+              key={`${b.definition_id}-${b.status}-materials`}
+              title={`Materials for ${b.name}`}
+              items={b.materials?.map((m) => ({
+                id: m.item_id,
+                name: m.name ?? formatItemId(m.item_id),
+                value: ratio(m.quantity_in_storage, m.quantity_required),
+                bad: Boolean(m.quantity_missing),
+              }))}
+            />
+          ))}
         </div>
       )}
     </div>
