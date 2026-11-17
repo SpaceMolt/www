@@ -1,12 +1,12 @@
 'use client'
 
-import { Landmark, Activity, Settings2, Flag, RefreshCw, ShoppingCart } from 'lucide-react'
+import { Landmark, Activity, Settings2, Flag, RefreshCw, PackageSearch, Receipt, Factory } from 'lucide-react'
 import { useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
 import { Panel, Loading, Section, shared } from '../shared'
 import { FoundingSection } from './station/FoundingSection'
 import { StationStatus } from './station/StationStatus'
 import { StationAdmin } from './station/StationAdmin'
-import { StationDemand } from './station/StationDemand'
+import { StationFacilities, StationNeeds, StationTerms } from './station/StationDetails'
 import { useFactionPermissions } from '../hooks/useGates'
 
 /**
@@ -47,10 +47,20 @@ export function StationPanel() {
           <StationStatus data={data} />
         </Section>
       )}
-      {base && data?.services.includes('market') && (
-        <Section title="Market Interest" icon={<ShoppingCart size={12} />} defaultOpen>
-          <StationDemand baseId={base.id} />
-        </Section>
+      {base && data && (
+        <>
+          <Section title="Needs" icon={<PackageSearch size={12} />} defaultOpen>
+            <StationNeeds data={data} />
+          </Section>
+          <Section title="Services and Terms" icon={<Receipt size={12} />} defaultOpen>
+            <StationTerms data={data} />
+          </Section>
+          {base.facilities?.length ? (
+            <Section title={`Facilities (${base.facilities.length})`} icon={<Factory size={12} />} defaultOpen={false}>
+              <StationFacilities ids={base.facilities} />
+            </Section>
+          ) : null}
+        </>
       )}
       {ownsBase && (
         <Section title="Administration" icon={<Settings2 size={12} />} defaultOpen>
