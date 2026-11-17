@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { Recipe } from '../types'
-import { buyPlan, combineItems, isRecyclable, maxCraftable, missingFromCargo, runsFor } from './craftPlan'
+import { buyPlan, combineItems, inputStoreFor, isRecyclable, maxCraftable, missingFromCargo, runsFor } from './craftPlan'
 
 const recipe: Recipe = {
   id: 'steel_plate',
@@ -54,4 +54,26 @@ test('isRecyclable rejects irreversible categories and no_recycle recipes', () =
   expect(isRecyclable({ category: 'Components' })).toBe(true)
   expect(isRecyclable({ category: 'Refining' })).toBe(false)
   expect(isRecyclable({ category: 'Components', no_recycle: true })).toBe(false)
+})
+
+// The server takes inputs from `source`, else `deliver_to`; both on auto use personal
+// storage, then faction storage when only it covers the job (gameserver crafting.go).
+describe('inputStoreFor', () => {
+  const full = [{ item_id: 'iron_ore', quantity: 3 }, { item_id: 'carbon', quantity: 1 }]
+  test('output faction with inputs auto reads faction storage (hiver bug report)', () => {
+    expect(inputStoreFor(recipe, { personal: [], faction: full, deliverTo: 'faction' })).toBe('faction')
+  })
+  test('an explicit source wins over the output store', () => {
+    expect(inputStoreFor(recipe, { personal: full, faction: [], source: 'storage', deliverTo: 'faction' })).toBe('storage')
+    expect(inputStoreFor(recipe, { personal: full, faction: [], source: 'faction' })).toBe('faction')
+  })
+  test('both auto fall back to faction storage only when it covers the job and the pilot may use it', () => {
+    expect(inputStoreFor(recipe, { personal: [], faction: full, canUseFaction: true })).toBe('faction')
+    expect(inputStoreFor(recipe, { personal: [], faction: full })).toBe('storage')
+    expect(inputStoreFor(recipe, { personal: full, faction: full, canUseFaction: true })).toBe('storage')
+    expect(inputStoreFor(recipe, { personal: [], faction: [], canUseFaction: true })).toBe('storage')
+  })
+  test('output to my storage never falls back', () => {
+    expect(inputStoreFor(recipe, { personal: [], faction: full, deliverTo: 'storage', canUseFaction: true })).toBe('storage')
+  })
 })
