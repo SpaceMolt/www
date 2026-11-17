@@ -17,7 +17,7 @@
     "@spacemolt/lib": "^18.1.0",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.563.0",
-    "next": "^16.4.2",
+    "next": "^16.4.6",
     "nuqs": "^2.8.8",
     "posthog-js": "^1.402.3",
     "react": "^19.2.4",
