@@ -1,12 +1,12 @@
 'use client'
 
-import { Landmark, Activity, Settings2, Flag, RefreshCw, PackageSearch, Receipt, Factory } from 'lucide-react'
+import { Landmark, Activity, Settings2, Flag, RefreshCw, Coins, Skull, Receipt, Factory } from 'lucide-react'
 import { useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
 import { Panel, Loading, Section, shared } from '../shared'
 import { FoundingSection } from './station/FoundingSection'
 import { StationStatus } from './station/StationStatus'
 import { StationAdmin } from './station/StationAdmin'
-import { StationFacilities, StationNeeds, StationTerms } from './station/StationDetails'
+import { StationFacilities, StationMint, StationPirateRecovery, StationTerms } from './station/StationDetails'
 import { useFactionPermissions } from '../hooks/useGates'
 
 /**
@@ -49,9 +49,17 @@ export function StationPanel() {
       )}
       {base && data && (
         <>
-          <Section title="Needs" icon={<PackageSearch size={12} />} defaultOpen>
-            <StationNeeds data={data} />
-          </Section>
+          {/* Each of these exists at only a few stations, so its section appears only when get_base sends it. */}
+          {data.sovereign_mint && (
+            <Section title="Sovereign Mint" icon={<Coins size={12} />} defaultOpen>
+              <StationMint mint={data.sovereign_mint} />
+            </Section>
+          )}
+          {data.pirate_recovery && (
+            <Section title="Replacement Hull" icon={<Skull size={12} />} defaultOpen>
+              <StationPirateRecovery pirate={data.pirate_recovery} />
+            </Section>
+          )}
           <Section title="Services and Terms" icon={<Receipt size={12} />} defaultOpen>
             <StationTerms data={data} />
           </Section>

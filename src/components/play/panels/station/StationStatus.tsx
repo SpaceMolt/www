@@ -7,6 +7,7 @@ import { ItemChips, Notes, Stat, StatList, Tip, fillOf, type Tone } from '../../
 import { useAccountStore } from '@/lib/spacemolt'
 import { formatItemId } from '@/data/catalog'
 import { formatDuration, formatNumber, titleCase } from '@/lib/format'
+import { materialChips } from './StationDetails'
 
 const CONDITION_OK = new Set(['thriving', 'operational'])
 // Station upkeep (power fuel, life support) draws a small share of the listed bill each facility cycle.
@@ -158,6 +159,13 @@ export function StationStatus({ data }: { data: GetBaseResponse }) {
               </Stat>
             ))}
           </StatList>
+          {building.map((b) => (
+            <ItemChips
+              key={`${b.definition_id}-${b.status}-materials`}
+              title={`Materials for ${b.name}`}
+              items={materialChips(b.materials)}
+            />
+          ))}
         </div>
       )}
     </div>

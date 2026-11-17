@@ -8,7 +8,7 @@ import { formatNumber, titleCase } from '@/lib/format'
 
 type Material = { item_id: string; name?: string; quantity_in_storage: number; quantity_required: number; quantity_missing?: number }
 
-const materialChips = <M extends Material>(items: M[] | undefined, tip?: (m: M) => string): Chip[] | undefined =>
+export const materialChips = <M extends Material>(items: M[] | undefined, tip?: (m: M) => string): Chip[] | undefined =>
   items?.map((m) => ({
     id: m.item_id,
     name: m.name ?? formatItemId(m.item_id),
@@ -17,45 +17,34 @@ const materialChips = <M extends Material>(items: M[] | undefined, tip?: (m: M) 
     tip: tip?.(m),
   }))
 
-/** What the station asks for: build materials, sovereign mint inputs, a pirate replacement hull. */
-export function StationNeeds({ data }: { data: GetBaseResponse }) {
-  const { construction, sovereign_mint: mint, pirate_recovery: pirate } = data
-  const builds = [...(construction?.under_construction ?? []), ...(construction?.pending ?? [])].filter((b) => b.materials?.length)
-  if (!builds.length && !mint && !pirate) return <Notes notes={['This station reports no material needs.']} />
-
+/** Shortages and blockers at the empire-backed mint. get_base sends this only for a station with a mint that is held back. */
+export function StationMint({ mint }: { mint: NonNullable<GetBaseResponse['sovereign_mint']> }) {
   return (
     <>
-      {builds.map((b) => (
-        <ItemChips
-          key={`${b.definition_id}-${b.status}`}
-          title={`${b.name}${b.reason ? `, built for ${titleCase(b.reason).toLowerCase()}` : ''} (${titleCase(b.status).toLowerCase()})`}
-          items={materialChips(b.materials)}
-        />
-      ))}
-      {mint && (
-        <>
-          <ItemChips
-            title={`${mint.output_name ?? formatItemId(mint.output_item_id)} mint inputs (${titleCase(mint.status).toLowerCase()})`}
-            items={materialChips(mint.shortages, (s) => (s.buy_order_available ? 'The station has a buy order for this input.' : 'The station has no buy order for this input.'))}
-          />
-          <ItemChips
-            title="Mint inputs priced above the station's bid"
-            items={mint.price_limits?.map((p) => ({
-              id: p.item_id,
-              name: p.name,
-              value: `bid ${formatNumber(p.station_buy_price)} / ask ${formatNumber(p.lowest_sell_price)} cr`,
-            }))}
-          />
-          <Notes warn notes={[mint.remediation, ...(mint.internal_blockers ?? []).map((x) => x.remediation)]} />
-        </>
-      )}
-      {pirate && (
-        <ItemChips
-          title={`${pirate.ship_name} replacement hull (${titleCase(pirate.status).toLowerCase()})`}
-          items={materialChips(pirate.materials, (p) => `${formatNumber(p.quantity_incoming)} incoming. Station bids ${formatNumber(p.bid_price)} cr for ${formatNumber(p.bid_quantity)}.`)}
-        />
-      )}
+      <ItemChips
+        title={`${mint.output_name ?? formatItemId(mint.output_item_id)} inputs (${titleCase(mint.status).toLowerCase()})`}
+        items={materialChips(mint.shortages, (s) => (s.buy_order_available ? 'The station has a buy order for this input.' : 'The station has no buy order for this input.'))}
+      />
+      <ItemChips
+        title="Inputs priced above the station's bid"
+        items={mint.price_limits?.map((p) => ({
+          id: p.item_id,
+          name: p.name,
+          value: `bid ${formatNumber(p.station_buy_price)} / ask ${formatNumber(p.lowest_sell_price)} cr`,
+        }))}
+      />
+      <Notes warn notes={[mint.remediation, ...(mint.internal_blockers ?? []).map((x) => x.remediation)]} />
     </>
+  )
+}
+
+/** Materials for the next pirate hull. get_base sends this only at a pirate stronghold that needs one. */
+export function StationPirateRecovery({ pirate }: { pirate: NonNullable<GetBaseResponse['pirate_recovery']> }) {
+  return (
+    <ItemChips
+      title={`${pirate.ship_name} (${titleCase(pirate.status).toLowerCase()})`}
+      items={materialChips(pirate.materials, (p) => `${formatNumber(p.quantity_incoming)} incoming. Station bids ${formatNumber(p.bid_price)} cr for ${formatNumber(p.bid_quantity)}.`)}
+    />
   )
 }
 
