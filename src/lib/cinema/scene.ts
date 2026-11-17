@@ -904,7 +904,6 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     for (let i = shockwaveCount; i < shockwaves.length; i++) shockwaves[i].visible = false
     grade.uniforms.time.value = reduced ? 0 : time
     grade.uniforms.amount.value = 0
-    audio.intensity(shot?.intensity ?? 0.1, time)
     renderer.info.reset()
     renderer.setRenderTarget(sceneTarget);renderer.clear();renderer.render(scene,camera);renderer.setRenderTarget(null)
     composer.render()

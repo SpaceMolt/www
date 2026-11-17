@@ -80,7 +80,7 @@ it does not replace the chronological edit or manufacture additional action.
 
 Self-destruct records still have no bespoke countdown choreography. Confirmed
 losses use the existing recorded outcome handling. Boarding adds no downloaded
-models, textures, audio assets, external generation service or asset request.
+models, textures, external generation service or asset request.
 
 ### Goal-based camera planning
 
@@ -170,15 +170,19 @@ prove an effect occurred. Unknown remote repair sources never acquire invented
 beams. These are short cinematic accents, not representations of mechanical
 status durations or exact hardpoint positions.
 
-`audio.ts` synthesizes the score and effects locally through Web Audio. It creates
-or resumes its context from the Play gesture, limits transient voices, and
-cancels existing sources on pause, seek and disposal. Families have distinct
-onsets, burst envelopes, pitch, filter sweeps and noise/tone balance. A separate
+`audio.ts` plays sound effects from SpaceMolt: Adventures. The MP3 files are in
+`public/cinema/sfx/`. Each weapon family, hit and event maps to one game sound in
+`cueSound()`. Each screening also plays one random combat track from the game.
+The tracks are on `assets.spacemolt.com/cinema/music/`. The asset host sends no
+CORS headers, so the music plays through an `<audio>` element, not Web Audio.
+The player creates or resumes its context from the Play gesture. It limits the
+effects to 24 voices and stops them on pause, seek and disposal. A separate
 audio schedule aligns railgun charge/release and victim-local impact sounds with
 the final edited film. Misses have no impact sound; simultaneous batteries share
-one representative impact and nearby destruction supplies its own sound. Behavior
-accents remain quiet; casualty sounds can displace ordinary volley voices. No audio files, external
-asset services, generation credentials or paid requests are required.
+one representative impact and nearby destruction supplies its own sound.
+Casualty sounds can displace ordinary volley voices. The player's Credits button
+lists every sound source from `CINEMA_AUDIO_CREDITS`. If you add a sound, add
+its source there too.
 
 Development builds expose diagnostic `data-cinema-*` attributes on the canvas.
 The counters include the entire postprocessing frame. They are not product UI.

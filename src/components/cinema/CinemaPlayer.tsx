@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, ArrowUpRight, Check, Film, Maximize, Minimize, Pause, Play, RotateCcw, SlidersHorizontal, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Check, Film, Maximize, Minimize, Music, Pause, Play, RotateCcw, SlidersHorizontal, Volume2, VolumeX, X } from 'lucide-react'
 import { useTranslation } from '@/i18n'
 import type { CinemaFilm } from '@/lib/cinema/types'
 import type { ShipAppearanceMap } from '@/lib/cinema/appearance'
 import type { mountCinema } from '@/lib/cinema/scene'
+import { CINEMA_AUDIO_CREDITS } from '@/lib/cinema/audio'
 import { cinemaShortcut } from './playbackControls'
 import { restoreSettingsFocus } from './settingsFocus'
 import styles from './Cinema.module.css'
@@ -33,6 +34,7 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
   const [time, setTime] = useState(0)
   const [quality, setQuality] = useState<Quality>('auto')
   const [settings, setSettings] = useState(false)
+  const [credits, setCredits] = useState(false)
   const [reducedMotion, setReducedMotion] = useState(false)
   const [active, setActive] = useState(true)
   const [fullscreen, setFullscreen] = useState(false)
@@ -127,7 +129,7 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
       setFullscreenError(false)
     } catch { setFullscreenError(true) }
   }
-  const visible = active || !playing || settings
+  const visible = active || !playing || settings || credits
   const record = `/battles/${encodeURIComponent(film.battleId)}`
   const closeSettings = () => {
     if (!settings) return
@@ -193,6 +195,10 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
           <button className={styles.settingRow} aria-pressed={reducedMotion} onClick={() => { setReducedMotion(!reducedMotion); player.current?.setReducedMotion(!reducedMotion) }}>{t('cinema.reducedMotion')}<span className={`${styles.checkbox} ${reducedMotion ? styles.checked : ''}`}>{reducedMotion && <Check size={13} aria-hidden />}</span></button>
           <p className={styles.settingsHint}>{t('cinema.shortcuts')}</p>
         </section>}
+        {credits && <section className={`${styles.settings} ${styles.credits}`} aria-label={t('cinema.credits')}>
+          <div className={styles.settingsHeading}><span>{t('cinema.credits')}</span><button type="button" aria-label={t('cinema.close')} onClick={() => setCredits(false)}><X size={16} aria-hidden /></button></div>
+          <ul>{CINEMA_AUDIO_CREDITS.map(credit => <li key={credit.url + credit.title}><a href={credit.url} target="_blank" rel="noopener noreferrer">{credit.title}</a> <span>{credit.by} / {credit.license}</span></li>)}</ul>
+        </section>}
         <label className={styles.seekLabel}><span className={styles.srOnly}>{t('cinema.seek')}</span><input className={styles.seek} type="range" min={0} max={film.duration} step={0.1} value={time} aria-valuetext={`${clock(time)} / ${clock(film.duration)}`} onChange={event => seek(Number(event.target.value))} /></label>
         <div className={styles.controlRow}>
           <button type="button" onClick={togglePlay} aria-label={t(playing ? 'cinema.pause' : 'cinema.play')}>{playing ? <Pause size={19} fill="currentColor" aria-hidden /> : <Play size={19} fill="currentColor" aria-hidden />}</button>
@@ -200,7 +206,8 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
           <input className={styles.volume} type="range" min={0} max={1} step={0.05} value={volume} aria-label={t('cinema.volume')} onChange={event => { const value = Number(event.target.value); setVolume(value); player.current?.setVolume(value); if (muted && value > 0) { setMuted(false); player.current?.setMuted(false) } }} />
           <span className={styles.time}>{clock(time)} <span>/ {clock(film.duration)}</span></span>
           <span className={styles.filmLabel}><Film size={13} aria-hidden />{film.systemName}</span>
-          <button ref={settingsTrigger} type="button" className={styles.settingsButton} onClick={() => settings ? closeSettings() : setSettings(true)} aria-expanded={settings} aria-label={t('cinema.settings')}><SlidersHorizontal size={18} aria-hidden /></button>
+          <button type="button" className={styles.settingsButton} onClick={() => { setCredits(!credits); closeSettings() }} aria-expanded={credits} aria-label={t('cinema.credits')}><Music size={18} aria-hidden /></button>
+          <button ref={settingsTrigger} type="button" onClick={() => { setCredits(false); if (settings) closeSettings(); else setSettings(true) }} aria-expanded={settings} aria-label={t('cinema.settings')}><SlidersHorizontal size={18} aria-hidden /></button>
           <button type="button" onClick={() => void toggleFullscreen()} aria-label={t(fullscreen ? 'cinema.exitFullscreen' : 'cinema.fullscreen')}>{fullscreen ? <Minimize size={19} aria-hidden /> : <Maximize size={19} aria-hidden />}</button>
         </div>
         {fullscreenError && <p className={styles.settingsHint} role="status">{t('cinema.fullscreenError')}</p>}
