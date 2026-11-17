@@ -30,6 +30,8 @@ export interface ShipMotion {
   retroThrust: number
 }
 
+/** Seconds an escaping ship spools its jump drive before it streaks away. */
+export const ESCAPE_SPOOL = .5
 const clamp = (value: number, low: number, high: number) => Math.max(low, Math.min(high, value))
 const smooth = (value: number) => { const p = clamp(value, 0, 1); return p * p * (3 - 2 * p) }
 
@@ -144,16 +146,23 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
   const retroThrust = reversing ? clamp((-inwardVelocity - .1) / 4, 0, 1) * (1 - flee) : 0
   if (time < ship.end || ship.fate === 'survived') return { ...base, yaw, bank, thrust: normalThrust, retroThrust }
 
-  if (ship.fate === 'escaped' || ship.fate === 'withdrawn') {
+  if (ship.fate === 'escaped') {
+    // A hyperspace jump, as in the game: the drive spools, then the hull streaks out of view.
+    const streak = Math.max(0, after - ESCAPE_SPOOL)
+    const boost = after * after * 6 + streak * streak * streak * 9000
+    const forwardX = velocity.x + Math.cos(angle) * after * 60, forwardZ = velocity.z + Math.sin(angle) * after * 60
+    return { x: base.x + velocity.x * after + Math.cos(angle) * boost,
+      y: base.y + velocity.y * after, z: base.z + velocity.z * after + Math.sin(angle) * boost,
+      yaw: Math.atan2(-forwardZ, forwardX), bank, thrust: normalThrust + Math.min(2, after * 3), retroThrust: 0 }
+  }
+  if (ship.fate === 'withdrawn') {
     // Velocity matches the live trajectory at departure; acceleration then
     // pulls the ship out of its formation rather than teleporting it away.
-    const bearing = angle
-    const acceleration = ship.fate === 'escaped' ? 24 : 12
-    const boost = after * after * acceleration
-    const forwardX = velocity.x + Math.cos(bearing) * after * acceleration * 2
-    const forwardZ = velocity.z + Math.sin(bearing) * after * acceleration * 2
-    return { x: base.x + velocity.x * after + Math.cos(bearing) * boost,
-      y: base.y + velocity.y * after, z: base.z + velocity.z * after + Math.sin(bearing) * boost,
+    const boost = after * after * 12
+    const forwardX = velocity.x + Math.cos(angle) * after * 24
+    const forwardZ = velocity.z + Math.sin(angle) * after * 24
+    return { x: base.x + velocity.x * after + Math.cos(angle) * boost,
+      y: base.y + velocity.y * after, z: base.z + velocity.z * after + Math.sin(angle) * boost,
       yaw: Math.atan2(-forwardZ, forwardX), bank, thrust: normalThrust + Math.min(1, after * 0.6), retroThrust: 0 }
   }
 

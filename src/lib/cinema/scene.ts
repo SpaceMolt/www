@@ -14,7 +14,7 @@ import { cueRange, cueLifetime, weaponImpactAge } from './playback'
 import { sampleCinemaHealth } from './director'
 import { buildCinemaCascades, sampleCinemaCascade } from './cascades'
 import { buildFleetFormation } from './formation'
-import { sampleShipMotion, fleetMotionSpacing, type ShipMotionOptions } from './motion'
+import { sampleShipMotion, fleetMotionSpacing, ESCAPE_SPOOL, type ShipMotionOptions } from './motion'
 import { createBoardingMotionSampler } from './boarding-motion'
 import { type CameraBody, type StoryCameraOptions } from './camera'
 import { buildShotPlan, samplePlannedCamera, type ShotPlan } from './shot-planner'
@@ -410,6 +410,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const cameraTarget = new THREE.Vector3(), cameraPosition = new THREE.Vector3()
   const pointA = new THREE.Vector3(), pointB = new THREE.Vector3()
   const up = new THREE.Vector3(0, 1, 0), direction = new THREE.Vector3()
+  const streakHead = new THREE.Vector3(), streakTail = new THREE.Vector3(), streakVelocity = new THREE.Vector3(), heat = new THREE.Color()
   const motionOptions = (actor: Actor): ShipMotionOptions => ({ size: actor.size, angle: actor.angle, lane: actor.lane, seed: actor.seed,
     formation: formations.get(actor.ship.id), fleetCount: sides.length, sideCount: sideCounts.get(actor.ship.sideIndex) ?? 1, spacing: fleetSpacing.get(actor.ship.sideIndex) ?? 90, depth: fleetDepth.get(actor.ship.sideIndex) ?? 130 })
   const boardingMotion = createBoardingMotionSampler(film.cues,
@@ -430,11 +431,12 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const cascadeCollateral = new Set(film.cues.filter(cue=>cue.hit===true && cue.parentId &&
     ['aoe','ammo_splash','chain'].includes(cue.secondaryKind??'') &&
     cascadeGroups.has(`${cue.parentId}:${cue.secondaryKind==='chain'?'chain':'area'}`)).map(cue=>cue.id))
-  const isVisible = (actor: Actor, t: number) => t >= actor.ship.start && (t <= actor.ship.end || !['escaped', 'withdrawn'].includes(actor.ship.fate) || t < actor.ship.end + 2.5)
+  const isVisible = (actor: Actor, t: number) => t >= actor.ship.start && (t <= actor.ship.end || !['escaped', 'withdrawn'].includes(actor.ship.fate) || t < actor.ship.end + (actor.ship.fate === 'escaped' ? ESCAPE_SPOOL + .4 : 2.5))
   const cameraBodyAt = (id: string | undefined, at: number): CameraBody | undefined => {
     const actor=id ? byId.get(id) : undefined
     if (!actor) return undefined
-    const motion=motionAt(actor,at)
+    // The camera holds the jump point, so an escaping ship visibly streaks away.
+    const motion=motionAt(actor,actor.ship.fate==='escaped' ? Math.min(at,actor.ship.end+ESCAPE_SPOOL) : at)
     return {id:actor.ship.id,size:actor.size,position:new THREE.Vector3(motion.x,motion.y,motion.z),
       ...(actor.contactBounds ? {contactHull:{min:actor.contactBounds.min,max:actor.contactBounds.max,yaw:motion.yaw,bank:reduced?0:motion.bank}} : {})}
   }
@@ -660,6 +662,19 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       sprite.visible = true; sprite.position.copy(position); sprite.scale.setScalar(radius)
       sprite.material.color.setHex(color); sprite.material.opacity = clamp(opacity, 0, reduced ? 0.35 : 1)
     }
+    // Sparks from the game's hit and blast effects: streaks fly out, slow under
+    // damping, and cool from white through `hot` to dark. Beams stay first in line.
+    const addStreaks = (at: THREE.Vector3, count: number, speed: number, age: number, life: number, hot: number, seed: number) => {
+      if (reduced || age < 0 || age >= life || beamCount > 110) return
+      const fade = 1 - age / life, drift = (1 - Math.exp(-3 * age)) / 3, tail = .07 * Math.exp(-3 * age)
+      const color = heat.setHex(0xfff6e0).lerp(tint.setHex(hot), Math.min(1, age / life * 2.5)).multiplyScalar(fade).getHex()
+      const r = random(seed)
+      for (let j = 0; j < count; j++) {
+        streakVelocity.set(r() - .5, (r() - .5) * .5, r() - .5).normalize().multiplyScalar(speed * (.4 + r()))
+        streakHead.copy(at).addScaledVector(streakVelocity, drift); streakTail.copy(streakHead).addScaledVector(streakVelocity, -tail)
+        addBeam(streakTail, streakHead, speed * .006 * fade, color)
+      }
+    }
     for (const actor of actors) {
       if (!isVisible(actor,time) || !actor.model) continue
       const health=sampleCinemaHealth(actor.ship,time)
@@ -788,23 +803,22 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         if (cue.hit && impactAge >= 0 && impactAge < 1.2) {
           const damage = (cue.hullDamage ?? 0) + (cue.shieldDamage ?? 0)
           if (damage > 0) addFlash(pointB, to.size * (cue.hullDamage ? 0.75 : 0.4) * (1 + impactAge), color, (1 - impactAge / 1.2) * 0.65)
+          if (cue.hullDamage && impactAge < .1) addFlash(pointB, to.size * .4, 0xfff0d8, 1 - impactAge / .1)
+          if (cue.hullDamage && impactAge < .7) addFlash(pointB, to.size * .22, heat.setHex(color).lerp(tint.setHex(0xff4010), .5).getHex(), (1 - impactAge / .7) * .7)
           // A stopped volley lights the shield, never a penetrating hull explosion.
           if (((cue.shieldDamage ?? 0) > 0 || damage === 0) && !(time >= to.ship.end && ['destroyed', 'knocked_out'].includes(to.ship.fate))) {
             if (shieldCount < shields.length) {
               const shield = shields[shieldCount++]; shield.visible = true; shield.position.copy(to.position); shield.rotation.y = to.rotation
               shield.scale.set(to.size * 0.6, to.size * 0.32, to.size * 0.43)
               shield.material.uniforms.opacity.value = (1 - impactAge / 1.2) * (reduced ? 0.25 : 0.65)
-              shield.material.uniforms.time.value = impactAge; shield.material.uniforms.color.value.setHex(0x62ceff)
+              shield.material.uniforms.time.value = impactAge; shield.material.uniforms.color.value.setHex(0x62ceff).lerp(tint.setHex(color), .35)
+            }
+            if (impactAge < .15) {
+              pointA.copy(from.position).sub(to.position).setY(0).setLength(to.size * .55).add(to.position)
+              addFlash(pointA, to.size * .3, heat.setHex(color).lerp(tint.setHex(0xffffff), .3).getHex(), 1 - impactAge / .15)
             }
           }
-          if ((cue.hullDamage ?? 0) > 0 && sparkCount < 720) {
-            for (let j = 0; j < 8; j++) {
-              const r = random(seed + j * 13), velocity = new THREE.Vector3(r() - 0.5, r() - 0.2, r() - 0.5).multiplyScalar(20)
-              dummy.position.copy(pointB).addScaledVector(velocity, impactAge)
-              dummy.rotation.set(j + age, j * 2, age * 3); dummy.scale.setScalar((1 - impactAge / 1.2) * 0.8); dummy.updateMatrix()
-              sparks.setMatrixAt(sparkCount, dummy.matrix); sparks.setColorAt(sparkCount++, tint.setHex(0xffc074))
-            }
-          }
+          if ((cue.hullDamage ?? 0) > 0) addStreaks(pointB, 8, to.size * 1.6, impactAge, .6, color, seed)
         }
       } else if (cue.kind === 'death' || cue.kind === 'knockout' || cue.kind === 'capture') {
         const death = cue.kind === 'death', radius = destination.size
@@ -812,7 +826,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         const knockout = cue.kind === 'knockout'
         // Knockouts leave an intact unpowered hull; destruction breaks into fragments.
         if (age < 3.8) {
-          addFlash(destination.position, radius * (death ? 2.6 + age * 2.2 : 1.7 + age), effectColor, Math.exp(-age * (death ? .95 : 1.1)) * (death ? 1 : .8))
+          addFlash(destination.position, radius * (death ? 1 + 3.2 * (1 - Math.exp(-age * 4)) : 1.7 + age), effectColor, Math.exp(-age * (death ? .95 : 1.1)) * (death ? 1 : .8))
           if (death && age < 1.1) addFlash(destination.position, radius * (1 + age), 0xfff5d8, 1 - age / 1.1)
         }
         if (!death && shieldCount < shields.length && age < 3.2) {
@@ -840,10 +854,18 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
           }
         }
         if (death) {
-          if (age < 2.8) for (let burst=0;burst<3;burst++) {
-            const r=random(seed+burst*73)
-            pointA.copy(destination.position).add(new THREE.Vector3(r()-.5,r()-.5,r()-.5).multiplyScalar(radius*(.15+age*.5)))
-            addFlash(pointA,radius*(.9+age*.6),burst===0?0xffd196:0xf47731,Math.exp(-age*1.1)*.7)
+          // Secondary blasts ripple across the hull, as in the game's big-ship explosions.
+          for (let burst=0;burst<3;burst++) {
+            const r=random(seed+burst*73), stage=age-(burst?.18+.22*burst:0)
+            if (stage<0 || stage>=2.8) continue
+            pointA.copy(destination.position).add(new THREE.Vector3(r()-.5,r()-.5,r()-.5).multiplyScalar(radius*(burst?.8:.15)))
+            addFlash(pointA,radius*(burst?.5:.9)*(1+2*(1-Math.exp(-stage*5))),burst===0?0xffd196:0xf47731,Math.exp(-stage*1.6)*.8)
+            if (stage<.2) addFlash(pointA,radius*.6,0xfff6e0,1-stage/.2)
+            addStreaks(pointA,burst?5:12,radius*(burst?2:3.5),stage,1.2,0xff8a3a,seed+burst*311)
+          }
+          if (!reduced && age>.25 && age<2.25 && shockwaveCount<shockwaves.length) {
+            const t=(age-.25)/2,ring=shockwaves[shockwaveCount++];ring.visible=true;ring.position.copy(destination.position);ring.quaternion.copy(camera.quaternion)
+            ring.scale.setScalar(radius*(.6+Math.sqrt(t)*4.5));ring.material.color.setHex(0xffe2c0);ring.material.opacity=Math.pow(1-t,2)*.7
           }
           for (let j = 0; j < 48 && sparkCount < 800; j++) {
             const r = random(seed + j * 997)
@@ -883,8 +905,24 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         }
       } else if (cue.kind === 'cloak' && age < cue.duration) {
         if(shieldCount<shields.length){const shield=shields[shieldCount++];shield.visible=true;shield.position.copy(destination.position);shield.rotation.y=destination.rotation;shield.scale.set(destination.size*.6,destination.size*.32,destination.size*.43);shield.material.uniforms.opacity.value=Math.sin(age/cue.duration*Math.PI)*(reduced?.1:.45);shield.material.uniforms.time.value=age*.4;shield.material.uniforms.color.value.setHex(0x8999b8)}
-      } else if ((cue.kind === 'arrival' || cue.kind === 'escape') && age < 1.7) {
+      } else if (cue.kind === 'escape' && age < ESCAPE_SPOOL + 1.2) {
+        // As in the game: the jump drive spools with a growing glow, then the hull
+        // streaks away and leaves a flash and a ring at the departure point.
+        if (age < ESCAPE_SPOOL) addFlash(destination.position, destination.size * (.6 + age), 0x80d8ff, age / ESCAPE_SPOOL * .55)
+        else {
+          const t = (age - ESCAPE_SPOOL) / 1.2, jump = motionAt(destination, cue.time + ESCAPE_SPOOL)
+          pointA.set(jump.x, jump.y, jump.z)
+          if (t < .4) addBeam(pointA, destination.position, destination.size * .05 * (1 - t / .4), 0xbfeaff)
+          addFlash(pointA, destination.size * (1.2 + t), 0x80d8ff, Math.pow(1 - t, 2))
+          if (t < .25) addFlash(pointA, destination.size * .5, 0xffffff, 1 - t / .25)
+          if (!reduced && shockwaveCount < shockwaves.length) {
+            const ring = shockwaves[shockwaveCount++]; ring.visible = true; ring.position.copy(pointA); ring.quaternion.copy(camera.quaternion)
+            ring.scale.setScalar(destination.size * (.4 + Math.sqrt(t) * 2.4)); ring.material.color.setHex(0xa8e4ff); ring.material.opacity = Math.pow(1 - t, 2)
+          }
+        }
+      } else if (cue.kind === 'arrival' && age < 1.7) {
         addFlash(destination.position, destination.size * (1.3 + age), 0x80d8ff, Math.exp(-age * 3) * 0.35)
+        if (age < .3) addFlash(destination.position, destination.size * .5, 0xffffff, 1 - age / .3)
       } else if (cue.kind === 'burn' && age < cue.duration) {
         addFlash(destination.position, destination.size * 0.5, 0xff8c40, 0.18 * Math.sin(age / cue.duration * Math.PI))
       }

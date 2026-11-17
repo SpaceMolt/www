@@ -147,6 +147,8 @@ describe('cinema ship choreography', () => {
     expect(distance(at, first)).toBeLessThan(0.1)
     expect(distance(second, third)).toBeGreaterThan(distance(at, second) * 2)
     expect(third.thrust).toBeGreaterThan(1)
+    // The jump streak carries the hull far out of the fight within a second.
+    expect(distance(at, sampleShipMotion(actor, 20.9, options))).toBeGreaterThan(400)
     for (const frame of [at, first, second, third]) expect(frame.retroThrust).toBe(0)
   })
 
