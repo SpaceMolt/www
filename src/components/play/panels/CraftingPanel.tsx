@@ -9,6 +9,7 @@ import {
 import type {
   BulkCraftResponse,
   BulkJobCancelResponse,
+  BulkStorageResponse,
   CraftJobResponse,
   CraftQueueResponse,
   FacilityResponse,
@@ -24,9 +25,9 @@ import { buildRecipeContext } from '../bugReportContext'
 import type { Recipe, CraftJobView, CraftQuote, Facility } from '../types'
 import { recipesById, formatItemId } from '@/data/catalog'
 import { hasImage, imageUrl } from '@/data/images'
-import { canCraftRecipe, availableQuantity } from '@/lib/crafting'
+import { canCraftRecipe, availableQuantity, type ItemQty } from '@/lib/crafting'
 import { estimateJobProgress } from './craftProgress'
-import { buyPlan, combineItems, isRecyclable, maxCraftable, missingFromCargo, runsFor, type BuyLine } from './craftPlan'
+import { buyPlan, combineItems, inputStoreFor, isRecyclable, maxCraftable, missingFromCargo, runsFor, type BuyLine } from './craftPlan'
 import { mergeLiveBook } from './trading/tradingLogic'
 import { FacilityVenuePicker } from './facilities/FacilityVenuePicker'
 import { useFactionPermissions, useStationServices } from '../hooks/useGates'
@@ -43,7 +44,9 @@ type BatchJob = { recipe_id: string; quantity: number; facility_id?: string }
 // `{ station_facilities: unknown }` uniquely identifies the facility-list
 // variant within the FacilityResponse union.
 type FacilityListResponse = Extract<FacilityResponse, { station_facilities: unknown }>
-type ViewStorageResponse = Extract<StorageResponse, { items: unknown }>
+type ViewStorageResponse = Extract<StorageResponse, { action: 'view_storage' }>
+type ViewFactionStorageResponse = Extract<StorageResponse, { action: 'view_faction_storage' }>
+type InputStore = ReturnType<typeof inputStoreFor>
 
 const bulkFailures = (results: { success: boolean; error?: string }[]) =>
   results.filter((r) => !r.success).map((r) => r.error ?? 'failed').join('; ')
@@ -132,8 +135,41 @@ export function CraftingPanel() {
     { enabled: isDocked, refreshOnSections: ['cargo'], refreshOnEvents: ['crafting_update'] },
   )
   const storageItems = useMemo(() => (isDocked ? storageResp?.items ?? [] : []), [isDocked, storageResp])
+  // Faction storage feeds crafts whose inputs come from it: source, else output, set to
+  // faction, or both on auto when only faction storage covers the job.
+  const { data: factionResp, refetch: refetchFaction } = useCommandQuery(
+    async (account) => {
+      const resp = await account.commands.spacemolt_storage.view({ target: 'faction' })
+      return resp.structuredContent as ViewFactionStorageResponse | undefined
+    },
+    [dockedAt],
+    { enabled: isDocked && canUseFactionStore, refreshOnSections: ['cargo'], refreshOnEvents: ['crafting_update'] },
+  )
+  const factionItems = useMemo(
+    () => (isDocked && canUseFactionStore ? factionResp?.items ?? [] : []),
+    [isDocked, canUseFactionStore, factionResp],
+  )
   const cargoItems = useMemo(() => cargo ?? [], [cargo])
-  const heldItems = useMemo(() => combineItems(storageItems, cargoItems), [storageItems, cargoItems])
+  const itemsIn = useCallback(
+    (store: InputStore) => (store === 'faction' ? factionItems : storageItems),
+    [factionItems, storageItems],
+  )
+  // Inputs + cargo per store: what MAX and Buy & craft plan with.
+  const heldIn = useMemo(() => ({
+    storage: combineItems(storageItems, cargoItems),
+    faction: combineItems(factionItems, cargoItems),
+  }), [storageItems, factionItems, cargoItems])
+  // A bulk deposit succeeds even when single items fail, so surface those as an error.
+  const deposit = useCallback(async (params: { items: ItemQty[]; source?: string; target?: string }) => {
+    const { delta } = await mutate((c) => c.spacemolt_storage.deposit(params), { label: 'deposit' })
+    const details = delta.details as BulkStorageResponse | undefined
+    if (details?.failed) throw new Error(`Could not move ${bulkFailures(details.results)}`)
+  }, [mutate])
+  // Buys into storage and storage-to-faction moves leave cargo alone, so re-read both stores.
+  const refetchStores = useCallback(() => {
+    refetchStorage()
+    if (canUseFactionStore) refetchFaction()
+  }, [refetchStorage, refetchFaction, canUseFactionStore])
 
   // Local sell orders: the asks a Buy & craft fills from. The snapshot gives
   // our own order quantities; the live book keeps prices current.
@@ -181,11 +217,12 @@ export function CraftingPanel() {
         return next
       })
       refetchJobs()
+      refetchStores()
     } catch (err) {
       reportError(err)
     }
     setBusyId(null)
-  }, [getQty, selectedVenue, route, mutate, toast, refetchJobs, reportError])
+  }, [getQty, selectedVenue, route, mutate, toast, refetchJobs, refetchStores, reportError])
 
   // dry_run is a read on the server: a query, not a queued mutation.
   const handleQuote = useCallback(async (recipeId: string, mode: CraftMode) => {
@@ -201,42 +238,51 @@ export function CraftingPanel() {
     setBusyId(null)
   }, [store, getQty, selectedVenue, route])
 
-  const handleMoveInputs = useCallback(async (recipe: Recipe) => {
-    const items = missingFromCargo(recipe, runsFor(recipe, getQty(recipe.id)), storageItems, cargoItems)
+  const handleMoveInputs = useCallback(async (recipe: Recipe, store: InputStore) => {
+    const items = missingFromCargo(recipe, runsFor(recipe, getQty(recipe.id)), itemsIn(store), cargoItems)
     setBusyId(recipe.id)
     try {
-      await mutate((c) => c.spacemolt_storage.deposit({ items }), { label: 'deposit' })
-      toast('success', `Moved ${items.map((i) => `${i.quantity}x ${formatItemId(i.item_id)}`).join(', ')} to storage`)
+      await deposit({ items, ...storeTarget(store) })
+      toast('success', `Moved ${items.map((i) => `${i.quantity}x ${formatItemId(i.item_id)}`).join(', ')} to ${storeLabel(store)}`)
     } catch (err) {
       reportError(err)
     }
+    refetchStores()
     setBusyId(null)
-  }, [getQty, storageItems, cargoItems, mutate, toast, reportError])
+  }, [getQty, itemsIn, cargoItems, deposit, toast, reportError, refetchStores])
 
-  // Move any cargo inputs to storage, buy the rest into storage (one buy per
-  // item, at the full quantity), then queue the craft. A short fill stops it
-  // before the craft, so no job queues without its inputs.
-  const handleBuyAndCraft = useCallback(async (recipe: Recipe) => {
+  // Move any cargo inputs to the input store, buy the rest into storage (one buy
+  // per item, at the full quantity) and move it on to faction storage when that
+  // is the input store, then queue the craft. A short fill stops it before the
+  // craft, so no job queues without its inputs.
+  const handleBuyAndCraft = useCallback(async (recipe: Recipe, store: InputStore) => {
     const runs = runsFor(recipe, getQty(recipe.id))
-    const deposit = missingFromCargo(recipe, runs, storageItems, cargoItems)
-    const lines = buyPlan(recipe, runs, heldItems, asksFor)
+    const fromCargo = missingFromCargo(recipe, runs, itemsIn(store), cargoItems)
+    const lines = buyPlan(recipe, runs, heldIn[store], asksFor)
     setBusyId(recipe.id)
     try {
-      if (deposit.length > 0) await mutate((c) => c.spacemolt_storage.deposit({ items: deposit }), { label: 'deposit' })
+      if (fromCargo.length > 0) await deposit({ items: fromCargo, ...storeTarget(store) })
       for (const { item_id, quantity } of lines) {
         const { delta } = await mutate((c) => c.spacemolt.buy({ id: item_id, quantity, deliver_to: 'storage' }), { label: 'buy' })
         const bought = delta.details?.quantity ?? 0
-        if (bought < quantity) throw new Error(`Bought only ${bought} of ${quantity} ${formatItemId(item_id)}. Craft not queued; earlier purchases are in storage.`)
+        if (bought < quantity) throw new Error(`Bought only ${bought} of ${quantity} ${formatItemId(item_id)}. Craft not queued; earlier purchases are in your storage.`)
+      }
+      if (store === 'faction' && lines.length > 0) {
+        const items = lines.map(({ item_id, quantity }) => ({ item_id, quantity }))
+        await deposit({ items, source: 'storage', target: 'faction' }).catch((err: unknown) => {
+          throw new Error(`Bought the inputs, but could not move them to faction storage: ${errorMessage(err)}. Craft not queued; the purchases are in your storage.`)
+        })
       }
     } catch (err) {
       reportError(err)
+      refetchStores()
       setBusyId(null)
       return
     } finally {
       refetchMarket()
     }
     await handleCraft(recipe.id, 'craft')
-  }, [getQty, storageItems, cargoItems, heldItems, asksFor, mutate, reportError, refetchMarket, handleCraft])
+  }, [getQty, itemsIn, cargoItems, heldIn, asksFor, deposit, mutate, reportError, refetchStores, refetchMarket, handleCraft])
 
   const handleQueueBatch = useCallback(async () => {
     setBusyId('batch')
@@ -306,13 +352,15 @@ export function CraftingPanel() {
   // Filter, group by category, sort
   const groupedRecipes = useMemo(() => {
     const search = searchQuery.toLowerCase().trim()
+    const stores = { personal: storageItems, faction: factionItems, source, deliverTo, canUseFaction: canUseFactionStore }
     const withStatus = recipes.map((recipe) => {
-      const status = canCraftRecipe(recipe, storageItems)
-      // One run's shortfall against storage + cargo, priced on the local book.
-      const plan = canBuy && !status.craftable ? buyPlan(recipe, 1, heldItems, asksFor) : []
+      const inputStore = inputStoreFor(recipe, stores)
+      const status = canCraftRecipe(recipe, itemsIn(inputStore))
+      // One run's shortfall against the input store + cargo, priced on the local book.
+      const plan = canBuy && !status.craftable ? buyPlan(recipe, 1, heldIn[inputStore], asksFor) : []
       const buyCost = sumCost(plan)
       const buyable = status.craftable || (canBuy && isFillable(plan) && buyCost <= credits)
-      return { recipe, ...status, buyable, buyCost }
+      return { recipe, ...status, buyable, buyCost, inputStore }
     })
 
     let filtered = withStatus
@@ -352,7 +400,7 @@ export function CraftingPanel() {
     }
 
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
-  }, [recipes, storageItems, heldItems, asksFor, canBuy, credits, filter, categoryFilter, searchQuery])
+  }, [recipes, storageItems, factionItems, source, deliverTo, canUseFactionStore, itemsIn, heldIn, asksFor, canBuy, credits, filter, categoryFilter, searchQuery])
 
   const toggleCategory = useCallback((cat: string) => {
     setCollapsedCategories(prev => {
@@ -366,7 +414,7 @@ export function CraftingPanel() {
   const activeJobs = jobs ?? []
   const refreshAll = () => {
     store.account.refresh().catch(reportError)
-    if (isDocked) { refetchStorage(); refetchJobs() }
+    if (isDocked) { refetchStores(); refetchJobs() }
   }
 
   return (
@@ -625,16 +673,18 @@ export function CraftingPanel() {
 
               {!isCollapsed && (
                 <div className={styles.recipeGrid}>
-                  {items.map(({ recipe, craftable, reasons, buyable, buyCost }) => {
+                  {items.map(({ recipe, craftable, reasons, buyable, buyCost, inputStore }) => {
                     const isExpanded = expandedId === recipe.id
                     const qty = getQty(recipe.id)
                     const quote = quotes[recipe.id]
                     const busy = busyId === recipe.id
+                    const inputItems = itemsIn(inputStore)
+                    const held = heldIn[inputStore]
                     // MAX plans with cargo too: "Move inputs from cargo" deposits the gap before crafting.
-                    const maxQty = isExpanded ? Math.max(1, maxCraftable(recipe, heldItems)) : 1
+                    const maxQty = isExpanded ? Math.max(1, maxCraftable(recipe, held)) : 1
                     const runs = runsFor(recipe, qty)
-                    const missing = isExpanded ? missingFromCargo(recipe, runs, storageItems, cargoItems) : []
-                    const plan = isExpanded && canBuy ? buyPlan(recipe, runs, heldItems, asksFor) : []
+                    const missing = isExpanded ? missingFromCargo(recipe, runs, inputItems, cargoItems) : []
+                    const plan = isExpanded && canBuy ? buyPlan(recipe, runs, held, asksFor) : []
                     const planCost = sumCost(plan)
                     const cardClass = craftable ? styles.recipeCardCraftable : buyable ? styles.recipeCardBuyable : styles.recipeCardLocked
                     return (
@@ -668,13 +718,13 @@ export function CraftingPanel() {
                             {recipe.description && (
                               <div className={styles.recipeDesc}>{recipe.description}</div>
                             )}
-                            <div className={styles.ioLabel}>Inputs for {runs} run{runs === 1 ? '' : 's'}</div>
+                            <div className={styles.ioLabel}>Inputs for {runs} run{runs === 1 ? '' : 's'} · from {storeLabel(inputStore)}</div>
                             <div className={styles.ioList}>
                               {(recipe.inputs ?? []).map((i) => {
-                                // The server takes inputs from station storage only (crafting.go craftStoreRef);
+                                // The server takes inputs from the input store only (crafting.go craftStoreRef);
                                 // cargo counts once it is deposited.
                                 const need = i.quantity * runs
-                                const have = availableQuantity(i.item_id, storageItems)
+                                const have = availableQuantity(i.item_id, inputItems)
                                 const inCargo = availableQuantity(i.item_id, cargoItems)
                                 const line = plan.find((l) => l.item_id === i.item_id)
                                 const showCargo = inCargo > 0 && have < need
@@ -736,7 +786,7 @@ export function CraftingPanel() {
                                 </div>
                                 {(!quote.have_inputs || !quote.have_credits) && (
                                   <div className={styles.quoteWarn}>
-                                    {!quote.have_inputs && 'Missing materials in storage. '}
+                                    {!quote.have_inputs && `Missing materials in ${storeLabel(inputStore)}. `}
                                     {!quote.have_credits && 'Not enough credits.'}
                                   </div>
                                 )}
@@ -787,13 +837,13 @@ export function CraftingPanel() {
                                   <Calculator size={11} /> Quote
                                 </button>
                               )}
-                              {hasStorage && missing.length > 0 && (
+                              {(hasStorage || inputStore === 'faction') && missing.length > 0 && (
                                 <button
                                   type="button"
                                   className={styles.quoteBtn}
-                                  onClick={() => handleMoveInputs(recipe)}
+                                  onClick={() => handleMoveInputs(recipe, inputStore)}
                                   disabled={busy}
-                                  title={`Deposit ${missing.map((i) => `${i.quantity}x ${formatItemId(i.item_id)}`).join(', ')} from cargo to storage`}
+                                  title={`Deposit ${missing.map((i) => `${i.quantity}x ${formatItemId(i.item_id)}`).join(', ')} from cargo to ${storeLabel(inputStore)}`}
                                 >
                                   <ArrowDownToLine size={11} /> Move inputs from cargo
                                 </button>
@@ -822,7 +872,7 @@ export function CraftingPanel() {
                                 <ActionButton
                                   label={`Buy & craft · ~${planCost.toLocaleString()} cr`}
                                   icon={<ShoppingCart size={12} />}
-                                  onClick={() => handleBuyAndCraft(recipe)}
+                                  onClick={() => handleBuyAndCraft(recipe, inputStore)}
                                   disabled={busy || planCost > credits}
                                   loading={busy}
                                   size="sm"
@@ -833,7 +883,7 @@ export function CraftingPanel() {
                                   label="Craft"
                                   icon={<Hammer size={12} />}
                                   onClick={() => handleCraft(recipe.id, 'craft')}
-                                  disabled={(!craftable && source !== 'faction') || busy}
+                                  disabled={!craftable || busy}
                                   loading={busy}
                                   size="sm"
                                 />
@@ -886,6 +936,9 @@ const marketNote = ({ quantity, cost, short }: BuyLine) =>
   short === quantity ? 'not sold here'
     : short > 0 ? `only ${(quantity - short).toLocaleString()} for sale`
       : `buy ${quantity.toLocaleString()} · ~${cost.toLocaleString()} cr`
+
+const storeLabel = (store: InputStore) => (store === 'faction' ? 'faction storage' : 'your storage')
+const storeTarget = (store: InputStore) => (store === 'faction' ? { target: 'faction' } : {})
 
 const sumCost = (plan: BuyLine[]) => plan.reduce((sum, l) => sum + l.cost, 0)
 const isFillable = (plan: BuyLine[]) => plan.every((l) => l.short === 0)

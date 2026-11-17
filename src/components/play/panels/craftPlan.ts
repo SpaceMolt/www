@@ -1,10 +1,24 @@
-import { availableQuantity, type ItemQty } from '@/lib/crafting'
+import { availableQuantity, canCraftRecipe, type ItemQty } from '@/lib/crafting'
 import type { Recipe } from '../types'
 
 // The server converts an output quantity to whole runs with the first output's yield.
 const perRun = (recipe: Recipe) => Math.max(1, recipe.outputs?.[0]?.quantity ?? 1)
 
 export const runsFor = (recipe: Recipe, quantity: number) => Math.max(1, Math.ceil(quantity / perRun(recipe)))
+
+type InputStores = { personal: ItemQty[]; faction: ItemQty[]; source?: string; deliverTo?: string; canUseFaction?: boolean }
+
+/**
+ * The store the server takes this craft's inputs from (gameserver crafting.go):
+ * `source`, else `deliverTo`. With both on auto it uses personal storage, or
+ * faction storage when only that covers the job and the pilot has manage_treasury.
+ */
+export function inputStoreFor(recipe: Recipe, { personal, faction, source = '', deliverTo = '', canUseFaction = false }: InputStores): 'storage' | 'faction' {
+  const store = source || deliverTo
+  if (store) return store === 'faction' ? 'faction' : 'storage'
+  const fallback = canUseFaction && !canCraftRecipe(recipe, personal).craftable && canCraftRecipe(recipe, faction).craftable
+  return fallback ? 'faction' : 'storage'
+}
 
 /** Most output items `items` can pay for, in whole runs. */
 export function maxCraftable(recipe: Recipe, items: ItemQty[]): number {
