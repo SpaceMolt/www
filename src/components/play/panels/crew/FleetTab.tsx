@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Crown, Fuel, LogOut, Ship, UserMinus, UserPlus, Users, Wrench, X, Check, Armchair } from 'lucide-react'
 import type { Commands, MutationResult, RefuelResponse, RepairResponse } from '@spacemolt/lib'
-import { useCargo, useCommandMutation, useCommandQuery, useLocationState, useModules, usePlayer } from '@/lib/spacemolt'
+import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useLocationState, useModules, usePlayer } from '@/lib/spacemolt'
 import { ConfirmAction, shared, useAction } from '../../shared'
 import styles from '../CrewPanel.module.css'
 import { hasRepairKit, invitablePlayers, parseCount } from './crewLogic'
@@ -22,7 +22,11 @@ const DONE: Record<string, string> = {
   fleet_board: 'Boarded',
 }
 
+// Boarding and disembarking change the player's ship but send no state delta, so reload the state.
+const RELOADS_STATE = new Set(['fleet_board', 'fleet_disembark'])
+
 export function FleetTab() {
+  const store = useAccountStore()
   const mutate = useCommandMutation()
   const player = usePlayer()
   const location = useLocationState()
@@ -75,6 +79,8 @@ export function FleetTab() {
     run('crew', () => mutate(call, { label }), (r) => r.delta.details?.message ?? DONE[label] ?? 'Done').then((r) => {
       setConfirm(null)
       refetch()
+      // A failed reload is not fatal: the play page reloads the state every 30 s.
+      if (r && RELOADS_STATE.has(label)) store.account.refresh().catch(() => undefined)
       return r
     })
 
