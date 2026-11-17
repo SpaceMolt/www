@@ -9,6 +9,7 @@ import {
 import type {
   BulkCraftResponse,
   BulkJobCancelResponse,
+  BulkStorageResponse,
   CraftJobResponse,
   CraftQueueResponse,
   FacilityResponse,
@@ -24,7 +25,7 @@ import { buildRecipeContext } from '../bugReportContext'
 import type { Recipe, CraftJobView, CraftQuote, Facility } from '../types'
 import { recipesById, formatItemId } from '@/data/catalog'
 import { hasImage, imageUrl } from '@/data/images'
-import { canCraftRecipe, availableQuantity } from '@/lib/crafting'
+import { canCraftRecipe, availableQuantity, type ItemQty } from '@/lib/crafting'
 import { estimateJobProgress } from './craftProgress'
 import { buyPlan, combineItems, inputStoreFor, isRecyclable, maxCraftable, missingFromCargo, runsFor, type BuyLine } from './craftPlan'
 import { mergeLiveBook } from './trading/tradingLogic'
@@ -153,6 +154,17 @@ export function CraftingPanel() {
     (store: InputStore) => (store === 'faction' ? factionItems : storageItems),
     [factionItems, storageItems],
   )
+  // Inputs + cargo per store: what MAX and Buy & craft plan with.
+  const heldIn = useMemo(() => ({
+    storage: combineItems(storageItems, cargoItems),
+    faction: combineItems(factionItems, cargoItems),
+  }), [storageItems, factionItems, cargoItems])
+  // A bulk deposit succeeds even when single items fail, so surface those as an error.
+  const deposit = useCallback(async (params: { items: ItemQty[]; source?: string; target?: string }) => {
+    const { delta } = await mutate((c) => c.spacemolt_storage.deposit(params), { label: 'deposit' })
+    const details = delta.details as BulkStorageResponse | undefined
+    if (details?.failed) throw new Error(`Could not move ${bulkFailures(details.results)}`)
+  }, [mutate])
   // Buys into storage and storage-to-faction moves leave cargo alone, so re-read both stores.
   const refetchStores = useCallback(() => {
     refetchStorage()
@@ -230,14 +242,14 @@ export function CraftingPanel() {
     const items = missingFromCargo(recipe, runsFor(recipe, getQty(recipe.id)), itemsIn(store), cargoItems)
     setBusyId(recipe.id)
     try {
-      await mutate((c) => c.spacemolt_storage.deposit({ items, ...storeTarget(store) }), { label: 'deposit' })
+      await deposit({ items, ...storeTarget(store) })
       toast('success', `Moved ${items.map((i) => `${i.quantity}x ${formatItemId(i.item_id)}`).join(', ')} to ${storeLabel(store)}`)
     } catch (err) {
       reportError(err)
     }
     refetchStores()
     setBusyId(null)
-  }, [getQty, itemsIn, cargoItems, mutate, toast, reportError, refetchStores])
+  }, [getQty, itemsIn, cargoItems, deposit, toast, reportError, refetchStores])
 
   // Move any cargo inputs to the input store, buy the rest into storage (one buy
   // per item, at the full quantity) and move it on to faction storage when that
@@ -245,11 +257,11 @@ export function CraftingPanel() {
   // craft, so no job queues without its inputs.
   const handleBuyAndCraft = useCallback(async (recipe: Recipe, store: InputStore) => {
     const runs = runsFor(recipe, getQty(recipe.id))
-    const deposit = missingFromCargo(recipe, runs, itemsIn(store), cargoItems)
-    const lines = buyPlan(recipe, runs, combineItems(itemsIn(store), cargoItems), asksFor)
+    const fromCargo = missingFromCargo(recipe, runs, itemsIn(store), cargoItems)
+    const lines = buyPlan(recipe, runs, heldIn[store], asksFor)
     setBusyId(recipe.id)
     try {
-      if (deposit.length > 0) await mutate((c) => c.spacemolt_storage.deposit({ items: deposit, ...storeTarget(store) }), { label: 'deposit' })
+      if (fromCargo.length > 0) await deposit({ items: fromCargo, ...storeTarget(store) })
       for (const { item_id, quantity } of lines) {
         const { delta } = await mutate((c) => c.spacemolt.buy({ id: item_id, quantity, deliver_to: 'storage' }), { label: 'buy' })
         const bought = delta.details?.quantity ?? 0
@@ -257,7 +269,9 @@ export function CraftingPanel() {
       }
       if (store === 'faction' && lines.length > 0) {
         const items = lines.map(({ item_id, quantity }) => ({ item_id, quantity }))
-        await mutate((c) => c.spacemolt_storage.deposit({ items, source: 'storage', target: 'faction' }), { label: 'deposit' })
+        await deposit({ items, source: 'storage', target: 'faction' }).catch((err: unknown) => {
+          throw new Error(`Bought the inputs, but could not move them to faction storage: ${errorMessage(err)}. Craft not queued; the purchases are in your storage.`)
+        })
       }
     } catch (err) {
       reportError(err)
@@ -268,7 +282,7 @@ export function CraftingPanel() {
       refetchMarket()
     }
     await handleCraft(recipe.id, 'craft')
-  }, [getQty, itemsIn, cargoItems, asksFor, mutate, reportError, refetchStores, refetchMarket, handleCraft])
+  }, [getQty, itemsIn, cargoItems, heldIn, asksFor, deposit, mutate, reportError, refetchStores, refetchMarket, handleCraft])
 
   const handleQueueBatch = useCallback(async () => {
     setBusyId('batch')
@@ -343,7 +357,7 @@ export function CraftingPanel() {
       const inputStore = inputStoreFor(recipe, stores)
       const status = canCraftRecipe(recipe, itemsIn(inputStore))
       // One run's shortfall against the input store + cargo, priced on the local book.
-      const plan = canBuy && !status.craftable ? buyPlan(recipe, 1, combineItems(itemsIn(inputStore), cargoItems), asksFor) : []
+      const plan = canBuy && !status.craftable ? buyPlan(recipe, 1, heldIn[inputStore], asksFor) : []
       const buyCost = sumCost(plan)
       const buyable = status.craftable || (canBuy && isFillable(plan) && buyCost <= credits)
       return { recipe, ...status, buyable, buyCost, inputStore }
@@ -386,7 +400,7 @@ export function CraftingPanel() {
     }
 
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
-  }, [recipes, storageItems, factionItems, source, deliverTo, canUseFactionStore, itemsIn, cargoItems, asksFor, canBuy, credits, filter, categoryFilter, searchQuery])
+  }, [recipes, storageItems, factionItems, source, deliverTo, canUseFactionStore, itemsIn, heldIn, asksFor, canBuy, credits, filter, categoryFilter, searchQuery])
 
   const toggleCategory = useCallback((cat: string) => {
     setCollapsedCategories(prev => {
@@ -665,7 +679,7 @@ export function CraftingPanel() {
                     const quote = quotes[recipe.id]
                     const busy = busyId === recipe.id
                     const inputItems = itemsIn(inputStore)
-                    const held = isExpanded ? combineItems(inputItems, cargoItems) : []
+                    const held = heldIn[inputStore]
                     // MAX plans with cargo too: "Move inputs from cargo" deposits the gap before crafting.
                     const maxQty = isExpanded ? Math.max(1, maxCraftable(recipe, held)) : 1
                     const runs = runsFor(recipe, qty)
