@@ -107,6 +107,17 @@ test('station sale notification retains treasury terms through acceptance', asyn
   } finally { f.close() }
 })
 
+test('exchange fill toast names the counterparty when the server sends one', async () => {
+  const f = await fixture()
+  try {
+    const fill = { type: 'sell_filled', order_id: 'o1', base_id: 'b1', item_id: 'iron_ore', item_name: 'Iron Ore', quantity: 10, price_each: 5, total: 50 }
+    f.send('exchange_fill', { ...fill, counterparty: 'hiver' })
+    expect(f.store.getState().eventLog[0]?.text).toBe('Order filled: Sold 10 Iron Ore to hiver for 50 cr')
+    f.send('exchange_fill', { ...fill, type: 'buy_filled' })
+    expect(f.store.getState().eventLog[0]?.text).toBe('Order filled: Bought 10 Iron Ore for 50 cr')
+  } finally { f.close() }
+})
+
 describe('pushed errors', () => {
   test('out_of_ammo does not toast every tick; other errors do', async () => {
     const f = await fixture()

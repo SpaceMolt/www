@@ -175,10 +175,13 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
       resyncTrades(account, store).catch(() => {})
     }),
     account.on('exchange_fill', (fill) => {
-      const verb = fill.type === 'buy_filled' ? 'Bought' : 'Sold'
+      const buy = fill.type === 'buy_filled'
+      // ponytail: drop the cast once @spacemolt/lib regenerates with `counterparty` (after the gameserver deploy).
+      const { counterparty } = fill as typeof fill & { counterparty?: string }
+      const other = counterparty ? ` ${buy ? 'from' : 'to'} ${counterparty}` : ''
       store.dispatch({
         type: 'toast', kind: 'chat',
-        text: `Order filled: ${verb} ${fill.quantity.toLocaleString()} ${fill.item_name} for ${fill.total.toLocaleString()} cr`,
+        text: `Order filled: ${buy ? 'Bought' : 'Sold'} ${fill.quantity.toLocaleString()} ${fill.item_name}${other} for ${fill.total.toLocaleString()} cr`,
       })
     }),
 
