@@ -65,6 +65,12 @@ export function ActionLogTab() {
   const load = useCallback(async (nextPage: number) => {
     const seq = ++requestSeq.current
     setLoading(true)
+    // A new source or category is a new row set: drop the old rows and the filter built from them.
+    if (nextPage === 1) {
+      setEntries([])
+      setOpenId(null)
+      setEventType('')
+    }
     try {
       const resp = await store.account.commands.spacemolt_social.get_action_log({
         page: nextPage,
