@@ -50,6 +50,10 @@
 .settingRow select { background: #11231c; border: 1px solid #344e42; color: #d1dfd4; padding: 6px; font-size: 11px; }
 .checkbox { height: 18px; width: 18px; display: grid; place-items: center; border: 1px solid #537560; }
 .checked { background: #c3d6c4; color: #17221b; border-color: #c3d6c4; }
+.credits { width: 380px; max-height: 60vh; overflow-y: auto; }
+.credits ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; font-size: 12px; line-height: 1.5; }
+.credits a { color: #d1dfd4; }
+.credits span { display: block; color: #83968b; font: 10px var(--font-jetbrains), monospace; }
 .settingsHint { color: #83968b; font: 9px/1.7 var(--font-jetbrains), monospace; margin: 14px 0 0; }
 .inactive { cursor: none; }
 .state { position: absolute; inset: 16% 8%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
