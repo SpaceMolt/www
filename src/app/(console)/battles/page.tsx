@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Anchor, Search, Skull, Trophy, Warehouse, Zap } from 'lucide-react'
 import styles from './page.module.css'
 import { useTranslation } from '@/i18n'
@@ -54,15 +55,31 @@ const CATEGORY_FILTERS: { key: FilterCategory; labelKey: string }[] = [
 ]
 
 export default function BattlesPage() {
+  return <Suspense fallback={null}><Battles /></Suspense>
+}
+
+function Battles() {
   const { t } = useTranslation()
+  // Filters live in the URL, so the back button and shared links restore them.
+  const params = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  const status = params.get('status')
+  const filter: FilterStatus = status === 'active' || status === 'completed' ? status : 'all'
+  const category = CATEGORY_FILTERS.find(c => c.key === params.get('category'))?.key ?? 'all'
+  const captured = params.get('captured') === 'true'
+  const submittedSearch = params.get('search') ?? ''
+  const setParam = (key: string, value: string) => {
+    const next = new URLSearchParams(params)
+    if (value) next.set(key, value)
+    else next.delete(key)
+    router.push(next.size ? `${pathname}?${next}` : pathname, { scroll: false })
+  }
   const [battles, setBattles] = useState<BattleSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  const [filter, setFilter] = useState<FilterStatus>('all')
-  const [category, setCategory] = useState<FilterCategory>('all')
-  const [search, setSearch] = useState('')
-  const [captured, setCaptured] = useState(false)
-  const [submittedSearch, setSubmittedSearch] = useState('')
+  const [search, setSearch] = useState(submittedSearch)
+  useEffect(() => setSearch(submittedSearch), [submittedSearch])
   const [limit, setLimit] = useState(PAGE_SIZE)
   const [total, setTotal] = useState(0)
   const [hasMore, setHasMore] = useState(false)
@@ -151,7 +168,7 @@ export default function BattlesPage() {
               key={status}
               aria-pressed={filter === status}
               className={`${styles.filterBtn} ${filter === status ? styles.filterBtnActive : ''}`}
-              onClick={() => setFilter(status)}
+              onClick={() => setParam('status', status === 'all' ? '' : status)}
             >
               {status === 'all'
                 ? t('battles.filterAll')
@@ -170,7 +187,7 @@ export default function BattlesPage() {
               key={c.key}
               aria-pressed={category === c.key}
               className={`${styles.filterBtn} ${styles.categoryBtn} ${category === c.key ? styles.filterBtnActive : ''}`}
-              onClick={() => setCategory(c.key)}
+              onClick={() => setParam('category', c.key === 'all' ? '' : c.key)}
             >
               {c.key !== 'all' && (
                 <span className={styles.filterGlyph}>
@@ -183,7 +200,7 @@ export default function BattlesPage() {
           <button
             className={`${styles.filterBtn} ${styles.categoryBtn} ${captured ? styles.filterBtnActive : ''}`}
             aria-pressed={captured}
-            onClick={() => setCaptured(v => !v)}
+            onClick={() => setParam('captured', captured ? '' : 'true')}
           >
             <span className={styles.filterGlyph}>
               <Anchor size={13} aria-hidden />
@@ -193,7 +210,7 @@ export default function BattlesPage() {
         </div>
         <form className={styles.searchRow} onSubmit={event => {
           event.preventDefault()
-          setSubmittedSearch(search.trim())
+          setParam('search', search.trim())
         }}>
           <div className={styles.searchInputWrap}>
             <Search size={14} className={styles.searchIcon} aria-hidden />
