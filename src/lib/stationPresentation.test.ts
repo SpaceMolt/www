@@ -4,6 +4,7 @@ import {
   splitStationRegistry,
   stationsVisibleInRecon,
   stationsVisibleOnPublicMap,
+  visibleOnDarkMap,
 } from './stationPresentation'
 
 const majorStation = { id: 'sol_base', type: 'station' }
@@ -35,5 +36,21 @@ describe('station presentation', () => {
       stations: [majorStation],
       outposts: [ownedOutpost],
     })
+  })
+})
+
+describe('visibleOnDarkMap', () => {
+  it('lifts a dark faction color so it reads on the dark map', () => {
+    expect(visibleOnDarkMap('#502087')).toBe('#724b9e')
+    expect(visibleOnDarkMap('#522289')).toBe('#724b9f')
+    expect(visibleOnDarkMap('#000')).toBe('#595959')
+    expect(visibleOnDarkMap('#0000ffcc')).toBe('#4c4cff')
+  })
+
+  it('keeps bright colors and passes non-hex colors through', () => {
+    expect(visibleOnDarkMap('#ff3355')).toBe('#ff3355')
+    expect(visibleOnDarkMap('#FF3355')).toBe('#ff3355')
+    expect(visibleOnDarkMap('#f80')).toBe('#ff8800')
+    expect(visibleOnDarkMap('hsl(100 70% 55%)')).toBe('hsl(100 70% 55%)')
   })
 })

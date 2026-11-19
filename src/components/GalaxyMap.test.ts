@@ -119,7 +119,7 @@ describe('mobile base markers', () => {
   })
 
   it('colors by owner, then capital empire color, then cyan, and greys wrecks', () => {
-    expect(mobileBaseColor(base({ faction_color: '#ff0000' }), '#00ff00')).toBe('#ff0000')
+    expect(mobileBaseColor(base({ faction_color: '#ff3355' }), '#00ff00')).toBe('#ff3355')
     expect(mobileBaseColor(base({ kind: 'capital' }), '#2dd4bf')).toBe('#2dd4bf')
     expect(mobileBaseColor(base({}), '#2dd4bf')).toBe('#00FFFF')
     expect(mobileBaseColor(base({ wrecked: true, faction_color: '#ff0000' }))).toBe('#6b7280')

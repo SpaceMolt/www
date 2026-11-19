@@ -1,5 +1,6 @@
 import { mobileBasePose, type PublicMobileBase } from '@/lib/mobileBases'
 import type { WorldPoint } from '@/lib/transitMotion'
+import { visibleOnDarkMap } from '@/lib/stationPresentation'
 
 const DEFAULT_MOBILE_BASE_COLOR = '#00FFFF'
 const WRECKED_MOBILE_BASE_COLOR = '#6b7280'
@@ -32,7 +33,7 @@ export function mobileBaseFanOffset(index: number, count: number, distance: numb
 /** Stroke color: the owner's color, the capital's empire color, else cyan; grey once wrecked. */
 export function mobileBaseColor(base: PublicMobileBase, empireColor?: string): string {
   if (base.wrecked) return WRECKED_MOBILE_BASE_COLOR
-  return base.faction_color || (base.kind === 'capital' && empireColor) || DEFAULT_MOBILE_BASE_COLOR
+  return (base.faction_color && visibleOnDarkMap(base.faction_color)) || (base.kind === 'capital' && empireColor) || DEFAULT_MOBILE_BASE_COLOR
 }
 
 /**

@@ -20,7 +20,7 @@ import {
 } from './publicTransit'
 import { TickClock } from '@/lib/transitMotion'
 import { configureHiDPICanvas, logicalCanvasSize } from './canvasResolution'
-import { fixedStations, stationsVisibleOnPublicMap } from '@/lib/stationPresentation'
+import { fixedStations, stationsVisibleOnPublicMap, visibleOnDarkMap } from '@/lib/stationPresentation'
 import { mobileBaseLabel, mobileBaseStatus, type PublicMobileBase } from '@/lib/mobileBases'
 import { layoutMobileBaseMarkers, mobileBaseColor, mobileBaseMarkerAt } from './mobileBaseMarkers'
 import { drawGateLanes, type MapGate } from '@/lib/gateLanes'
@@ -1115,7 +1115,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         } else if (system.has_station) {
           // Significant faction stations retain their ownership treatment;
           // only minor outposts are filtered from the map entirely.
-          const stationRingColor = system.faction_station_color || color
+          const stationRingColor = visibleOnDarkMap(system.faction_station_color || color)
           ctx.strokeStyle = stationRingColor + 'aa'
           ctx.lineWidth = 1.5
           if (system.has_faction_station) ctx.setLineDash([3, 2])
