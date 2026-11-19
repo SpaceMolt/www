@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useCallback, useImperativeHandle, useMemo, forwardRef } from 'react'
 import { drawGateLanes, type MapGate } from '@/lib/gateLanes'
+import { visibleOnDarkMap } from '@/lib/stationPresentation'
 import type {
   IntelAgent,
   IntelLayerState,
@@ -148,7 +149,7 @@ export function getStationRingStyle(stations: PublicStation[], systemColor: stri
   const factionStation = stations.find((station) => station.faction_id)
   if (factionStation?.faction_id) {
     return {
-      color: factionStation.faction_color || fallbackFactionColor(factionStation.faction_id),
+      color: visibleOnDarkMap(factionStation.faction_color || fallbackFactionColor(factionStation.faction_id)),
       dashed: true,
     }
   }
