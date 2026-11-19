@@ -236,7 +236,7 @@ This does **not** add a separate freight building or make core shipping features
 - At NPC stations, that can be a **Mission Board or any higher-level missions facility**.
 - At player-founded stations, it is the station's **Contract Terminal**.
 
-Faction financial actions add one local requirement: quoting or posting as a faction, accepting as a faction, and paying faction freight debt require **Manage Treasury** permission and an active local **Market Runner / faction-market service**. At a station owned by that faction, the station's active market already supplies the faction-market capability; the faction does not build a redundant Market Runner there. This requirement does not apply to personal shipping or to `list`, `profile`, `get`, `track`, `deliver`, `return`, or `cancel`.
+Faction financial actions add one local requirement: quoting or posting as a faction, accepting as a faction, and paying faction freight debt require **Manage Treasury** permission and an active local **Market Runner / faction-market service**. At a station owned by that faction, the station's active market already supplies the faction-market capability; the faction does not build a redundant Market Runner there. This requirement does not apply to personal shipping or to `list`, `list_all`, `profile`, `get`, `track`, `deliver`, `return`, or `cancel`.
 
 `get`, `track`, `profile`, `deliver`, `return`, and `cancel` remain available when their other conditions are met; they do not require you to be standing at a missions service.
 
@@ -302,6 +302,23 @@ Browse the freight board while docked at a station with an operational missions 
 ```
 
 Each listing carries the `contract` (route and payment terms, package value and liability exposure, required tier) plus `target_ticks`, `deadline_ticks`, and `recovery_ticks`, counted from acceptance. The board shows only contracts the selected carrier can accept now. A `warning` appears when the contract has `requires_hazmat` and your active ship has no lead-lined cargo module. An empty board carries `empty_reason_code` and `empty_reason`, which name the blocking reason. For self-shipping, eligibility bypasses standing and tier-derived liability limits while still enforcing unpaid freight debt.
+
+To also see the runs you cannot take, add `"include_ineligible": true`. Each listing then carries `eligible`. When `eligible` is false, `ineligible_reason` names the blocker, for example a carrier tier below the contract's risk band. Use it to find a job for a friend or a faction mate who has the standing.
+
+#### Finding freight at other stations
+
+`list_all` shows the same board for every station at once. Run it while docked at any station with an operational missions service. It takes the same filters, sort, paging, `eligible_as`, and `include_ineligible` as `list`, plus `filter_origin` to narrow it to one origin station:
+
+```json
+{"type": "shipping", "payload": {
+  "action": "list_all",
+  "eligible_as": "player",
+  "filter_destination": "nova_terra_central",
+  "include_ineligible": true
+}}
+```
+
+`list_all` shows only contracts whose origin and destination stations you have charted. You still accept at the origin: fly to `contract.origin_base_id`, dock, and run `accept` there.
 
 Accept personally or for your current faction. Accepting for a faction requires **Manage Treasury** permission and an active local Market Runner / faction-market service at the contract's origin. A faction-owned station's active market supplies that capability:
 
@@ -409,7 +426,7 @@ If insured cargo is lost, insurance compensates the covered shipper according to
 1. **Shipper:** pack the cargo into `package:ab12cd34` and leave it in personal storage at the origin. Use the raw ID, `ab12cd34`, in shipping payloads.
 2. **Shipper:** run `shipping action=quote` to `nova_terra_central`; inspect the price, deadline, risk band, required tier, and insurance availability.
 3. **Shipper:** run `shipping action=post` with the same terms and a sensible `max_total_cost`. The package and funding enter escrow.
-4. **Carrier:** dock at the origin station and run `shipping action=list eligible_as=player`. Choose a listing.
+4. **Carrier:** find the run with `shipping action=list_all eligible_as=player` from any missions station, or dock at the origin station and run `shipping action=list eligible_as=player`. Choose a listing.
 5. **Carrier:** run `shipping action=accept carrier=player`. The package appears in personal storage at that station.
 6. **Carrier:** withdraw the package, carry it to Nova Terra Central, and leave the seal intact. Warehouse stops and handoffs are allowed, but this carrier keeps the liability.
 7. **Carrier:** dock at Nova Terra Central with the package in the active ship and run `shipping action=deliver`. The package goes directly to recipient storage and the carrier is paid.
@@ -449,5 +466,6 @@ For MCP/v2 agents, the same operations are methods on the `shipping` tool, for e
 - **It's a crafting job** — escrow up front, runs over ticks, `crafting_update` on completion, refundable on cancel. Don't poll or re-issue.
 - **Delivery can be direct or contracted:** carry, trade, or gift a standalone package yourself, or post a cross-station freight contract that names a destination and recipient and makes the accepting player or faction liable. Self-shipping is allowed without standing gates but earns no reputation.
 - **Any operational missions service provides the full freight network:** use a Mission Board or higher at an NPC station, or a Contract Terminal at a player-founded station. Facility tier does not gate posting or insurance; faction financial actions additionally need Manage Treasury and local faction-market capability.
+- **Find freight anywhere:** `shipping action=list_all` shows posted contracts at every charted station. Add `include_ineligible=true` to `list` or `list_all` to also see runs you cannot take yet, with the reason.
 - **Value concentrates risk:** a mid-flight jettison destroys it while a jettison at a POI leaves it lootable, death only spares packages that land in your wreck (lootable by anyone), and customs seizes sealed contraband.
 - Pull this guide up in-game any time with `get_guide guide="packages"`.
