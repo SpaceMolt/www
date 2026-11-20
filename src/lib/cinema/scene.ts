@@ -636,7 +636,9 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     }
     const frame=samplePlannedCamera(shotPlan,shot,cameraOptions,cameraBodiesAt(time))
     cameraPosition.copy(frame.position);cameraTarget.copy(frame.target)
-    camera.position.copy(frame.position);sky.position.copy(camera.position);stars.position.copy(camera.position);camera.fov=frame.fov;camera.far=Math.max(14000,...battlefield.map(body=>camera.position.distanceTo(body.position)+body.size*2+500));camera.lookAt(frame.target);camera.updateProjectionMatrix()
+    camera.position.copy(frame.position);sky.position.copy(camera.position);stars.position.copy(camera.position);camera.fov=frame.fov;camera.far=Math.max(14000,...battlefield.map(body=>camera.position.distanceTo(body.position)+body.size*2+500))
+    // Depth precision scales with the near plane. A fixed 0.5 made thin station caps z-fight in wide shots.
+    camera.near=THREE.MathUtils.clamp(Math.min(...battlefield.map(body=>camera.position.distanceTo(body.position)-body.size))*.5,.5,40);camera.lookAt(frame.target);camera.updateProjectionMatrix()
     const shadowRadius=Math.max(90,subject.size*1.1)
     sun.position.copy(subject.position).addScaledVector(sunDirection,1400);sun.target.position.copy(subject.position)
     Object.assign(sun.shadow.camera,{left:-shadowRadius,right:shadowRadius,top:shadowRadius,bottom:-shadowRadius})

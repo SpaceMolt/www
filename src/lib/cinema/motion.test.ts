@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { fleetMotionSpacing, sampleMotionProgress, sampleShipMotion, type ShipMotionOptions } from './motion'
+import { DEPARTURE_TURN, fleetMotionSpacing, sampleMotionProgress, sampleShipMotion, type ShipMotionOptions } from './motion'
 import type { CinemaShip } from './types'
 
 const ship = (over: Partial<CinemaShip> = {}): CinemaShip => ({ id: 'ship', playerId: 'pilot', name: 'Pilot',
@@ -150,6 +150,22 @@ describe('cinema ship choreography', () => {
     // The jump streak carries the hull far out of the fight within a second.
     expect(distance(at, sampleShipMotion(actor, 20.9, options))).toBeGreaterThan(400)
     for (const frame of [at, first, second, third]) expect(frame.retroThrust).toBe(0)
+  })
+
+  it('turns a jumping ship outward smoothly before the warp, without a snap', () => {
+    const actor = ship({ fate: 'escaped', end: 20 })
+    expect(DEPARTURE_TURN).toBeGreaterThanOrEqual(1)
+    expect(DEPARTURE_TURN).toBeLessThanOrEqual(2)
+    const yaw = (time: number) => sampleShipMotion(actor, time, options).yaw
+    expect(yaw(20 - DEPARTURE_TURN - .01)).toBeCloseTo(Math.PI)
+    expect(yaw(20 - DEPARTURE_TURN / 2)).toBeCloseTo(Math.PI * 1.5)
+    // The turn is complete when the spool starts and the jump keeps that heading.
+    for (const time of [20, 20.3, 21]) expect(Math.cos(yaw(time))).toBeCloseTo(1)
+    let previous = yaw(17)
+    for (let time = 17; time <= 21; time += .02) {
+      expect(Math.abs(yaw(time) - previous)).toBeLessThan(.07)
+      previous = yaw(time)
+    }
   })
 
   it('gives creatures no engines and lets an escaping creature swim off instead of jumping', () => {

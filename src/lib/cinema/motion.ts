@@ -32,6 +32,8 @@ export interface ShipMotion {
 
 /** Seconds an escaping ship spools its jump drive before it streaks away. */
 export const ESCAPE_SPOOL = .5
+/** Seconds a jumping ship takes to turn outward; the turn ends as the spool starts. */
+export const DEPARTURE_TURN = 1.5
 /** Escaped ships leave by hyperspace jump; an escaped creature swims off instead. */
 export const jumpsAway = (ship: CinemaShip) => ship.fate === 'escaped' && ship.kind !== 'creature'
 const clamp = (value: number, low: number, high: number) => Math.max(low, Math.min(high, value))
@@ -137,7 +139,9 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
   // Combat maneuvers can strafe or reverse while retaining the engagement.
   // A recorded flee stance alone turns the bow and its main drive outward.
   const inwardYaw = Math.PI - angle
-  const flee = fleeTurn(ship, sampledAt)
+  // A jumping ship eases about to its exit heading before the drive spools.
+  const departure = jumpsAway(ship) ? smooth((sampledAt - ship.end) / DEPARTURE_TURN + 1) : 0
+  const flee = Math.max(fleeTurn(ship, sampledAt), departure)
   const yaw = inwardYaw + Math.PI * flee + (formation.heading ?? 0)
   const bank = formation.roll ?? 0
   const after = Math.max(0, time - ship.end)
@@ -154,10 +158,9 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
     // A hyperspace jump, as in the game: the drive spools, then the hull streaks out of view.
     const streak = Math.max(0, after - ESCAPE_SPOOL)
     const boost = after * after * 6 + streak * streak * streak * 9000
-    const forwardX = velocity.x + Math.cos(angle) * after * 60, forwardZ = velocity.z + Math.sin(angle) * after * 60
     return { x: base.x + velocity.x * after + Math.cos(angle) * boost,
       y: base.y + velocity.y * after, z: base.z + velocity.z * after + Math.sin(angle) * boost,
-      yaw: Math.atan2(-forwardZ, forwardX), bank, thrust: normalThrust + Math.min(2, after * 3), retroThrust: 0 }
+      yaw, bank, thrust: normalThrust + Math.min(2, after * 3), retroThrust: 0 }
   }
   if (ship.fate === 'withdrawn' || ship.fate === 'escaped') {
     // Velocity matches the live trajectory at departure; acceleration then
