@@ -12,6 +12,7 @@ import { loadRoutes, rememberRoutes, saveRoutes, type SavedRoute } from '@/compo
 import type { TelescopeControl } from '../telescope'
 import { TelescopeButtons } from './TelescopeButtons'
 import type { Point } from './systemMapMath'
+import { strokeLine } from '@/lib/canvasLine'
 import { fractionalTick } from '../tickEstimate'
 import styles from './GalaxyPanel.module.css'
 
@@ -663,10 +664,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         ctx.shadowColor = isCompleted ? 'transparent' : 'rgba(0, 212, 255, 0.6)'
         ctx.shadowBlur = isCompleted ? 0 : 8
 
-        ctx.beginPath()
-        ctx.moveTo(from.x, from.y)
-        ctx.lineTo(to.x, to.y)
-        ctx.stroke()
+        strokeLine(ctx, from, to)
       }
 
       // Draw numbered waypoint dots
@@ -796,10 +794,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         ctx.globalAlpha = (ray.pinned ? 0.3 : 0.45) + ray.strength * 0.4
         ctx.lineWidth = 1 + ray.strength * 1.5
         ctx.setLineDash(ray.pinned ? [8, 6] : [])
-        ctx.beginPath()
-        ctx.moveTo(at.x, at.y)
-        ctx.lineTo(to.x, to.y)
-        ctx.stroke()
+        strokeLine(ctx, at, to)
         ctx.setLineDash([])
         if (ray.match) {
           ctx.lineWidth = 2
@@ -830,10 +825,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         ctx.strokeStyle = color
         ctx.lineWidth = 1.5
         ctx.setLineDash(dash)
-        ctx.beginPath()
-        ctx.moveTo(at.x, at.y)
-        ctx.lineTo(to.x, to.y)
-        ctx.stroke()
+        strokeLine(ctx, at, to)
         ctx.setLineDash([])
         if (hit) {
           const node = worldToScreen(hit.system.x, hit.system.y)
