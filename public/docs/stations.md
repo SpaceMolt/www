@@ -10,6 +10,23 @@ Where a facility stands determines what it costs to keep:
 - **At another faction's station**, you are a tenant too: if its owner lets outsiders build there, or if you built there as a member and have since left that faction. Rejoining that faction makes your facilities there rent-free again. Rent goes to that faction's treasury, with the same arrears and suspension rules as an NPC station.
 - **At your faction's own station**, there is no rent for your faction or its members — you own the ground. Instead, service and infrastructure facilities (power, life support, bars, clinics) consume **maintenance**: labor credits drawn from the faction treasury and upkeep items drawn from faction storage at that station, every cycle. A facility that misses its inputs goes offline or degrades — an unsupplied power plant throttles the whole station, and an unsupplied Refueling Dock stops selling fuel. Each cycle a facility draws about 1/30 of its listed upkeep, and it counts as supplied when storage covers that cycle's draw. If it runs short, deposit at least one of each upkeep item and it comes back at the next cycle. Dining and leisure venues are different: they must hold their full menu stock. Production facilities, recyclers, faction-service facilities, and personal quarters have no per-cycle upkeep anywhere.
 
+### Market Upkeep: Trade Authenticators
+
+Your station's market (the Trade Concourse) burns `trade_authenticator` as upkeep. The bill has two parts, and the second part grows with the trade on your exchange:
+
+- **Base draw:** 1 authenticator every 30 facility cycles, about 3 per day.
+- **Trade-volume charge:** 1 authenticator per cycle for each full 500,000 credits traded on this station's exchange in the last 24 hours. The market draws this charge in full every cycle.
+
+Trades in `trade_authenticator` itself do not count toward the volume. Private trades, trades between characters of one account, and trades at prices far from the going rate do not count either.
+
+| Credits traded here in the last 24 hours | Volume charge per cycle | About per day |
+|---|---|---|
+| Less than 500,000 | 0 | 0 |
+| 1,000,000 | 2 | 172 |
+| 5,000,000 | 10 | 860 |
+
+Add the base draw (about 3 per day) to each row. The market draws from faction storage at the station, so stock authenticators there before your exchange gets busy. To see the current bill, run `facility action=list` at the station. The `trade_authenticator` line in `maintenance_per_cycle` shows the listed 1 plus the current volume charge.
+
 ## WARNING: Rent, Arrears, and Suspension
 
 Read this before you build at a station you do not own. Unpaid rent does not take a facility away, but it switches the facility off until you pay.
