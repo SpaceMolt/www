@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { compileBattleFilm, getCinemaEligibility, sampleCinemaHealth, sampleCinemaShot, sourceTickAt } from './director'
+import { compileBattleFilm, getCinemaEligibility, sampleCinemaHealth, sampleCinemaShot, shotDelay, sourceTickAt } from './director'
 import type { AttackLogEntry, BattleLogEntry, BattleSummary, ParticipantSnapshot, WeaponFireDetail } from '../battle/types'
 import { applyBattleLoadResult, initialBattleLoaderState, shouldPollBattle } from '../battle/battleData'
 import { buildHardwareCatalog } from './hardware'
@@ -435,7 +435,7 @@ describe('authored narrative sequences', () => {
     expect(film.story?.protagonistId).toBe('a:0')
     expect(film.story?.adversaryId).toBe('b:0')
     expect(film.shots[0]).toMatchObject({start:0,end:2.5,role:'geography',battlefield:true})
-    expect(film.shots.find(shot=>shot.role==='fire')!.start).toBeLessThan(3)
+    expect(film.shots.find(shot=>shot.role==='fire')!.start).toBeLessThan(3.2)
     expect(film.story!.sequences.length).toBeGreaterThanOrEqual(3)
     expect(film.story!.sequences.length).toBeLessThanOrEqual(26)
     for (const sequence of film.story!.sequences) {
@@ -652,7 +652,8 @@ describe('collateral consequence direction', () => {
     const event = film.cues.find(cue => cue.id === sequence.eventCueId)!
     expect(event.kind).toBe('knockout')
     expect(event.to).toBe('c:0')
-    expect(event.time - (cause!.time + cause!.duration)).toBeCloseTo(.4)
+    expect(event.time - (cause!.time + cause!.duration)).toBeGreaterThan(.2)
+    expect(event.time - (cause!.time + cause!.duration)).toBeLessThanOrEqual(.4)
     const fire = film.shots.find(shot => shot.sequenceId === sequence.id && shot.role === 'fire')!
     expect(fire.subject).toBe('a:0')
     expect(fire.target).toBe('b:0')
@@ -683,6 +684,28 @@ describe('collateral consequence direction', () => {
   })
 })
 
+describe('volley stagger', () => {
+  it('gives each shot a small, repeatable delay that its impact and the kill follow', () => {
+    const delays = Array.from({ length: 200 }, (_, i) => shotDelay(7, 100 + i, i % 5, i % 3, 2.5))
+    for (const delay of delays) { expect(delay).toBeGreaterThanOrEqual(0); expect(delay).toBeLessThan(.2) }
+    expect(new Set(delays).size).toBeGreaterThan(150)
+    expect(shotDelay(7, 101, 2, 1, 2.5)).toBe(shotDelay(7, 101, 2, 1, 2.5))
+    const entries = [row(100, { snapshots: [snap('a'), snap('c'), snap('b', 2, { hull: 40 })],
+      attacks: [attack('a', 'b', { hull_damage: 20 }), attack('c', 'b', { hull_damage: 20 })], kills: [kill('a', 'b')] }),
+      terminal(101, { snapshots: [snap('a'), snap('c')] })]
+    const film = compile(entries)
+    expect(compile(entries).cues).toEqual(film.cues)
+    const shots = film.cues.filter(cue => cue.kind === 'weapon')
+    const impacts = shots.map(cue => cue.time + cue.duration)
+    expect(new Set(impacts).size).toBe(shots.length)
+    const death = film.cues.find(cue => cue.kind === 'death')!
+    for (const impact of impacts) expect(death.time).toBeGreaterThan(impact)
+    // Health drops when the last shot lands, not at a shared tick instant.
+    const last = Math.max(...impacts), victim = film.ships.find(ship => ship.playerId === 'b')!
+    expect(sampleCinemaHealth(victim, last - .001).hull).toBe(.4)
+  })
+})
+
 describe('action-driven edit pacing', () => {
   it('does not stretch a brief exchange into a minute-long film', () => {
     const film=compile([
@@ -690,7 +713,7 @@ describe('action-driven edit pacing', () => {
       terminal(101,{attacks:[attack('a','b',{hull_damage:100})],kills:[kill('a','b')]}),
     ])
     expect(film.duration).toBeLessThanOrEqual(16)
-    expect(film.cues.find(cue=>cue.kind==='weapon')!.time).toBeLessThanOrEqual(3)
+    expect(film.cues.find(cue=>cue.kind==='weapon')!.time).toBeLessThanOrEqual(3.2)
     expect(film.duration-Math.max(...film.cues.map(cue=>cue.time+cue.duration))).toBeLessThanOrEqual(3)
   })
   it('does not add screen time for idle cooldown rows between the same actions', () => {

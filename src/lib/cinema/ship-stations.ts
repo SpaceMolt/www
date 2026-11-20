@@ -73,12 +73,12 @@ export function buildStationHull(appearance:ShipAppearance,c:SpecialHullContext)
     if(hero)for(let i=0;i<7;i++)part(a,r-.056+i*.018,y+.012,.007,.081,.003,'hull')
   }
   const hub=(radius=.12)=>{
-    cylinder(radius*.84,.51,-.015,'dark',radius)
+    // The core tapers inside the top section; at .84 its wall grazed that section's wall and z-fought.
+    cylinder(radius*.8,.51,-.015,'dark',radius)
     for(const [y,r,h] of [[-.25,radius*.67,.07],[-.16,radius*1.13,.08],[.01,radius,.23],[.20,radius*.83,.10],[.285,radius*.55,.045]]){
       cylinder(r,h,y,'hull',r*1.05);cylinder(r*1.03,.009,y+h/2,'armor')
     }
     ring(radius*1.03,.007,-.115,'metal');ring(radius*.86,.008,.242,'accent')
-    cylinder(radius*.84,.024,.191,'glass')
     if(hero)for(let i=0;i<12;i++){
       const a=i*Math.PI/6
       windows(a,radius*.88,.202,3)

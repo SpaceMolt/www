@@ -6,7 +6,7 @@ import { resolveWeaponFamily } from './weapons'
 import { mergeRecordedHardwareWeapons, projectCinemaHardware, type HardwareCatalog, type RecordedHardwareWeapon } from './hardware'
 import type { CinemaAxis, CinemaCue, CinemaFilm, CinemaHealth, CinemaSequence, CinemaShip, CinemaShot, CinemaSourceSegment } from './types'
 
-export const DIRECTOR_VERSION = 8
+export const DIRECTOR_VERSION = 9
 const OPENING = 2.5
 const AFTERMATH = 3.5
 const clamp = (value: number, low = 0, high = 1) => Math.min(high, Math.max(low, Number.isFinite(value) ? value : low))
@@ -16,6 +16,12 @@ export function cinemaHash(value: string): number {
   let hash = 2166136261
   for (let i = 0; i < value.length; i++) hash = Math.imul(hash ^ value.charCodeAt(i), 16777619)
   return hash >>> 0
+}
+
+/** Deterministic per-shot stagger under 8% of the tick's action span. Impacts stay
+ * before the fate cue (at least 16% after impact) and the regen frame (10% after). */
+export function shotDelay(seed: number, tick: number, attackIndex: number, weaponIndex: number, actionSpan: number): number {
+  return cinemaHash(`${seed}:${tick}:${attackIndex}:${weaponIndex}`) % 1000 / 1000 * actionSpan * .08
 }
 
 export type CinemaEligibility = 'loading' | 'active' | 'finalizing' | 'unavailable' | 'interrupted' | 'uneventful' | 'retreated' | 'ready'
@@ -536,6 +542,7 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       if (parent !== undefined) decisiveAttacks.add(parent)
     }
     const hullDamage = new Map<string, number>()
+    const landed = new Map<string, number>()
     const shieldDamage = new Map<string, number>()
     const behaviorKeys = new Set<string>()
     const behavior = (cue: Omit<CinemaCue, 'id' | 'tick' | 'time' | 'duration'>, time = impactTime) => {
@@ -603,8 +610,10 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
         const hit = weapon?.hit_success ?? attack.hit_success
         const component = weapon ? attack.defense_components?.find(part => part.weapon_instance_id === weapon.instance_id) : undefined
         const fire = segment.start + actionSpan * (0.08 + (cinemaHash(`${film.seed}:${entry.tick}:${attackIndex}`) % 23) / 100 + weaponIndex * 0.04)
-        const cue = addCue({ kind: 'weapon', time: parent?.time ?? fire,
-          duration: Math.max(Number.EPSILON, impactTime - (parent?.time ?? fire)), tick: entry.tick, from: from.id, to: to.id,
+        // Each shot leaves and lands a little apart, so a volley is not one flash.
+        const delay = shotDelay(film.seed, entry.tick, attackIndex, weaponIndex, actionSpan)
+        const cue = addCue({ kind: 'weapon', time: parent?.time ?? fire + delay,
+          duration: parent?.duration ?? Math.max(Number.EPSILON, impactTime - fire), tick: entry.tick, from: from.id, to: to.id,
           damageType: weapon?.damage_type || attack.damage_type || 'kinetic', hit,
           shieldDamage: hit ? Math.max(0, component?.shield_damage ?? attack.shield_damage) : 0,
           hullDamage: hit ? Math.max(0, component?.hull_damage ?? attack.hull_damage) : 0,
@@ -613,6 +622,7 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
           weaponName: weapon?.name, weaponFamily: resolveWeaponFamily(weapon?.name, weapon?.damage_type || attack.damage_type),
           ammoName: weapon?.ammo_used, critical: weapon?.crit_fired })
         if (parentIndex === undefined && weaponIndex === 0) emittedPrimary.set(attackIndex, cue)
+        landed.set(to.id, Math.max(landed.get(to.id) ?? impactTime, cue.time + cue.duration))
       })
     })
     for (const burn of entry.burns ?? []) {
@@ -625,7 +635,7 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
     for (const snap of entry.snapshots) {
       const ship = active.get(snap.player_id)
       if (!ship) continue
-      appendHealth(ship, { time: impactTime,
+      appendHealth(ship, { time: landed.get(ship.id) ?? impactTime,
         hull: fraction(snap.hull - (hullDamage.get(snap.player_id) ?? 0), snap.max_hull),
         shield: fraction(snap.shield - (shieldDamage.get(snap.player_id) ?? 0), snap.max_shield) })
     }
