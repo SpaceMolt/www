@@ -1,3 +1,5 @@
+import { strokeLine } from './canvasLine'
+
 /** A player-built jump gate, as /api/map lists it. */
 export interface MapGate {
   from_system: string
@@ -48,10 +50,7 @@ export function drawGateLanes(
     if (!from || !to) continue
     ctx.strokeStyle = gate.online ? GATE_COLOR : GATE_OFFLINE_COLOR
     ctx.setLineDash(gate.online ? [] : GATE_OFFLINE_DASH)
-    ctx.beginPath()
-    ctx.moveTo(from.x, from.y)
-    ctx.lineTo(to.x, to.y)
-    ctx.stroke()
+    strokeLine(ctx, from, to)
   }
   ctx.restore()
 }
