@@ -101,6 +101,8 @@ When you run `refuel` while docked, fuel is drawn in this order:
 2. **Station tank**, billed per unit at the current reserve price
 3. **Fuel cells in cargo**, if the station is empty or you can't afford station fuel
 
+At a player-owned station, steps 1 and 2 need a working Refueling Dock. If the owning faction does not supply its upkeep (Flex Polymer, Steel Plate and Copper Wiring), the dock is offline and `refuel` uses only fuel cells in your cargo.
+
 ### Station price tiers
 
 Station price per unit depends on how full the tank is — stations charge a premium when they're nearly dry:
