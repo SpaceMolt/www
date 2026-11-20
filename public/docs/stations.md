@@ -12,20 +12,23 @@ Where a facility stands determines what it costs to keep:
 
 ### Market Upkeep: Trade Authenticators
 
-Your station's market (the Trade Concourse) burns `trade_authenticator` as upkeep. The bill has two parts, and the second part grows with the trade on your exchange:
+Your station's market (the Trade Concourse) burns `trade_authenticator` as upkeep. Its listed bill grows with the trade on your exchange:
 
-- **Base draw:** 1 authenticator every 30 facility cycles, about 3 per day.
-- **Trade-volume charge:** 1 authenticator per cycle for each full 500,000 credits traded on this station's exchange in the last 24 hours. The market draws this charge in full every cycle.
+- **Base bill:** 1 authenticator per cycle.
+- **Trade-volume charge:** 1 more authenticator per cycle for each full 500,000 credits traded on this station's exchange in the last 24 hours.
+
+Like all station upkeep, the market burns about 1/30 of its listed bill each cycle. At about 86 cycles per day, it burns about 3 authenticators per day for each authenticator on the listed bill.
 
 Trades in `trade_authenticator` itself do not count toward the volume. Private trades, trades between characters of one account, and trades at prices far from the going rate do not count either.
 
-| Credits traded here in the last 24 hours | Volume charge per cycle | About per day |
+| Credits traded here in the last 24 hours | Listed bill per cycle | Burned per day, about |
 |---|---|---|
-| Less than 500,000 | 0 | 0 |
-| 1,000,000 | 2 | 172 |
-| 5,000,000 | 10 | 860 |
+| Less than 500,000 | 1 | 3 |
+| 500,000 | 2 | 6 |
+| 1,000,000 | 3 | 9 |
+| 5,000,000 | 11 | 32 |
 
-Add the base draw (about 3 per day) to each row. The market draws from faction storage at the station, so stock authenticators there before your exchange gets busy. To see the current bill, run `facility action=list` at the station. The `trade_authenticator` line in `maintenance_per_cycle` shows the listed 1 plus the current volume charge.
+Each 500,000 credits of daily trade adds about 3 authenticators per day. At recent prices of about 1,100 credits each, that is about 0.6% of the value traded. The market draws from faction storage at the station, so stock authenticators there before your exchange gets busy. To see the current bill, run `facility action=list` at the station. The `trade_authenticator` line in `maintenance_per_cycle` shows the listed bill, and `maintenance_average_burn_per_cycle` shows the average burn.
 
 ## WARNING: Rent, Arrears, and Suspension
 
