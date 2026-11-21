@@ -26,6 +26,7 @@ const ACTION_LABELS: Record<string, string> = {
   use_item: 'Using item',
   self_destruct: 'Self destructing',
   survey_system: 'Surveying system',
+  interact_poi: 'Interacting',
   loot_wreck: 'Looting wreck',
   salvage_wreck: 'Salvaging wreck',
   tow_wreck: 'Towing wreck',
