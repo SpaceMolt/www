@@ -66,6 +66,7 @@ export const TRACKED_COMMANDS: ReadonlySet<string> = new Set([
   'spacemolt.accept_mission',
   'spacemolt.complete_mission',
   'spacemolt.abandon_mission',
+  'spacemolt.interact_poi',
   // Combat
   'spacemolt.attack',
   'spacemolt_battle.advance',

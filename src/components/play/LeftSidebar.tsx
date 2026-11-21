@@ -22,6 +22,7 @@ import {
   SlidersHorizontal,
   X,
   AlertTriangle,
+  MessageSquare,
 } from 'lucide-react'
 import type { FactionQueryIntelResponse, MapSystemInfo, ScanContact, ScanResponse } from '@spacemolt/lib'
 import {
@@ -498,6 +499,29 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     }
   }, [mutate, logEvent, reportError])
 
+  // get_poi carries a private prompt at charted archives; interact_poi acts on it and changes the next prompt.
+  const interaction = poiData?.interaction
+  const refetchPoi = poiQuery.refetch
+  const handleInteract = useCallback(async () => {
+    try {
+      const result = await mutate((c) => c.spacemolt.interact_poi(), { label: 'interact_poi' })
+      logEvent(detailMessage(result.delta.details) || 'Interaction complete')
+    } catch (err) {
+      reportError(err)
+    }
+    refetchPoi()
+  }, [mutate, logEvent, reportError, refetchPoi])
+
+  const handleAcceptOffer = useCallback(async (missionId: string) => {
+    try {
+      const result = await mutate((c) => c.spacemolt.accept_mission({ id: missionId }), { label: 'accept_mission' })
+      logEvent(detailMessage(result.delta.details) || 'Mission accepted')
+    } catch (err) {
+      reportError(err)
+    }
+    refetchPoi()
+  }, [mutate, logEvent, reportError, refetchPoi])
+
   const handleMine = useCallback(async () => {
     logEvent('Mining...')
     onMobileClose?.()
@@ -669,6 +693,9 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                   {poi.description && (
                     <div className={styles.poiDescription}>{poi.description}</div>
                   )}
+                  {interaction?.message && (
+                    <div className={styles.poiDescription}>{interaction.message}</div>
+                  )}
                   {hasMineableResources(location) && (
                     <div className={styles.resourceList}>
                       {location?.resources?.map((r) => (
@@ -785,6 +812,25 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                 <span>Scan</span>
               </button>
             </div>
+          )}
+
+          {/* POI interaction — get_poi names the command that acts on its prompt */}
+          {interaction?.command === 'interact_poi' && (
+            <button className={styles.actionBtn} onClick={handleInteract} disabled={actionBusy} type="button">
+              <MessageSquare size={13} />
+              <span>Interact</span>
+            </button>
+          )}
+          {interaction?.command === 'accept_mission' && interaction.mission && (
+            <button
+              className={styles.actionBtn}
+              onClick={() => void handleAcceptOffer(interaction.mission!.mission_id)}
+              disabled={actionBusy}
+              type="button"
+            >
+              <MessageSquare size={13} />
+              <span>Accept: {interaction.mission.title}</span>
+            </button>
           )}
 
           {/* Survey */}
