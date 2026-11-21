@@ -3,7 +3,7 @@ import { formatCompact, formatNumber, titleCase } from '@/lib/format'
 import { ActivityChart, BondFlowChart, BondPriceChart, FlowsChart, FuelChart, Legend, PriceChart, SupplyChart, TradeChart } from './charts'
 import { C } from './chartTheme'
 import {
-  bondHeadline, bondSummary, chartRows, fuelHeadline, fuelSummary, compact, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays, netDevTeam,
+  activitySummary, bondHeadline, bondSummary, chartRows, fuelHeadline, fuelSummary, compact, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays, netDevTeam,
   playerHeld, priceHeadline, signed, signedPct, summarize, tradeHeadline, type EconomyReport,
 } from './economy'
 import styles from './page.module.css'
@@ -183,6 +183,8 @@ export default async function EconomyPage() {
     players_to_stations: C.p2s, stations_to_players: C.s2p, player_to_player: C.p2p, station_to_station: C.neutral,
   }
   const activeChange = firstActive ? ((lastActive - firstActive) / firstActive) * 100 : 0
+  const act = activitySummary(recent)
+  const actSpan = `${act.velocityDays} days`
 
   return (
     <div className="console-page">
@@ -666,6 +668,70 @@ export default async function EconomyPage() {
                 ))}
               </div>
             </Chapter>
+
+            {act.velocityDays > 0 && (
+              <Chapter
+                n={chapterNum(9)}
+                topic="Velocity and output"
+                title={`On average ${(act.velocity * 100).toFixed(1)}% of the money supply changed hands each day over ${actSpan}`}
+                lede={
+                  <>
+                    Velocity is how often credits change hands: every payment from one holder to another, counted
+                    once, divided by the money supply. GDP is the value of the new goods and services the galaxy made.
+                    Over {actSpan}, <strong>{cr(act.moved)}</strong> changed hands
+                    {act.gdpDays > 0 && <> and the galaxy made <strong>{cr(act.gdp)}</strong> of new value. GDP averaged {(act.gdpToSupply * 100).toFixed(1)}% of the money supply per day</>}.
+                  </>
+                }
+              >
+                <aside className={styles.note}>
+                  <strong>How to read this.</strong> Neither number says if there is too much or too little money.
+                  Compare them with their own history: falling velocity means more credits sit still, in savings or
+                  treasuries. Rising GDP with a steady supply means each credit backs more new output. Large one-off transfers,
+                  such as a big gift or a faction moving its treasury, make single-day spikes. For the question
+                  &quot;is the money supply right?&quot;, read the price index and the credits created and destroyed.
+                </aside>
+                <div className={styles.multiples}>
+                  {([['velocityPct', 'Velocity', '% of supply moved'], ['gdp', 'GDP', 'Credits']] as const).map(([field, title, unit]) => {
+                    const latest = rows.at(-1)?.[field] ?? null
+                    return (
+                      <div key={field}>
+                        <h3 className={styles.subhead}>
+                          {title}
+                          <span>
+                            <small>{dayLabel(last.date)}</small>{' '}
+                            {latest === null ? '—' : field === 'gdp' ? cr(latest) : `${latest.toFixed(1)}%`}
+                          </span>
+                        </h3>
+                        <ActivityChart rows={rows} field={field} unit={unit} />
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className={styles.pair}>
+                  <BarList
+                    title={`Where credits changed hands · ${actSpan}`}
+                    rows={act.flows.map((f) => ({ label: f.label, value: f.value, color: C.neutral }))}
+                  />
+                  {act.gdpDays > 0 && (
+                    <div>
+                      <BarList
+                        title={`What the galaxy made · ${act.gdpDays} days`}
+                        rows={[
+                          { label: 'Goods', note: 'mined, harvested and made, minus the inputs used', value: act.goods, color: C.created },
+                          { label: 'Ships', note: 'new hulls at their market value', value: act.ships, color: C.created },
+                          ...act.serviceTypes.map((t) => ({ label: t.label, note: 'service', value: t.value, color: C.player })),
+                        ]}
+                      />
+                      {act.goods < 0 && (
+                        <p className={styles.note}>
+                          Goods: <strong>{signedCr(act.goods)}</strong>. Production used more value in inputs than it made.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </Chapter>
+            )}
           </div>
         </>
       )}
@@ -687,6 +753,10 @@ export default async function EconomyPage() {
           <dd>Station labor and construction payments go to citizen pools. Founding and war fees go to empire treasuries. These payments move existing credits.</dd>
           <dt>NPC</dt>
           <dd>A game-run account, such as a station manager or empire treasury.</dd>
+          <dt>Velocity</dt>
+          <dd>Credits paid from one holder to another in a day, each payment once, divided by the money supply. Moving credits into or out of your own escrow is not a payment. New credits the game creates are not either.</dd>
+          <dt>GDP</dt>
+          <dd>The value of goods made (mining, harvesting, ranching, crafting and production, minus the inputs they used), new ship hulls, and services sold to their final user. Goods are valued at their 7-day market price, else their last market price, else their catalog value. Loot and salvage recover goods; they are not new output.</dd>
           <dt>Price index</dt>
           <dd>A fixed basket per category, weighted by value traded in the base week ({baseWeek}). 100 = base-week prices. A gap means no data.</dd>
           <dt>Trade authenticator</dt>
