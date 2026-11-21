@@ -199,7 +199,7 @@ export function PriceChart({ rows, categories }: { rows: ChartRow[]; categories:
 /** One small multiple: a single measure per day. */
 export function ActivityChart({ rows, field, unit, color = C.neutral }: {
   rows: ChartRow[]
-  field: 'active' | 'mined' | 'crafted' | 'bReserve' | 'bCirculating'
+  field: 'active' | 'mined' | 'crafted' | 'bReserve' | 'bCirculating' | 'velocityPct' | 'gdp'
   unit: string
   color?: string
 }) {
