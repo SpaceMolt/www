@@ -140,6 +140,27 @@ export interface EconomyDay {
   trade_authenticators: EconomyBondDay
   /** Null on days before the fuel record starts. */
   fuel: EconomyFuelDay | null
+  /** Null on days before velocity was recorded; absent on older servers. */
+  velocity?: EconomyVelocity | null
+  /** Null on days before GDP was recorded; absent on older servers. */
+  gdp?: EconomyGDP | null
+}
+
+/** Credits that changed holder in the day, each movement once. velocity = credits_moved ÷ supply_total. */
+export interface EconomyVelocity {
+  credits_moved: number
+  by_flow: Record<string, number>
+  velocity: number
+}
+
+/** Value of new goods and services in the day. total = goods + ships + services; goods can be negative. */
+export interface EconomyGDP {
+  total: number
+  goods: number
+  ships: number
+  services: number
+  services_by_type: Record<string, number>
+  to_supply: number
 }
 
 /**
@@ -196,6 +217,73 @@ export const SINK_LABELS: Record<Exclude<keyof EconomySinks, 'total'>, string> =
   war_declarations: 'War declarations',
   penalties: 'Penalties & fees',
   dev_team: 'Dev team removals',
+}
+
+/** Velocity flows, as named in days[].velocity.by_flow. */
+export const FLOW_LABELS: Record<string, string> = {
+  exchange: 'Market fills',
+  station: 'NPC station payments',
+  gifts: 'Gifts',
+  faction: 'Faction treasuries',
+  taxes: 'Taxes, fines & empire fees',
+  station_fees: 'Player station fees',
+  labor: 'Wages',
+  direct_trades: 'Direct trades',
+  asset_sales: 'Ship & facility sales',
+  passengers: 'Passengers & cruises',
+  missions: 'Funded rewards',
+  insurance: 'Insurance',
+  freight: 'Freight',
+  rescue: 'Rescues',
+}
+
+/** GDP services, as named in days[].gdp.services_by_type. */
+export const SERVICE_LABELS: Record<string, string> = {
+  tourism: 'Tourism',
+  facility_build_income: 'Facility construction',
+  repair_fees: 'Repairs',
+  fixer_and_mission_fees: 'Station services',
+  personnel: 'Crew & medical',
+  listing_fees: 'Market listing',
+  freight_fees: 'Freight booking',
+  freight: 'Freight hauling',
+  passenger_fares: 'Passenger fares',
+  cruise: 'Cruises',
+  salvage_recovery: 'Salvage recovery',
+  rescue: 'Rescues',
+}
+
+/** Sums a map field over days, largest first, with labels (unknown keys get a title-cased label). */
+function sumMaps(maps: Record<string, number>[], labels: Record<string, string>): LabelledValue[] {
+  const totals: Record<string, number> = {}
+  for (const m of maps) for (const [k, v] of Object.entries(m)) totals[k] = (totals[k] ?? 0) + v
+  return Object.entries(totals)
+    .map(([key, value]) => ({ key, label: labels[key] ?? key.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase()), value }))
+    .sort((a, b) => b.value - a.value)
+}
+
+/** Velocity and GDP over the days that have them. */
+export function activitySummary(days: EconomyDay[]) {
+  const v = days.filter((d) => d.velocity)
+  const g = days.filter((d) => d.gdp)
+  const moved = v.reduce((s, d) => s + d.velocity!.credits_moved, 0)
+  const vSupply = v.reduce((s, d) => s + d.supply_total, 0)
+  const gdp = g.reduce((s, d) => s + d.gdp!.total, 0)
+  const gSupply = g.reduce((s, d) => s + d.supply_total, 0)
+  return {
+    velocityDays: v.length,
+    moved,
+    /** Credits moved ÷ supply, averaged over the days: the share of the supply that changes hands in a day. */
+    velocity: vSupply ? moved / vSupply : 0,
+    flows: sumMaps(v.map((d) => d.velocity!.by_flow), FLOW_LABELS),
+    gdpDays: g.length,
+    gdp,
+    goods: g.reduce((s, d) => s + d.gdp!.goods, 0),
+    ships: g.reduce((s, d) => s + d.gdp!.ships, 0),
+    serviceTypes: sumMaps(g.map((d) => d.gdp!.services_by_type), SERVICE_LABELS),
+    /** GDP ÷ supply, averaged over the days. */
+    gdpToSupply: gSupply ? gdp / gSupply : 0,
+  }
 }
 
 export interface Holder {
@@ -452,6 +540,9 @@ export interface ChartRow {
   active: number | null
   mined: number | null
   crafted: number | null
+  /** Credits moved as a percentage of the supply. */
+  velocityPct: number | null
+  gdp: number | null
   ore: number | null
   refined: number | null
   component: number | null
@@ -500,6 +591,8 @@ export function chartRows(days: EconomyDay[]): ChartRow[] {
     active: d?.active_players ?? null,
     mined: d?.ore_mined ?? null,
     crafted: d?.items_crafted ?? null,
+    velocityPct: d?.velocity ? d.velocity.velocity * 100 : null,
+    gdp: d?.gdp?.total ?? null,
     ore: d?.price_index.ore ?? null,
     refined: d?.price_index.refined ?? null,
     component: d?.price_index.component ?? null,

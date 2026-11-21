@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 import {
-  avgPrice, bondHeadline, fuelHeadline, fuelSummary, bondSummary, calendar, chartRows, netDevTeam, compact, dayLabel, flowCaption, holders, inBrief, indexedCategories, lastDays, niceCeil,
+  activitySummary, avgPrice, bondHeadline, fuelHeadline, fuelSummary, bondSummary, calendar, chartRows, netDevTeam, compact, dayLabel, flowCaption, holders, inBrief, indexedCategories, lastDays, niceCeil,
   playerHeld, priceHeadline, signed, signedPct, summarize, ticksFor, tradeHeadline,
   type EconomyBondDay, type EconomyCurrent, type EconomyDay, type EconomyMoneySupply,
 } from './economy'
@@ -428,5 +428,38 @@ describe('station fuel', () => {
     expect(rows[0].fuelPrice).toBeNull()
     expect(rows[1]).toMatchObject({ fuelPrice: 3, fuelPaid: 3.2, fuelUnits: 100, fuelRange: null })
     expect(rows[3]).toMatchObject({ fuelPrice: 5, fuelPaid: 5.2, fuelUnits: 200, fuelRange: [3, 6] })
+  })
+})
+
+describe('activitySummary', () => {
+  it('sums velocity and GDP over the days that have them, and labels the flows', () => {
+    const days = [
+      day('2026-11-18'), // before the counters: velocity and GDP absent
+      day('2026-11-19', {
+        velocity: { credits_moved: 100, by_flow: { exchange: 60, gifts: 40 }, velocity: 0.1 },
+        gdp: { total: 50, goods: 20, ships: 0, services: 30, services_by_type: { tourism: 30 }, to_supply: 0.05 },
+      }),
+      day('2026-11-20', {
+        supply_total: 3000,
+        velocity: { credits_moved: 300, by_flow: { exchange: 200, new_flow: 100 }, velocity: 0.1 },
+        gdp: null,
+      }),
+    ]
+    const a = activitySummary(days)
+    expect(a.velocityDays).toBe(2)
+    expect(a.moved).toBe(400)
+    expect(a.velocity).toBeCloseTo(0.1) // 400 / (1000 + 3000)
+    expect(a.flows.map((f) => [f.label, f.value])).toEqual([['Market fills', 260], ['New flow', 100], ['Gifts', 40]])
+    expect(a.gdpDays).toBe(1)
+    expect(a.gdp).toBe(50)
+    expect(a.gdpToSupply).toBeCloseTo(0.05)
+    expect(a.serviceTypes).toEqual([{ key: 'tourism', label: 'Tourism', value: 30 }])
+  })
+
+  it('reports nothing on servers without the counters', () => {
+    const a = activitySummary([day('2026-11-19')])
+    expect(a.velocityDays).toBe(0)
+    expect(a.velocity).toBe(0)
+    expect(a.flows).toEqual([])
   })
 })
