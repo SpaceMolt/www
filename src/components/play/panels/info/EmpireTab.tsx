@@ -120,7 +120,7 @@ export function EmpireTab() {
         <div key={e.empire_id} className={styles.versionCard}>
           <div className={styles.versionNumber}><Shield size={12} /> {titleCase(e.empire_id)}</div>
           <div className={styles.versionDate}>
-            Income {pct(e.income_tax_bps)} - Property {pct(e.property_tax_bps)} - Sales {pct(e.sales_tax_bps)} - Listing {pct(e.listing_fee_bps)}
+            Income {pct(e.income_tax_bps)} - Property {pct(e.property_tax_bps)} - Sales {pct(e.sales_tax_bps)}
           </div>
           <div className={styles.versionDate}>
             Fuel tax {e.fuel_tax_per_unit} cr/unit - Repair {e.repair_cost_per_hull} cr/hull - Jail {e.jail_duration_hours}h
