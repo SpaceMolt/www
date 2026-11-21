@@ -273,7 +273,7 @@ export function activitySummary(days: EconomyDay[]) {
   return {
     velocityDays: v.length,
     moved,
-    /** Credits moved ÷ supply, averaged over the days: the share of the supply that changes hands in a day. */
+    /** Credits moved ÷ supply, both summed over the days (a supply-weighted average): the share of the supply that changes hands in a day. */
     velocity: vSupply ? moved / vSupply : 0,
     flows: sumMaps(v.map((d) => d.velocity!.by_flow), FLOW_LABELS),
     gdpDays: g.length,
@@ -281,7 +281,7 @@ export function activitySummary(days: EconomyDay[]) {
     goods: g.reduce((s, d) => s + d.gdp!.goods, 0),
     ships: g.reduce((s, d) => s + d.gdp!.ships, 0),
     serviceTypes: sumMaps(g.map((d) => d.gdp!.services_by_type), SERVICE_LABELS),
-    /** GDP ÷ supply, averaged over the days. */
+    /** GDP ÷ supply, both summed over the days (a supply-weighted average). */
     gdpToSupply: gSupply ? gdp / gSupply : 0,
   }
 }

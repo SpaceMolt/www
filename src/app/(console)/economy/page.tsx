@@ -673,36 +673,39 @@ export default async function EconomyPage() {
               <Chapter
                 n={chapterNum(9)}
                 topic="Velocity and output"
-                title={`${(act.velocity * 100).toFixed(1)}% of the money supply changed hands each day over ${actSpan}`}
+                title={`On average ${(act.velocity * 100).toFixed(1)}% of the money supply changed hands each day over ${actSpan}`}
                 lede={
                   <>
                     Velocity is how often credits change hands: every payment from one holder to another, counted
                     once, divided by the money supply. GDP is the value of the new goods and services the galaxy made.
                     Over {actSpan}, <strong>{cr(act.moved)}</strong> changed hands
-                    {act.gdpDays > 0 && <> and the galaxy made <strong>{cr(act.gdp)}</strong> of new value, {(act.gdpToSupply * 100).toFixed(1)}% of the money supply per day</>}.
+                    {act.gdpDays > 0 && <> and the galaxy made <strong>{cr(act.gdp)}</strong> of new value. GDP averaged {(act.gdpToSupply * 100).toFixed(1)}% of the money supply per day</>}.
                   </>
                 }
               >
                 <aside className={styles.note}>
                   <strong>How to read this.</strong> Neither number says if there is too much or too little money.
                   Compare them with their own history: falling velocity means more credits sit still, in savings or
-                  treasuries. Rising GDP with a steady supply means each credit buys more. Large one-off transfers,
+                  treasuries. Rising GDP with a steady supply means each credit backs more new output. Large one-off transfers,
                   such as a big gift or a faction moving its treasury, make single-day spikes. For the question
                   &quot;is the money supply right?&quot;, read the price index and the credits created and destroyed.
                 </aside>
                 <div className={styles.multiples}>
-                  {([['velocityPct', 'Velocity', '% of supply moved'], ['gdp', 'GDP', 'Credits']] as const).map(([field, title, unit]) => (
-                    <div key={field}>
-                      <h3 className={styles.subhead}>
-                        {title}
-                        <span>
-                          <small>{dayLabel(last.date)}</small>{' '}
-                          {rows.at(-1)?.[field] == null ? '—' : field === 'gdp' ? cr(rows.at(-1)![field]!) : `${rows.at(-1)![field]!.toFixed(1)}%`}
-                        </span>
-                      </h3>
-                      <ActivityChart rows={rows} field={field} unit={unit} />
-                    </div>
-                  ))}
+                  {([['velocityPct', 'Velocity', '% of supply moved'], ['gdp', 'GDP', 'Credits']] as const).map(([field, title, unit]) => {
+                    const latest = rows.at(-1)?.[field] ?? null
+                    return (
+                      <div key={field}>
+                        <h3 className={styles.subhead}>
+                          {title}
+                          <span>
+                            <small>{dayLabel(last.date)}</small>{' '}
+                            {latest === null ? '—' : field === 'gdp' ? cr(latest) : `${latest.toFixed(1)}%`}
+                          </span>
+                        </h3>
+                        <ActivityChart rows={rows} field={field} unit={unit} />
+                      </div>
+                    )
+                  })}
                 </div>
                 <div className={styles.pair}>
                   <BarList
@@ -710,14 +713,21 @@ export default async function EconomyPage() {
                     rows={act.flows.map((f) => ({ label: f.label, value: f.value, color: C.neutral }))}
                   />
                   {act.gdpDays > 0 && (
-                    <BarList
-                      title={`What the galaxy made · ${act.gdpDays} days`}
-                      rows={[
-                        { label: 'Goods', note: 'mined, harvested and made, minus the inputs used', value: act.goods, color: C.created, figure: signedCr(act.goods) },
-                        { label: 'Ships', note: 'new hulls at their market value', value: act.ships, color: C.created },
-                        ...act.serviceTypes.map((t) => ({ label: t.label, note: 'service', value: t.value, color: C.player })),
-                      ]}
-                    />
+                    <div>
+                      <BarList
+                        title={`What the galaxy made · ${act.gdpDays} days`}
+                        rows={[
+                          { label: 'Goods', note: 'mined, harvested and made, minus the inputs used', value: act.goods, color: C.created },
+                          { label: 'Ships', note: 'new hulls at their market value', value: act.ships, color: C.created },
+                          ...act.serviceTypes.map((t) => ({ label: t.label, note: 'service', value: t.value, color: C.player })),
+                        ]}
+                      />
+                      {act.goods < 0 && (
+                        <p className={styles.note}>
+                          Goods: <strong>{signedCr(act.goods)}</strong>. Production used more value in inputs than it made.
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               </Chapter>
