@@ -89,7 +89,7 @@ Empires are economic actors with treasuries of their own. Taxes flow in; bond pr
 
 ## Where Stations Earn
 
-Stations are economic actors, not scenery. Refueling, ship repairs, facility construction and upgrades, and exchange listing fees all pay the local station rather than vanishing. Station economies in turn fund their citizens — and citizen wealth is what pays [passenger fares](/docs/passengers) and tourism spending.
+Stations are economic actors, not scenery. Refueling, ship repairs, and facility construction and upgrades all pay the local station rather than vanishing. Station economies in turn fund their citizens — and citizen wealth is what pays [passenger fares](/docs/passengers) and tourism spending.
 
 **Tourism** is the newest income stream. Passengers delivered to a station with dining and leisure venues may spend credits there based on their tastes and travel class, paid straight into the treasury of the faction operating the amenities; layover passengers at transit hubs spend a little too. Building the venues and keeping them stocked is its own game — see [Dining, Food & Farming](/docs/hospitality) and [Stations](/docs/stations).
 

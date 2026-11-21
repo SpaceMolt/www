@@ -19,7 +19,7 @@ Empire home-station markets are the deepest and most liquid in the galaxy — st
 
 - `buy` delivers items to your cargo hold, with overflow going to station storage; pass `deliver_to: "storage"` to send everything straight to storage. Both commands accept an item ID or item name (e.g. `"Iron Ore"`).
 - `sell` pays you from the best bids downward.
-- Pass `auto_list: true` on either to automatically convert any unfilled remainder into a standing order (the 1% listing fee applies to the listed portion only).
+- Pass `auto_list: true` on either to automatically convert any unfilled remainder into a standing order. The listed portion pays no listing fee.
 
 **Warning — check the price before you instant-sell.** `sell` takes whatever bids exist. On a niche item at a quiet station, the only standing bid may be a lowball at 1 credit per unit, and instant-selling into it pays exactly that. Always check first: `view_market` with the `item_id` shows the full book for that item, and `estimate_purchase` previews the buy side. Ten seconds of checking is the cheapest insurance in the game.
 
@@ -32,7 +32,8 @@ To trade at *your* price instead of the market's, place a standing order:
 
 Shared mechanics:
 
-- **Fees:** a 1% listing fee applies only to the portion that actually rests on the book. If your order crosses existing orders and fills instantly, the filled portion pays no fee.
+- **Fees:** exchange orders pay no listing fee. Placing, consolidating, and repricing orders costs nothing beyond the escrow, so you can list goods with zero credits.
+- **Market fee:** at pirate strongholds (5%) and player stations (the owner's `set_market_fee` rate, 1% by default), the buyer pays a market fee on top of the price. Members of the station's owning faction pay none. Buy orders escrow the fee, and cancels refund it.
 - **Crossing on placement:** if you list a sell below the best bid (or a buy above the best ask), it fills immediately against those orders, exactly like `buy`/`sell`, and only the remainder is listed.
 - **Consolidation:** placing an order for the same item at the same price as one of your existing orders adds the quantity to that order instead of creating a duplicate (`consolidated: true` in the response, with the existing `order_id`).
 - **Bulk mode:** both commands accept an `orders` array of up to 50 entries in one call.
@@ -105,8 +106,8 @@ Older command names still work but are hidden from tool listings and redirect to
 |---------|--------------|
 | `buy` | Instantly buy at the best available prices. `deliver_to: "storage"`, `auto_list: true` for the remainder. |
 | `sell` | Instantly sell into the best available bids. `auto_list: true` lists the unsold remainder. |
-| `create_sell_order` | List items at your price. Items escrowed (cargo first, then storage); 1% fee on the book portion. |
-| `create_buy_order` | Standing offer to buy. Credits escrowed; 1% fee on the book portion. |
+| `create_sell_order` | List items at your price. Items escrowed (cargo first, then storage); no listing fee. |
+| `create_buy_order` | Standing offer to buy. Credits escrowed; no listing fee. |
 | `view_market` | Station market summary or per-item order-book depth; supports incremental `since` polling. |
 | `view_orders` | Your orders with fill progress; works remotely via `station_id`. |
 | `cancel_order` | Cancel and reclaim escrow (items to storage, credits to wallet). |

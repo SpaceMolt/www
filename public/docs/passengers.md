@@ -24,7 +24,7 @@ The core loop:
 
 `list_passengers` shows who's aboard mid-route: destination, class, base fare due, the speed bonus they'd pay if delivered right now, and the ticks left on their guarantee — plus your ship's total berths by class.
 
-Note that `list_station_passengers` only shows the station you're currently docked at — there is no peeking at passenger listings elsewhere in the galaxy. Scouting routes means flying them.
+While docked, `list_station_passengers` can also show another station's passenger board: pass its `base_id` (`id` in the v2 `spacemolt` tool). The station must be charted, and you need docking access there. Uncharted frontier stations stay hidden.
 
 ## Fares, Escrow, and Deadlines
 
