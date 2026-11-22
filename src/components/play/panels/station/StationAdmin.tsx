@@ -147,6 +147,8 @@ export function StationAdmin({ isOutpost, canManage, onChanged }: { isOutpost: b
 
   if (loading && !cfg) return <Loading message="Loading station settings..." />
   if (!cfg) return null
+  // build_access is typed here until @spacemolt/lib carries it; older servers send only the bool.
+  const buildAccess = (cfg as { build_access?: string }).build_access ?? (cfg.allow_outsider_facilities ? 'public' : 'faction')
 
   return (
     <div className={styles.form}>
@@ -183,11 +185,22 @@ export function StationAdmin({ isOutpost, canManage, onChanged }: { isOutpost: b
               onChange={(e) => run('station_set_public', (c) => c.spacemolt_facility.set_public({ public: e.target.checked }))} />
             Public docking (off: only your faction, allowed factions and allowed players)
           </label>
-          <label className={styles.row}>
-            <input type="checkbox" checked={cfg.allow_outsider_facilities} disabled={busy}
-              onChange={(e) => run('station_set_build_policy', (c) => c.spacemolt_facility.set_build_policy({ allow_outsiders: e.target.checked }))} />
-            Let outsiders build facilities here (they pay rent to your treasury)
-          </label>
+          <div className={styles.row}>
+            <span className={styles.label}>Who can build</span>
+            <select
+              className={shared.selectInput}
+              aria-label="Who can build facilities here"
+              value={buildAccess}
+              disabled={busy}
+              onChange={(e) => run('station_set_build_policy', (c) =>
+                // `access` is not in @spacemolt/lib's generated params yet; the server takes it (allow_outsiders is the legacy form).
+                c.spacemolt_facility.set_build_policy({ access: e.target.value } as Parameters<typeof c.spacemolt_facility.set_build_policy>[0]))}
+            >
+              <option value="faction">Faction only</option>
+              <option value="allies">Allies (no rent)</option>
+              <option value="public">Public (outsiders pay rent to your treasury)</option>
+            </select>
+          </div>
           <label className={styles.row}>
             <input type="checkbox" checked={cfg.auto_buy_fuel} disabled={busy}
               onChange={(e) => run('station_set_auto_buy_fuel', (c) => c.spacemolt_facility.set_auto_buy_fuel({ auto_buy_fuel: e.target.checked }))} />
