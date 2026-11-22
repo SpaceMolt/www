@@ -69,7 +69,7 @@ function statEntries(f: RawFacility): StatEntry[] {
   stats.push({ label: 'Level', value: String(f.level) })
   stats.push({ label: 'Build Cost', value: `${f.build_cost.toLocaleString('en-US')} cr` })
   stats.push({ label: 'Build Time', value: ticks(f.build_time) })
-  stats.push({ label: 'Labor Cost', value: f.labor_cost.toLocaleString('en-US') })
+  if (f.labor_cost) stats.push({ label: 'Labor Cost', value: f.labor_cost.toLocaleString('en-US') })
   stats.push({ label: 'Always On', value: f.always_on ? 'Yes' : 'No' })
 
   if (f.power_draw) stats.push({ label: 'Power Draw', value: String(f.power_draw) })
@@ -237,7 +237,7 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
                           {tier.build_time.toLocaleString('en-US')}
                         </td>
                         <td className={`${styles.td} ${styles.tdNum}`}>
-                          {tier.labor_cost.toLocaleString('en-US')}
+                          {tier.labor_cost?.toLocaleString('en-US') ?? '—'}
                         </td>
                         <td className={`${styles.td} ${styles.tdNum}`}>{tier.power_draw ?? '—'}</td>
                         <td className={`${styles.td} ${styles.tdNum}`}>{tier.life_support_draw ?? '—'}</td>

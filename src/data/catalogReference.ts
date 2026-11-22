@@ -56,7 +56,8 @@ export interface RawFacility {
   build_cost: number
   /** In ticks */
   build_time: number
-  labor_cost: number
+  /** Omitted for types that never pay labor (faction, personal) */
+  labor_cost?: number
   build_materials?: ItemStack[]
   /** Facility id this one upgrades from (chain predecessor) */
   upgrades_from?: string
