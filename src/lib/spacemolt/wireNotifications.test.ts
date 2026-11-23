@@ -119,10 +119,11 @@ test('exchange fill toast names the counterparty when the server sends one', asy
 })
 
 describe('pushed errors', () => {
-  test('out_of_ammo does not toast every tick; other errors do', async () => {
+  test('out_of_ammo and out_of_range do not toast every tick; other errors do', async () => {
     const f = await fixture()
     try {
       f.send('error', { code: 'out_of_ammo', message: 'Your weapons cannot fire — magazine empty!' })
+      f.send('error', { code: 'out_of_range', message: "Your weapons can't reach the enemy at this range" })
       expect(f.store.getState().eventLog).toHaveLength(0)
       f.send('error', { code: 'no_fuel', message: 'Out of fuel' })
       expect(f.store.getState().eventLog[0]).toMatchObject({ kind: 'danger', text: 'Out of fuel', toast: true })
