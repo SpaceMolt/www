@@ -15,7 +15,7 @@ export interface UpgradeOption {
   build_cost: number
   build_time: number
   build_materials: { item_id: string; name: string; quantity: number }[]
-  labor_cost: number
+  labor_cost?: number
   rent_per_cycle: number
   recipe?: {
     id: string
