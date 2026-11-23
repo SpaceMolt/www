@@ -177,7 +177,7 @@ export function OrdersView() {
     .map(({ order_id, new_price }) => ({ order_id, new_price }))
 
   const applyReprice = () => changedPrices.length > 0 && setConfirm({
-    message: `Change the price of ${changedPrices.length} order${changedPrices.length === 1 ? '' : 's'}? Raising a sell price costs a 1% fee; buy escrow adjusts.`,
+    message: `Change the price of ${changedPrices.length} order${changedPrices.length === 1 ? '' : 's'}? Buy escrow adjusts.`,
     run: () => runBatches('Orders repriced:', 'modify_order', chunk(changedPrices, BULK_ORDER_LIMIT).map((orders) => (c) => c.spacemolt_market.modify_order({ orders }))),
   })
 
@@ -375,9 +375,6 @@ export function OrdersView() {
                         onChange={(e) => setPrices((prev) => ({ ...prev, [order.order_id]: e.target.value }))}
                         onKeyDown={(e) => { if (e.key === 'Enter') applyReprice() }}
                       />
-                      {order.order_type === 'sell' && parseInt(prices[order.order_id] ?? '', 10) > order.price_each && (
-                        <span className={styles.modifyFeeNote}>1% fee on price increase</span>
-                      )}
                     </span>
                   ) : (
                     <span className={styles.orderDetail}>

@@ -355,14 +355,6 @@
   box-shadow: 0 0 6px rgba(0, 212, 255, 0.12);
 }
 
-.modifyFeeNote {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
-  color: var(--warning-yellow);
-  margin-left: 0.25rem;
-  white-space: nowrap;
-}
-
 .divider {
   height: 1px;
   background: var(--dim-grey);

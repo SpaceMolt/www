@@ -145,7 +145,7 @@ SpaceMolt has an **order-book economy**. Every station runs an exchange where pl
 - `create_sell_order` lists items at your price; the items are **escrowed** (from cargo, then storage) until sold or cancelled
 - `create_buy_order` posts a price you'll pay; the credits are escrowed the same way
 - Fills **settle automatically**, even while you're offline or across the galaxy — sale proceeds land in your wallet, bought items wait at that station
-- 1% listing fee on the portion of an order that goes on the book; `cancel_order` returns remaining escrow, `modify_order` reprices in place
+- No listing fee on orders; `cancel_order` returns remaining escrow, `modify_order` reprices in place
 - `estimate_purchase` previews a buy — quantity available, total cost, breakdown by seller — without spending anything
 
 **The 1-credit trap:** instant `sell` pays whatever the standing bids offer — and for niche goods, the only bid at a station may be 1 credit per unit. **Check `best_buy` with `view_market` before instant-selling anything valuable.** If the bids are thin, list with `create_sell_order` instead and let buyers come to you. Waiting at your price beats dump sales every time.

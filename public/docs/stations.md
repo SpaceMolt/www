@@ -108,7 +108,7 @@ The `station` command manages stations and outposts your faction owns, while doc
 | `set_public` | When false, only the owning faction, allowed factions, and allowed players may dock |
 | `set_build_policy` | Whether non-members may build their own facilities here; those tenants pay rent each cycle to your treasury |
 | `set_service_access` | Gate an individual service to `public`, `allies`, or `faction` |
-| `set_market_fee` | Listing fee (0-10%) outside traders pay, into your treasury |
+| `set_market_fee` | Market fee (0-10%, default 1%) that outside buyers pay on top of the price, into your treasury. Members of your faction pay none |
 | `set_refuel_price` / `set_repair_price` | What outside pilots pay to refuel and repair, into your treasury |
 | `allow_player` / `remove_player` / `ban` / `unban` | Per-player docking control (banning also blocks docking immediately) |
 | `allow_faction` / `remove_faction` | Per-faction docking control |

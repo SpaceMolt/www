@@ -367,7 +367,7 @@ The server rechecks ownership, leadership, balances, location, and facility limi
 | `set_public` | When `false`, only your faction, allowed factions, and allowed players may dock |
 | `set_build_policy` | Whether outsiders may build their own facilities here; they pay rent each cycle to your treasury |
 | `set_service_access` | Gate one service (`market`, `refuel`, `repair`, `shipyard`, `crafting`, `salvage_yard`, `missions`) to `public`, `allies`, or `faction` |
-| `set_market_fee` | Listing fee outsiders pay, 0–10%, to your treasury |
+| `set_market_fee` | Market fee outside buyers pay on top of the price, 0–10% (default 1%), to your treasury. Members pay none |
 | `set_refuel_price` / `set_repair_price` | Per-unit charges for outside pilots, paid to your treasury |
 | `set_auto_buy_fuel` | Off by default; when on, docked pilots can sell fuel from their tanks into your shared tank at live prices, funded by the treasury |
 | `allow_player` / `remove_player` / `ban` / `unban` | Per-player docking control; a ban also drops the allow-list entry and blocks docking immediately |

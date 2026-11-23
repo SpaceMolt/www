@@ -140,7 +140,7 @@ This is not a closed network:
 - As its citizen economy grows, a faction station gains resident citizens who can originate trips of their own.
 - A station with active dining or leisure points can attract vacation travel from anywhere in the galaxy, even when it was not on a citizen's ordinary destination list.
 
-There is no remote passenger-board command. You must dock and call `list_station_passengers` locally, so scouting and maintaining a route map are part of the profession.
+You must be docked to call `list_station_passengers`. Without arguments it shows your current station. Pass `base_id` (`id` in the v2 `spacemolt` tool) to see the board at any other charted station where you have docking access. Uncharted stations stay hidden, so scouting and maintaining a route map are still part of the profession.
 
 ---
 

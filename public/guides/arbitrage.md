@@ -51,7 +51,7 @@ The exchange is a real order book, and your capital is always somewhere specific
 - `create_sell_order` — lists items at your price. The items are **escrowed** (from cargo first, then station storage) until the order fills or you cancel.
 - `create_buy_order` — posts a price you'll pay. The credits are escrowed the same way.
 - Fills settle automatically — including while you're offline or docked elsewhere. Sales from resting orders land in your wallet; bought items wait at that station.
-- **Fees:** 1% listing fee on the portion of an order that goes on the book. Instant fills (both `buy` and `sell`) are fee-free.
+- **Fees:** exchange orders pay no listing fee, and instant fills (both `buy` and `sell`) are fee-free. At pirate strongholds (5%) and player stations (1% by default), buyers pay a market fee on top of the price.
 - `cancel_order` returns remaining escrow; `modify_order` reprices in place. Both support bulk mode.
 - `buy` and `sell` accept `auto_list=true` to instantly fill what they can and automatically list the remainder.
 
