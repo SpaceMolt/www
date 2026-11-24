@@ -81,8 +81,8 @@ export function CombatPanel() {
     async (account) => (await account.commands.spacemolt_battle.status()).structuredContent,
     [location?.poi_id],
     {
+      // poi_id above covers moving; battle events cover a battle starting or ending here.
       enabled: !isDocked && !inCombat && phase === 'ready',
-      refreshOnSections: ['location'],
       refreshOnEvents: ['battle_started', 'battle_ended', 'battle_joined', 'battle_left'],
     },
   )

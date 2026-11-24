@@ -33,6 +33,13 @@ export interface CommandQueryResult<T> {
   refetch: () => void
 }
 
+/**
+ * A section notify and a dependency change often land in separate renders for
+ * one server event. Waiting this long before sending lets them collapse into
+ * one request instead of two reads of the same command in one tick.
+ */
+const COALESCE_MS = 50
+
 const message = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 const code = (err: unknown): string | null => (err instanceof SpacemoltError ? err.code : null)
 
@@ -55,23 +62,26 @@ export function useCommandQuery<T>(
   // biome-ignore format: dependency list intentionally spreads caller deps
   useEffect(() => {
     if (!enabled) return
-    const seq = ++runSeq.current
     setLoading(true)
-    run(store.account).then(
-      (result) => {
-        if (runSeq.current !== seq) return
-        setData(result)
-        setError(null)
-        setErrorCode(null)
-        setLoading(false)
-      },
-      (err) => {
-        if (runSeq.current !== seq) return
-        setError(message(err))
-        setErrorCode(code(err))
-        setLoading(false)
-      },
-    )
+    const timer = setTimeout(() => {
+      const seq = ++runSeq.current
+      run(store.account).then(
+        (result) => {
+          if (runSeq.current !== seq) return
+          setData(result)
+          setError(null)
+          setErrorCode(null)
+          setLoading(false)
+        },
+        (err) => {
+          if (runSeq.current !== seq) return
+          setError(message(err))
+          setErrorCode(code(err))
+          setLoading(false)
+        },
+      )
+    }, COALESCE_MS)
+    return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, enabled, generation, ...deps])
 

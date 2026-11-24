@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 /**
  * Runs `fn` on an interval, but only while the tab is visible. When the tab is
  * hidden the interval is paused; when it becomes visible again `fn` runs once
- * immediately and the interval resumes.
+ * immediately (unless it ran less than one interval ago) and the interval resumes.
  *
  * Background tabs otherwise keep polling the gameserver and share the same
  * per-IP rate-limit budget as the foreground tab, so pausing them keeps a stack
@@ -18,11 +18,16 @@ export function useVisiblePoll(fn: () => void, intervalMs: number) {
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = null
+    let lastRun = 0
+    const run = () => {
+      lastRun = Date.now()
+      saved.current()
+    }
 
     const start = () => {
       if (timer !== null) return
       timer = setInterval(() => {
-        if (document.visibilityState === 'visible') saved.current()
+        if (document.visibilityState === 'visible') run()
       }, intervalMs)
     }
 
@@ -35,7 +40,7 @@ export function useVisiblePoll(fn: () => void, intervalMs: number) {
 
     const onVisibility = () => {
       if (document.visibilityState === 'visible') {
-        saved.current()
+        if (Date.now() - lastRun >= intervalMs) run()
         start()
       } else {
         stop()
