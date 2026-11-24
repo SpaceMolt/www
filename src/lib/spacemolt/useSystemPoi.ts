@@ -6,7 +6,7 @@
  * they are fetched via get_system/get_poi and refreshed when the location
  * section changes (arrival, jump, dock).
  */
-import type { GetPoiResponse, GetSystemResponse } from '@spacemolt/lib'
+import type { Account, GetPoiResponse, GetSystemResponse } from '@spacemolt/lib'
 import { useLocationState } from './hooks'
 import { useCommandQuery, type CommandQueryResult } from './useCommandQuery'
 
@@ -29,13 +29,30 @@ function rememberPoiDescription(id: string, description?: string) {
 }
 export const knownPoiDescription = (id: string): string | undefined => loadDescriptions()[id]
 
+/**
+ * Several panels mount useSystem/usePoi at once, and each re-runs on the same
+ * location change. Share one request per account and key for a short window so
+ * they cost one get_system/get_poi, not one each.
+ */
+const SHARE_MS = 2_000
+const shared = new WeakMap<Account, Map<string, { at: number; result: Promise<unknown> }>>()
+export const shareRead = <T,>(account: Account, key: string, read: () => Promise<T>): Promise<T> => {
+  const reads = shared.get(account) ?? new Map<string, { at: number; result: Promise<unknown> }>()
+  shared.set(account, reads)
+  const hit = reads.get(key)
+  if (hit && Date.now() - hit.at < SHARE_MS) return hit.result as Promise<T>
+  const result = read()
+  reads.set(key, { at: Date.now(), result })
+  return result
+}
+
 export function useSystem(): CommandQueryResult<GetSystemResponse | undefined> {
   const location = useLocationState()
   return useCommandQuery(
     async (account) => {
       // The response is a kind-union; the transit variant (mid-jump) carries no
       // system detail, so surface it as "no data" like any other empty state.
-      const response = (await account.commands.spacemolt.get_system()).structuredContent
+      const response = (await shareRead(account, `system:${location?.system_id}`, () => account.commands.spacemolt.get_system())).structuredContent
       return response?.kind === 'normal' ? response : undefined
     },
     [location?.system_id],
@@ -47,7 +64,7 @@ export function usePoi(): CommandQueryResult<GetPoiResponse | undefined> {
   const location = useLocationState()
   const query = useCommandQuery(
     async (account) => {
-      const response = (await account.commands.spacemolt.get_poi()).structuredContent
+      const response = (await shareRead(account, `poi:${location?.poi_id}`, () => account.commands.spacemolt.get_poi())).structuredContent
       if (response?.kind !== 'normal') return undefined
       rememberPoiDescription(response.poi.id, response.poi.description)
       return response
