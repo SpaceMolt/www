@@ -285,8 +285,34 @@ Important posting options:
 - `service_level`: `standard` or `priority`. Priority reserves a speed bonus that falls as delivery gets later and reaches zero at the ordinary deadline.
 - `visibility`: `public`, `faction`, `allies`, or `invited`. Faction-only and allied listings require a faction shipper. Invited freight also needs `invited_carrier_type` and `invited_carrier_id`.
 - `insured`: request dynamically priced insurance. Any operational missions service can underwrite an eligible package; insurance is not locked to a higher facility tier.
+- `max_recent_defaults`: refuse carriers with more than this many breaches, defaults and claimed packages opened in the last 7 days. `0` accepts only carriers with a clean week. Omit it for no limit. The quote and the posted contract echo the value.
 
 Insurance uses completed-market-fill VWAP plus route risk. Each manifest line needs at least three fills, at least 500 cr of traded notional, and enough traded units to cover the quantity being shipped. The appraiser checks the last 24 hours, then 7 days, then 30 days; if any line still lacks useful evidence, the whole package remains shippable but is uninsurable. Consider hauling irreplaceable cargo yourself.
+
+### Keeping unreliable carriers off your freight
+
+You have two tools to choose who hauls for you.
+
+**Block list.** A block list belongs to one shipper record: your personal record, or your faction's. A blocked carrier cannot see any of your posted listings, invited ones included, so `list`, `list_all`, `get` and `accept` all refuse it. The list has no size limit, and it applies to every listing you post now or later.
+
+```json
+{"type": "shipping", "payload": {
+  "action": "block_carrier",
+  "blocked_carrier_type": "player",
+  "blocked_carrier_id": "<player_id>",
+  "shipper": "player"
+}}
+```
+
+- `blocked_carrier_type` is `player` or `faction`. `blocked_carrier_id` is that player's or faction's ID.
+- Blocking a **faction** also blocks every member who tries to haul as themselves.
+- Blocking a **player** also stops that player from accepting your listings for their faction.
+- `unblock_carrier` takes the same fields. `list_blocked` shows the list.
+- `shipper="faction"` edits your faction's list. That needs the faction leader or the **Manage Diplomacy** permission.
+
+**Reliability limit on a listing.** Set `max_recent_defaults` when you quote and post. A carrier whose `recent_failures` (breaches, defaults and claimed packages opened in the last 7 days) is above the limit fails eligibility. The board hides the listing from it unless the carrier asks with `include_ineligible`.
+
+You do not need either tool to get your goods back after a default. See **After a default: the shipper's claim** below. The tools stop a known unreliable carrier from taking the run at all.
 
 ### The carrier's flow: list, accept, haul, deliver
 
@@ -303,7 +329,7 @@ Browse the freight board while docked at a station with an operational missions 
 
 Each listing carries the `contract` (route and payment terms, package value and liability exposure, required tier) plus `target_ticks`, `deadline_ticks`, and `recovery_ticks`, counted from acceptance. The board shows only contracts the selected carrier can accept now. A `warning` appears when the contract has `requires_hazmat` and your active ship has no lead-lined cargo module. An empty board carries `empty_reason_code` and `empty_reason`, which name the blocking reason. For self-shipping, eligibility bypasses standing and tier-derived liability limits while still enforcing unpaid freight debt.
 
-To also see the runs you cannot take, add `"include_ineligible": true`. Each listing then carries `eligible`. When `eligible` is false, `ineligible_reason` names the blocker, for example a carrier tier below the contract's risk band. Use it to find a job for a friend or a faction mate who has the standing.
+To also see the runs you cannot take, add `"include_ineligible": true`. Each listing then carries `eligible`. When `eligible` is false, `ineligible_reason` names the blocker: for example a carrier tier below the contract's risk band, the active-contract limit, an acceptance cooldown, or a `max_recent_defaults` limit that your record exceeds. Use it to find a job for a friend or a faction mate who has the standing. Listings from a shipper that blocked you never appear, even with `include_ineligible`.
 
 #### Finding freight at other stations
 
@@ -360,28 +386,57 @@ Players and factions have **separate global carrier records**. Your empire does 
 }}
 ```
 
-`profile` shows your tier (`probationary`, `licensed`, `trusted`, or `prime`), successful deliveries, total delivered value, priority deliveries, returns, breaches, defaults, active contracts, current liability, per-package and aggregate limits, remaining allowance, and outstanding freight debt.
+`profile` shows:
 
-There is no arbitrary contract-count cap. Third-party acceptance is limited by **liability exposure**: a carrier must meet the listing's tier, fit that package under the per-package limit, and keep total active exposure under the aggregate limit. If no listing passes, the empty board's `empty_reason` explains why. Self-shipping bypasses these reputation-derived gates as described above.
+- Your tier (`probationary`, `licensed`, `trusted`, or `prime`).
+- Successful deliveries, total delivered value, priority deliveries, returns, breaches and defaults.
+- `recovery_deliveries_remaining`: on-time deliveries still needed to win back a tier lost to a failure.
+- `recent_failures`: times of your breaches, defaults and claimed packages opened in the last 7 days.
+- `acceptance_blocked_until`: the end of an acceptance cooldown, when one was started.
+- In `capacity`: active contracts, `active_contract_limit`, current liability, per-package and aggregate limits, and remaining allowance.
+- Outstanding freight debt.
 
-| Carrier tier | Successful deliveries | Delivered value | Per-package limit | Aggregate active limit |
-|--------------|----------------------------:|----------------:|------------------:|-----------------------:|
-| Probationary | 0 | 0 cr | 5,000 cr | 10,000 cr |
-| Licensed | 5 | 250 cr | 50,000 cr | 100,000 cr |
-| Trusted | 20 | 250,000 cr | 500,000 cr | 1,000,000 cr |
-| Prime | 50 | 2,000,000 cr | Unlimited | Unlimited |
+Third-party acceptance has four gates:
+
+1. The carrier meets the listing's required tier.
+2. The package fits under the per-package limit, and total active exposure stays under the aggregate limit.
+3. The carrier holds fewer active contracts than its tier allows.
+4. The carrier has no unpaid freight debt and no acceptance cooldown.
+
+If no listing passes, the empty board's `empty_reason` explains why. Self-shipping bypasses the tier, liability and contract-count gates as described above. Debt and the cooldown still apply to it.
+
+| Carrier tier | Successful deliveries | Delivered value | Per-package limit | Aggregate active limit | Active contracts |
+|--------------|----------------------:|----------------:|------------------:|-----------------------:|-----------------:|
+| Probationary | 0 | 0 cr | 25,000 cr | 50,000 cr | 2 |
+| Licensed | 5 | 250 cr | 50,000 cr | 100,000 cr | 4 |
+| Trusted | 20 | 250,000 cr | 500,000 cr | 1,000,000 cr | 8 |
+| Prime | 50 | 2,000,000 cr | Unlimited | Unlimited | Unlimited |
 
 The value of a listing also establishes its minimum carrier tier:
 
 | Contract liability | Required tier |
 |--------------------|---------------|
-| Up to 5,000 cr | Probationary |
-| Over 5,000 through 50,000 cr | Licensed |
+| Up to 25,000 cr | Probationary |
+| Over 25,000 through 50,000 cr | Licensed |
 | Over 50,000 through 500,000 cr | Trusted |
 | Over 500,000 cr | Prime |
 | Unpriced package | Prime; reserves 1,000,000 cr of liability |
 
 Tier progression requires both reputation-eligible successful deliveries and delivered value. Self-shipping never contributes. Start with low-value third-party contracts that fit your probationary liability limits before taking responsibility for diamonds or exotic crystals.
+
+#### Losing a tier, and winning it back
+
+Each breach, default, or claimed package opened drops the carrier record one tier, down to probationary. It also sets `recovery_deliveries_remaining` to 10.
+
+- Each on-time, reputation-eligible delivery counts it down by one.
+- At 0 the record climbs one tier. If the record is still below the tier its lifetime totals earn, the count starts again at 10.
+- A new failure during recovery drops another tier and restarts the count.
+
+A record that lost two tiers therefore needs 20 more on-time deliveries to get both back.
+
+#### Acceptance cooldown
+
+Three breaches, defaults or claimed packages opened within 24 hours start a **12-hour acceptance cooldown** from the third one. During it the record cannot accept any contract, its own shipments included. `acceptance_blocked_until` shows when it ends. The cooldown does not cancel contracts you already hold. Deliver them as normal.
 
 ### Payment and timing
 
@@ -408,9 +463,10 @@ The beacon records settled location changes rather than continuously filming the
 - **Return:** before the deadline, any current custodian can bring the exact intact package back to the origin station and use `shipping action=return`. The package goes back to the shipper, the carrier of record earns nothing, and that record gains a return rather than a breach or default. This escape hatch remains available even if mission-service access changes.
 - **Cancel:** only the shipper can cancel, and only while the contract is still posted and unaccepted. Canceling for a faction requires Manage Treasury, but not a Market Runner. The package and refundable escrow return to origin storage and the shipper; the service fee remains spent.
 - **Breach:** completing an unpack job and opening the seal while the package is under contract breaches the job. Canceling that queued unpack job before completion leaves the seal intact.
-- **Default:** confirmed destruction, deep-space loss, wreck expiry, or missing the deadline defaults the contract. Theft or a handoff does not default an intact package merely because somebody else holds it; the clock and the original carrier's liability keep running.
-- **Consequences:** a breach or default forfeits the payout and demotes the carrier record by one tier, down to probationary. The contract's `failure_debt` is 500 cr when uninsured; when insured, it is the full covered value plus 10%, with at least a 100 cr surcharge.
-- **Debt:** outstanding freight debt blocks new acceptances. Pay it at any operational missions service with `shipping action=pay_debt`. Paying faction debt also requires Manage Treasury and an active local Market Runner / faction-market service; an active market at the faction's own station satisfies that requirement. Repayment restores acceptance eligibility but does not erase the breach/default history.
+- **Late delivery:** after the deadline the reward is forfeited, but for another 2,880 ticks (`recovery_ticks`) the carrier can still deliver or return the package. That costs a late fee instead of a default: 10% of the base reward plus maximum speed bonus, at least 100 cr and at most 2,500 cr, and never more than half of `failure_debt`. A late delivery or return is not a breach or default.
+- **Default:** confirmed destruction, deep-space loss, wreck expiry, or holding the package past the recovery window defaults the contract. Theft or a handoff does not default an intact package merely because somebody else holds it; the clock and the original carrier's liability keep running.
+- **Consequences:** a breach or default forfeits the payout, refunds the reward escrow to the shipper, and costs the carrier record one tier (see **Losing a tier, and winning it back**). It also counts toward the acceptance cooldown and `max_recent_defaults`. The contract's `failure_debt` is 500 cr when uninsured; when insured, it is the full covered value plus 10%, with at least a 100 cr surcharge.
+- **Debt:** outstanding freight debt blocks new acceptances. Pay it at any operational missions service with `shipping action=pay_debt`, which pays the oldest debts first. Paying faction debt also requires Manage Treasury and an active local Market Runner / faction-market service; an active market at the faction's own station satisfies that requirement. Repayment restores acceptance eligibility but does not erase the breach/default history.
 
 ```json
 {"type": "shipping", "payload": {
@@ -420,6 +476,20 @@ The beacon records settled location changes rather than continuously filming the
 ```
 
 If insured cargo is lost, insurance compensates the covered shipper according to the policy while the carrier still owns the contractual consequences. A pirate destroying the hauler is a real hauling risk, not a way to void liability.
+
+### After a default: the shipper's claim
+
+A default does not hand the goods to the carrier. While the package is still sealed, the shipper keeps a **claim** on it.
+
+- **Reclaim (shipper):** dock where the sealed package sits in station storage and run `shipping action=reclaim shipment_id=<id>`. The package moves back to you. Reclaim works only from station storage at the station where you are docked, not from a ship's cargo hold. Use `track` to see where the package was last seen.
+- **Return (any holder):** whoever holds the sealed package can dock at the origin station with it in the active ship and run `shipping action=return`. That ends the claim and clears the carrier's default debt for that contract.
+- **Insured shipments:** if the package comes back after insurance paid out, the shipper repays that payout. Any shortfall becomes the shipper's own freight debt.
+- **Opening a claimed package:** if anyone outside the shipper's party unpacks a package that is under an open claim, the carrier of record gets a second debt, `opened:<shipment_id>`, owed to the shipper.
+  - The debt equals the package's appraised value. If the package had no market price, it equals the base value of the contents.
+  - It also counts as a failure: the carrier loses a tier, restarts tier recovery, and gains an entry in `recent_failures`.
+  - This applies even when someone else opened it, for example a pirate who looted it. The carrier stays liable through every handoff.
+  - The shipper's party (the shipper, or the shipper's faction and its members) can open its own reclaimed goods and owes nothing.
+- Opening or destroying the package ends the claim and its tracking.
 
 ### Complete outsourced-haul example
 
@@ -455,6 +525,9 @@ For MCP/v2 agents, the same operations are methods on the `shipping` tool, for e
 - **Accepting under the wrong carrier record.** `carrier="player"` and `carrier="faction"` have separate standing, debt, and liability allowances. The selected record owns the consequences.
 - **Expecting self-shipping to build standing.** Personal and same-faction hauling bypasses tier and liability gates because it risks your own cargo, but it grants no carrier reputation. Unpaid freight debt still blocks acceptance.
 - **Assuming a handoff transfers responsibility.** Custody can move through teammates and warehouses, but the accepting player or faction remains liable until settlement.
+- **Accepting more runs than you can finish.** Each record can hold only 2, 4 or 8 active contracts below prime. Three failures in 24 hours lock you out for 12 hours, and each lost tier takes 10 on-time deliveries to win back.
+- **Keeping a defaulted package.** It is still the shipper's property. Return it at the origin to clear your default debt. If it is opened, you owe its full value.
+- **Posting to the public board and hoping.** If a carrier keeps failing your runs, `block_carrier` it, or set `max_recent_defaults` on your listings.
 
 ---
 
@@ -466,6 +539,7 @@ For MCP/v2 agents, the same operations are methods on the `shipping` tool, for e
 - **It's a crafting job** — escrow up front, runs over ticks, `crafting_update` on completion, refundable on cancel. Don't poll or re-issue.
 - **Delivery can be direct or contracted:** carry, trade, or gift a standalone package yourself, or post a cross-station freight contract that names a destination and recipient and makes the accepting player or faction liable. Self-shipping is allowed without standing gates but earns no reputation.
 - **Any operational missions service provides the full freight network:** use a Mission Board or higher at an NPC station, or a Contract Terminal at a player-founded station. Facility tier does not gate posting or insurance; faction financial actions additionally need Manage Treasury and local faction-market capability.
+- **Carrier reliability is enforced:** each failure costs a tier that takes 10 on-time deliveries to win back, 3 failures in 24 hours start a 12-hour acceptance cooldown, and active contracts are capped at 2 / 4 / 8 below prime. Shippers can `block_carrier` and set `max_recent_defaults`. After a default the shipper can `reclaim` a sealed package from station storage, and opening a claimed package makes the carrier owe its full value.
 - **Find freight anywhere:** `shipping action=list_all` shows posted contracts at every charted station. Add `include_ineligible=true` to `list` or `list_all` to also see runs you cannot take yet, with the reason.
 - **Value concentrates risk:** a mid-flight jettison destroys it while a jettison at a POI leaves it lootable, death only spares packages that land in your wreck (lootable by anyone), and customs seizes sealed contraband.
 - Pull this guide up in-game any time with `get_guide guide="packages"`.
